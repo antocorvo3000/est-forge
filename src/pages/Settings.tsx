@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Upload } from "lucide-react";
+import { ArrowLeft, Upload, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,20 +61,22 @@ const Settings = () => {
             <h2 className="text-xl font-bold mb-4">Logo Aziendale</h2>
             <div className="flex items-center gap-4">
               {formData.logoPath ? (
-                <img
-                  src={formData.logoPath}
-                  alt="Logo aziendale"
-                  className="w-24 h-24 object-contain rounded-lg border border-border bg-white"
-                />
+                <div className="flex items-center gap-4">
+                  <img
+                    src={formData.logoPath}
+                    alt="Logo aziendale"
+                    className="max-h-36 w-auto object-contain rounded-lg border border-border bg-white p-2"
+                  />
+                </div>
               ) : (
-                <div className="w-24 h-24 rounded-lg border border-border bg-white flex items-center justify-center text-muted-foreground">
+                <div className="max-h-36 w-32 rounded-lg border border-border bg-white flex items-center justify-center text-muted-foreground p-2">
                   Logo
                 </div>
               )}
-              <div>
+              <div className="flex flex-col gap-2">
                 <Label
                   htmlFor="logo-upload"
-                  className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold hover:brightness-110 transition-all"
+                  className="cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold hover:brightness-110 transition-all h-10"
                 >
                   <Upload className="w-4 h-4" />
                   Carica Logo
@@ -86,6 +88,16 @@ const Settings = () => {
                   className="hidden"
                   onChange={handleLogoUpload}
                 />
+                {formData.logoPath && (
+                  <Button
+                    onClick={() => setFormData({ ...formData, logoPath: undefined })}
+                    variant="destructive"
+                    className="gap-2 h-10"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Elimina Logo
+                  </Button>
+                )}
               </div>
             </div>
           </div>
