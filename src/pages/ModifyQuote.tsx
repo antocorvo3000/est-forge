@@ -100,17 +100,20 @@ const ModifyQuote = () => {
 
   // Load quote data from database
   useEffect(() => {
-    if (id) {
+    if (id && !location.state?.clientData) {
+      loadQuoteData();
+    } else if (id && location.state?.clientData) {
+      // Se abbiamo dati cliente dalla navigazione, carica solo i dati del preventivo
       loadQuoteData();
     }
   }, [id]);
 
-  // Sync client data when returning from client details
+  // Sync client data when returning from client details - PRIORITÀ AI DATI MODIFICATI
   useEffect(() => {
     if (location.state?.clientData) {
       setClientData(location.state.clientData);
     }
-  }, [location.state]);
+  }, [location.state?.clientData]);
 
   const loadQuoteData = async () => {
     try {
@@ -118,8 +121,8 @@ const ModifyQuote = () => {
       const data = await getQuoteById(id!);
       
       if (data) {
-        // Set client data
-        if (data.clienti) {
+        // Set client data SOLO se non abbiamo già dati dal location.state
+        if (data.clienti && !location.state?.clientData) {
           setClientData({
             name: data.clienti.nome_ragione_sociale || "",
             taxCode: data.clienti.codice_fiscale_piva || "",
