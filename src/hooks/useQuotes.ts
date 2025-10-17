@@ -23,7 +23,20 @@ const initialQuotes: Quote[] = [
 export const useQuotes = () => {
   const [quotes, setQuotes] = useState<Quote[]>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : initialQuotes;
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        // Check if old data format - if any quote is missing number/year, use initial quotes
+        if (parsed.length > 0 && (!parsed[0].number || !parsed[0].year || !parsed[0].clientAddress)) {
+          console.log("Old data format detected, using initial quotes");
+          return initialQuotes;
+        }
+        return parsed;
+      } catch (e) {
+        return initialQuotes;
+      }
+    }
+    return initialQuotes;
   });
 
   useEffect(() => {

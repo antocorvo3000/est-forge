@@ -11,9 +11,13 @@ interface QuoteItemProps {
 }
 
 export const QuoteItem = ({ quote, index, onEdit, onDelete }: QuoteItemProps) => {
-  const formatQuoteNumber = (num: number) => {
+  const formatQuoteNumber = (num?: number) => {
+    if (!num) return '00';
     return num.toString().padStart(2, '0');
   };
+
+  const displayYear = quote.year || new Date(quote.date).getFullYear();
+  const displayAddress = quote.clientAddress || 'Indirizzo non disponibile';
 
   return (
     <motion.div
@@ -44,10 +48,10 @@ export const QuoteItem = ({ quote, index, onEdit, onDelete }: QuoteItemProps) =>
 
       <div className="min-w-0 flex flex-col gap-1 justify-center">
         <h3 className="font-bold text-base sm:text-lg tracking-tight">
-          {formatQuoteNumber(quote.number)}-{quote.year} {quote.client}
+          {formatQuoteNumber(quote.number)}-{displayYear} {quote.client}
         </h3>
         <p className="text-sm text-muted-foreground truncate">
-          {quote.clientAddress}
+          {displayAddress}
         </p>
       </div>
 
