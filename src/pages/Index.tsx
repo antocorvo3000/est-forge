@@ -101,7 +101,7 @@ const Index = () => {
           transition={{ delay: 0.4 }}
           className="glass rounded-2xl p-3 sm:p-4 mx-4 sm:mx-6"
         >
-          <div className="space-y-2 sm:space-y-3 max-h-[calc(70px*5+0.75rem*4)] overflow-y-auto scrollbar-thin pr-1">
+          <div className="space-y-2 sm:space-y-3 max-h-[calc(70px*5+0.75rem*4)] overflow-y-auto scrollbar-thin pr-2">
             {filteredQuotes.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0 }}
