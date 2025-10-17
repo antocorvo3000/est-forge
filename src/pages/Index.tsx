@@ -92,8 +92,8 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden pb-20">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-3 sm:space-y-4">
+    <div className="h-screen overflow-hidden">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-3 sm:space-y-4 h-full flex flex-col">
         <CompanyHeader />
 
         <motion.section
@@ -120,19 +120,15 @@ const Index = () => {
             y: 0,
             transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }
           }}
-          className="glass rounded-2xl p-3 sm:p-4 mx-4 sm:mx-6"
+          className="glass rounded-2xl p-3 sm:p-4 mx-4 sm:mx-6 flex-1 flex flex-col min-h-0"
           style={{
             willChange: 'auto'
           }}
         >
           <motion.div 
-            className="space-y-2 sm:space-y-3 overflow-y-auto scrollbar-thin pr-2"
+            className="space-y-2 sm:space-y-3 overflow-y-auto scrollbar-thin pr-2 flex-1"
             layout
             transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-            style={{
-              maxHeight: 'calc(100vh - 450px)',
-              minHeight: '300px'
-            }}
           >
             {filteredQuotes.length === 0 ? (
               <motion.div
