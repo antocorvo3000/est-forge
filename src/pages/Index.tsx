@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -12,10 +12,28 @@ import { useQuotes } from "@/hooks/useQuotes";
 import { toast } from "sonner";
 import type { Quote } from "@/types/quote";
 
+// Hook per debouncing
+function useDebounce(value: string, delay: number) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 const Index = () => {
   const navigate = useNavigate();
   const { quotes, addQuote, updateQuote, deleteQuote } = useQuotes();
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 150);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingQuote, setEditingQuote] = useState<Quote | undefined>();
   const [deleteDialog, setDeleteDialog] = useState<{
@@ -24,7 +42,7 @@ const Index = () => {
   }>({ open: false });
 
   const filteredQuotes = useMemo(() => {
-    const query = searchQuery.toLowerCase().trim();
+    const query = debouncedSearch.toLowerCase().trim();
     if (!query) return quotes;
 
     return quotes.filter(
@@ -39,7 +57,7 @@ const Index = () => {
         );
       }
     );
-  }, [quotes, searchQuery]);
+  }, [quotes, debouncedSearch]);
 
   const handleNewQuote = () => {
     setEditingQuote(undefined);
@@ -97,16 +115,27 @@ const Index = () => {
 
         <motion.main
           initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          animate={{ 
+            opacity: 1, 
+            y: 0,
+            transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }
+          }}
           className="glass rounded-2xl p-3 sm:p-4 mx-4 sm:mx-6"
+          style={{
+            willChange: 'auto'
+          }}
         >
-          <div className="space-y-2 sm:space-y-3 max-h-[calc(70px*5+0.75rem*4)] overflow-y-auto scrollbar-thin pr-2">
+          <motion.div 
+            className="space-y-2 sm:space-y-3 max-h-[calc(70px*5+0.75rem*4)] overflow-y-auto scrollbar-thin pr-2"
+            layout
+            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+          >
             {filteredQuotes.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
                 className="text-center py-12 text-muted-foreground"
               >
                 {searchQuery
@@ -126,7 +155,7 @@ const Index = () => {
                 ))}
               </AnimatePresence>
             )}
-          </div>
+          </motion.div>
         </motion.main>
 
         <motion.div
