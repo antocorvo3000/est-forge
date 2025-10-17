@@ -10,7 +10,7 @@ export const CompanyHeader = () => {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass rounded-2xl mx-4 sm:mx-6 mb-2 sm:mb-3 p-3 sm:p-4 flex justify-center"
+        className="glass rounded-2xl mx-4 sm:mx-6 mb-1 p-3 sm:p-4 flex justify-center"
       >
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
           Gestione Preventivi
@@ -23,11 +23,11 @@ export const CompanyHeader = () => {
         transition={{ delay: 0.1 }}
         className="flex justify-center py-1"
       >
-        <div className="w-24 h-24 rounded-2xl bg-white border border-border shadow-lg flex items-center justify-center overflow-hidden p-1">
+        <div className="w-32 h-32 rounded-2xl bg-white border border-border shadow-lg flex items-center justify-center overflow-hidden p-1">
           {settings.logoPath ? (
             <img src={settings.logoPath} alt="Logo aziendale" className="w-full h-full object-contain" />
           ) : (
-            <FileText className="w-12 h-12 text-foreground/80" strokeWidth={1.8} />
+            <FileText className="w-14 h-14 text-foreground/80" strokeWidth={1.8} />
           )}
         </div>
       </motion.div>
