@@ -24,6 +24,13 @@ import { useQuotes } from "@/hooks/useQuotes";
 import { toast } from "sonner";
 import type { ClientData } from "./ClientDetails";
 
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('it-IT', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+};
+
 interface QuoteLine {
   id: string;
   description: string;
@@ -364,11 +371,11 @@ const CreateQuote = () => {
                 <tr className="border-b">
                   <th className="text-left p-2 w-8">#</th>
                   <th className="text-left p-2">Descrizione</th>
-                  <th className="text-left p-2 w-40">U.M.</th>
+                  <th className="text-left p-2 w-48">U.M.</th>
                   <th className="text-left p-2 w-24">Qtà</th>
                   <th className="text-left p-2 w-32">Prezzo Unit.</th>
-                  <th className="text-left p-2 w-32">Totale</th>
-                  <th className="w-20"></th>
+                  <th className="text-left p-2 w-28">Totale</th>
+                  <th className="w-16"></th>
                 </tr>
               </thead>
               <tbody>
@@ -430,7 +437,7 @@ const CreateQuote = () => {
                       />
                     </td>
                     <td className="p-2 font-semibold">
-                      €{line.total.toFixed(2)}
+                      € {formatCurrency(line.total)}
                     </td>
                     <td className="p-2">
                       <div className="flex gap-1">
@@ -462,7 +469,7 @@ const CreateQuote = () => {
           <div className="mt-4 flex justify-end">
             <div className="text-right space-y-2">
               <div className="text-lg font-semibold">
-                Subtotale: €{calculateSubtotal().toFixed(2)}
+                Subtotale: € {formatCurrency(calculateSubtotal())}
               </div>
             </div>
           </div>
@@ -602,11 +609,11 @@ const CreateQuote = () => {
           <div className="text-center">
             <div className="text-lg text-muted-foreground mb-2">Totale</div>
             <div className="text-4xl font-extrabold">
-              €{calculateTotal().toFixed(2)}
+              € {formatCurrency(calculateTotal())}
             </div>
             {discountEnabled && (
               <div className="text-sm text-muted-foreground mt-2">
-                Sconto applicato: €{calculateDiscount().toFixed(2)}
+                Sconto applicato: € {formatCurrency(calculateDiscount())}
               </div>
             )}
           </div>
