@@ -31,7 +31,18 @@ interface QuoteLine {
   total: number;
 }
 
-const UNITS = ["pz", "m", "m²", "m³", "kg", "L", "h", "g", "cad"];
+const UNITS = [
+  { value: "pz", label: "pz (pezzi)" },
+  { value: "m", label: "m (metri)" },
+  { value: "mq", label: "mq (metri quadri)" },
+  { value: "mc", label: "mc (metri cubi)" },
+  { value: "kg", label: "kg (chilogrammi)" },
+  { value: "L", label: "L (litri)" },
+  { value: "h", label: "h (ore)" },
+  { value: "g", label: "g (grammi)" },
+  { value: "cad", label: "cad (cadauno)" },
+  { value: "a corpo", label: "a corpo (forfettario)" },
+];
 
 const CreateQuote = () => {
   const navigate = useNavigate();
@@ -367,8 +378,8 @@ const CreateQuote = () => {
                         </SelectTrigger>
                         <SelectContent className="bg-white">
                           {UNITS.map((unit) => (
-                            <SelectItem key={unit} value={unit}>
-                              {unit}
+                            <SelectItem key={unit.value} value={unit.value}>
+                              {unit.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
