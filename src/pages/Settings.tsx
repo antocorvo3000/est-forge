@@ -14,6 +14,16 @@ const Settings = () => {
   const { settings, updateSettings } = useCompanySettings();
   const [formData, setFormData] = useState(settings);
 
+  // Aggiorna il context in tempo reale quando cambiano i font size
+  useEffect(() => {
+    updateSettings({
+      fontSizeList: formData.fontSizeList,
+      fontSizeQuote: formData.fontSizeQuote,
+      fontSizeClient: formData.fontSizeClient,
+      fontSizeSettings: formData.fontSizeSettings,
+    });
+  }, [formData.fontSizeList, formData.fontSizeQuote, formData.fontSizeClient, formData.fontSizeSettings]);
+
   const handleSave = async () => {
     try {
       await salvaDatiAzienda({
@@ -29,7 +39,6 @@ const Settings = () => {
         font_size_settings: formData.fontSizeSettings,
       });
       
-      updateSettings(formData);
       toast.success("Impostazioni salvate con successo");
       navigate("/");
     } catch (error) {

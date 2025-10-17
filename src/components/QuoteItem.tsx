@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Pencil, Trash2 } from "lucide-react";
 import type { Quote } from "@/types/quote";
@@ -11,7 +12,8 @@ interface QuoteItemProps {
   fontSize?: number;
 }
 
-export const QuoteItem = ({ quote, index, onEdit, onDelete, fontSize = 1 }: QuoteItemProps) => {
+export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
+  ({ quote, index, onEdit, onDelete, fontSize = 1 }, ref) => {
   const formatQuoteNumber = (num?: number) => {
     if (!num) return '00';
     return num.toString().padStart(2, '0');
@@ -48,6 +50,7 @@ export const QuoteItem = ({ quote, index, onEdit, onDelete, fontSize = 1 }: Quot
       onMouseLeave={(e) => {
         e.currentTarget.style.background = 'white';
       }}
+      ref={ref}
     >
       <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/20">
         <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 sm:w-7 sm:h-7">
@@ -89,4 +92,6 @@ export const QuoteItem = ({ quote, index, onEdit, onDelete, fontSize = 1 }: Quot
       </div>
     </motion.div>
   );
-};
+});
+
+QuoteItem.displayName = "QuoteItem";
