@@ -23,11 +23,13 @@ export const CompanyHeader = () => {
         transition={{ delay: 0.1 }}
         className="flex justify-center py-1"
       >
-        <div className="w-32 h-32 rounded-2xl bg-white border border-border shadow-lg flex items-center justify-center overflow-hidden p-1">
+        <div className="max-h-36 rounded-2xl bg-white border border-border shadow-lg overflow-hidden p-1 flex items-center justify-center">
           {settings.logoPath ? (
-            <img src={settings.logoPath} alt="Logo aziendale" className="w-full h-full object-contain" />
+            <img src={settings.logoPath} alt="Logo aziendale" className="max-h-full w-auto object-contain" />
           ) : (
-            <FileText className="w-14 h-14 text-foreground/80" strokeWidth={1.8} />
+            <div className="w-32 h-32 flex items-center justify-center">
+              <FileText className="w-14 h-14 text-foreground/80" strokeWidth={1.8} />
+            </div>
           )}
         </div>
       </motion.div>
