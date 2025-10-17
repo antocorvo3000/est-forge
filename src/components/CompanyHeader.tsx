@@ -7,17 +7,15 @@ export const CompanyHeader = () => {
 
   return (
     <>
-      <motion.h1 
+      <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center text-3xl sm:text-4xl font-extrabold tracking-tight text-white mx-auto w-fit"
-        style={{ 
-          WebkitTextStroke: '4px black',
-          paintOrder: 'stroke fill'
-        }}
+        className="glass rounded-2xl mx-4 sm:mx-6 mb-2 sm:mb-3 p-3 sm:p-4 flex justify-center"
       >
-        Gestione Preventivi
-      </motion.h1>
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+          Gestione Preventivi
+        </h1>
+      </motion.div>
       
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}

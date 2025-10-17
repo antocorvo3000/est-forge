@@ -36,7 +36,7 @@ const Settings = () => {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 mb-4"
+          className="glass rounded-2xl p-3 sm:p-4 flex items-center gap-3 mx-4 sm:mx-6"
         >
           <Button
             variant="ghost"
