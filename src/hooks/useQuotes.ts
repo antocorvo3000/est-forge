@@ -40,7 +40,7 @@ export const useQuotes = () => {
         year: p.anno,
         title: p.oggetto || "",
         client: p.clienti?.nome_ragione_sociale || "",
-        clientAddress: `${p.clienti?.via || ""}, ${p.clienti?.citta || ""} (${p.clienti?.provincia || ""})`,
+        clientAddress: `${p.ubicazione_via || ""}, ${p.ubicazione_citta || ""} (${p.ubicazione_provincia || ""})`,
         amount: parseFloat(p.totale) || 0,
         date: p.creato_il?.split('T')[0] || "",
         createdAt: p.creato_il || "",
