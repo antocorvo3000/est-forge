@@ -23,28 +23,36 @@ const initialQuotes: Quote[] = [
 ];
 
 export const useQuotes = () => {
-  const [quotes, setQuotes] = useState<Quote[]>(() => {
-    const storedVersion = localStorage.getItem(DATA_VERSION_KEY);
-    
-    // Se la versione non corrisponde, resetta i dati
-    if (storedVersion !== CURRENT_VERSION) {
-      console.log("Resetting quotes data to version", CURRENT_VERSION);
+  // RESET FORZATO - rimuovere dopo il primo caricamento
+  useEffect(() => {
+    const forceReset = () => {
+      console.log("FORCE RESET - Clearing all quote data");
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(DATA_VERSION_KEY);
       localStorage.setItem(DATA_VERSION_KEY, CURRENT_VERSION);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(initialQuotes));
-      return initialQuotes;
-    }
+      window.location.reload();
+    };
     
+    const currentVersion = localStorage.getItem(DATA_VERSION_KEY);
+    if (currentVersion !== CURRENT_VERSION) {
+      forceReset();
+    }
+  }, []);
+
+  const [quotes, setQuotes] = useState<Quote[]>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        console.log("Loaded quotes:", parsed);
+        console.log("Loaded quotes from storage:", parsed);
         return parsed;
       } catch (e) {
         console.error("Error parsing stored quotes:", e);
         return initialQuotes;
       }
     }
+    console.log("Using initial quotes");
     return initialQuotes;
   });
 
