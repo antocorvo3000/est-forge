@@ -26,6 +26,7 @@ const Settings = () => {
         font_size_list: formData.fontSizeList,
         font_size_quote: formData.fontSizeQuote,
         font_size_client: formData.fontSizeClient,
+        font_size_settings: formData.fontSizeSettings,
       });
       
       updateSettings(formData);
@@ -60,7 +61,7 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden" style={{ fontSize: `${settings.fontSizeSettings}rem` }}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 pb-16 space-y-3 sm:space-y-4">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -260,6 +261,29 @@ const Settings = () => {
                   step="0.1"
                   value={formData.fontSizeClient}
                   onChange={(e) => setFormData({ ...formData, fontSizeClient: parseFloat(e.target.value) })}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Piccolo (0.8x)</span>
+                  <span>Normale (1.0x)</span>
+                  <span>Grande (1.5x)</span>
+                </div>
+              </div>
+
+              {/* Impostazioni */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="fontSizeSettings">Impostazioni</Label>
+                  <span className="text-sm font-semibold">{formData.fontSizeSettings.toFixed(2)}x</span>
+                </div>
+                <input
+                  id="fontSizeSettings"
+                  type="range"
+                  min="0.8"
+                  max="1.5"
+                  step="0.1"
+                  value={formData.fontSizeSettings}
+                  onChange={(e) => setFormData({ ...formData, fontSizeSettings: parseFloat(e.target.value) })}
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">

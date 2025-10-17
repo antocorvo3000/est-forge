@@ -8,6 +8,7 @@ export interface CompanySettings {
   fontSizeList: number;
   fontSizeQuote: number;
   fontSizeClient: number;
+  fontSizeSettings: number;
 }
 
 export const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
@@ -20,4 +21,5 @@ export const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
   fontSizeList: 1.0,
   fontSizeQuote: 1.0,
   fontSizeClient: 1.0,
+  fontSizeSettings: 1.0,
 };

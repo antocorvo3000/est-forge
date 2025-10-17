@@ -256,7 +256,7 @@ const CreateQuote = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {/* Header with back button */}
         <motion.div
@@ -272,7 +272,7 @@ const CreateQuote = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-3xl font-extrabold tracking-tight">Nuovo Preventivo</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight" style={{ fontSize: 'initial' }}>Nuovo Preventivo</h1>
         </motion.div>
 
         {/* Company and Client Info */}
@@ -283,8 +283,8 @@ const CreateQuote = () => {
             animate={{ opacity: 1, x: 0 }}
             className="glass rounded-2xl p-6"
           >
-            <h2 className="text-xl font-bold mb-4">Dati Azienda</h2>
-            <div className="space-y-2 text-sm">
+            <h2 className="text-xl font-bold mb-4" style={{ fontSize: 'initial' }}>Dati Azienda</h2>
+            <div className="space-y-2 text-sm" style={{ fontSize: 'initial' }}>
               {settings.logoPath && (
                 <div className="flex justify-center mb-3">
                   <img
@@ -309,7 +309,7 @@ const CreateQuote = () => {
             className="glass rounded-2xl p-6 flex flex-col"
           >
             <div className="flex items-start justify-between mb-4">
-              <h2 className="text-xl font-bold">Dati Cliente</h2>
+              <h2 className="text-xl font-bold" style={{ fontSize: 'initial' }}>Dati Cliente</h2>
               <Button
                 onClick={() => navigate("/client-details", { state: { clientData } })}
                 size="sm"
@@ -320,7 +320,7 @@ const CreateQuote = () => {
               </Button>
             </div>
             {clientData && clientData.name ? (
-              <div className="space-y-2 text-sm">
+              <div className="space-y-2 text-sm" style={{ fontSize: 'initial' }}>
                 <div className="font-semibold text-lg">{clientData.name}</div>
                 {clientData.taxCode && <div>CF/P.IVA: {clientData.taxCode}</div>}
                 {clientData.address && <div>{clientData.address}</div>}

@@ -8,9 +8,10 @@ interface QuoteItemProps {
   index: number;
   onEdit: (quote: Quote) => void;
   onDelete: (id: string) => void;
+  fontSize?: number;
 }
 
-export const QuoteItem = ({ quote, index, onEdit, onDelete }: QuoteItemProps) => {
+export const QuoteItem = ({ quote, index, onEdit, onDelete, fontSize = 1 }: QuoteItemProps) => {
   const formatQuoteNumber = (num?: number) => {
     if (!num) return '00';
     return num.toString().padStart(2, '0');
@@ -59,7 +60,7 @@ export const QuoteItem = ({ quote, index, onEdit, onDelete }: QuoteItemProps) =>
         </svg>
       </div>
 
-      <div className="min-w-0 flex flex-col gap-1 justify-center">
+      <div className="min-w-0 flex flex-col gap-1 justify-center" style={{ fontSize: `${fontSize}rem` }}>
         <h3 className="font-bold text-base sm:text-lg tracking-tight">
           {formatQuoteNumber(quote.number)}-{displayYear} {quote.client}
         </h3>
@@ -68,7 +69,7 @@ export const QuoteItem = ({ quote, index, onEdit, onDelete }: QuoteItemProps) =>
         </p>
       </div>
 
-      <div className="flex items-center gap-1 sm:gap-2">
+      <div className="flex items-center gap-1 sm:gap-2" style={{ fontSize: `${fontSize}rem` }}>
         <Button
           size="sm"
           onClick={() => onEdit(quote)}

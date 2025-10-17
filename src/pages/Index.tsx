@@ -9,6 +9,7 @@ import { QuoteModal } from "@/components/QuoteModal";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { useQuotes } from "@/hooks/useQuotes";
+import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { toast } from "sonner";
 import type { Quote } from "@/types/quote";
 
@@ -32,6 +33,7 @@ function useDebounce(value: string, delay: number) {
 const Index = () => {
   const navigate = useNavigate();
   const { quotes, addQuote, updateQuote, deleteQuote } = useQuotes();
+  const { settings } = useCompanySettings();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 150);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -153,6 +155,7 @@ const Index = () => {
                     index={index}
                     onEdit={handleEditQuote}
                     onDelete={() => handleDeleteClick(quote)}
+                    fontSize={settings.fontSizeList}
                   />
                 ))}
               </AnimatePresence>

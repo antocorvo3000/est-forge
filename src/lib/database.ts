@@ -26,6 +26,7 @@ export async function salvaDatiAzienda(dati: {
   font_size_list?: number;
   font_size_quote?: number;
   font_size_client?: number;
+  font_size_settings?: number;
 }) {
   // Prima controlla se esiste già un record
   const { data: existing } = await supabase

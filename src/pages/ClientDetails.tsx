@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CityCombobox } from "@/components/CityCombobox";
+import { useCompanySettings } from "@/hooks/useCompanySettings";
 
 export interface ClientData {
   name: string;
@@ -21,6 +22,7 @@ export interface ClientData {
 const ClientDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { settings } = useCompanySettings();
   const existingData = location.state?.clientData as ClientData | undefined;
 
   const [clientName, setClientName] = useState(existingData?.name || "");
@@ -51,7 +53,7 @@ const ClientDetails = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" style={{ fontSize: `${settings.fontSizeClient}rem` }}>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
         {/* Header with back button */}
         <motion.div
@@ -67,7 +69,7 @@ const ClientDetails = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-3xl font-extrabold tracking-tight">Dati Cliente</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight" style={{ fontSize: 'initial' }}>Dati Cliente</h1>
         </motion.div>
 
         {/* Client Form */}
