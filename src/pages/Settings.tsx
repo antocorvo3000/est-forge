@@ -22,7 +22,10 @@ const Settings = () => {
         sede_legale: formData.address,
         telefono: formData.phone,
         email: formData.email,
-        logo_url: formData.logoPath
+        logo_url: formData.logoPath,
+        font_size_list: formData.fontSizeList,
+        font_size_quote: formData.fontSizeQuote,
+        font_size_client: formData.fontSizeClient,
       });
       
       updateSettings(formData);
@@ -180,6 +183,91 @@ const Settings = () => {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="bg-white"
               />
+            </div>
+          </div>
+        </motion.section>
+
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="glass rounded-2xl p-6 mx-4 sm:mx-6 space-y-6"
+        >
+          <div>
+            <h2 className="text-xl font-bold mb-4">Dimensione Testo</h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              Personalizza la dimensione del testo per diverse sezioni dell'app (esclusi titoli e dati azienda/cliente)
+            </p>
+
+            <div className="space-y-6">
+              {/* Lista Preventivi */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="fontSizeList">Lista Preventivi</Label>
+                  <span className="text-sm font-semibold">{formData.fontSizeList.toFixed(2)}x</span>
+                </div>
+                <input
+                  id="fontSizeList"
+                  type="range"
+                  min="0.8"
+                  max="1.5"
+                  step="0.1"
+                  value={formData.fontSizeList}
+                  onChange={(e) => setFormData({ ...formData, fontSizeList: parseFloat(e.target.value) })}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Piccolo (0.8x)</span>
+                  <span>Normale (1.0x)</span>
+                  <span>Grande (1.5x)</span>
+                </div>
+              </div>
+
+              {/* Nuovo/Modifica Preventivo */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="fontSizeQuote">Nuovo/Modifica Preventivo</Label>
+                  <span className="text-sm font-semibold">{formData.fontSizeQuote.toFixed(2)}x</span>
+                </div>
+                <input
+                  id="fontSizeQuote"
+                  type="range"
+                  min="0.8"
+                  max="1.5"
+                  step="0.1"
+                  value={formData.fontSizeQuote}
+                  onChange={(e) => setFormData({ ...formData, fontSizeQuote: parseFloat(e.target.value) })}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Piccolo (0.8x)</span>
+                  <span>Normale (1.0x)</span>
+                  <span>Grande (1.5x)</span>
+                </div>
+              </div>
+
+              {/* Modifica Cliente */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="fontSizeClient">Modifica Cliente</Label>
+                  <span className="text-sm font-semibold">{formData.fontSizeClient.toFixed(2)}x</span>
+                </div>
+                <input
+                  id="fontSizeClient"
+                  type="range"
+                  min="0.8"
+                  max="1.5"
+                  step="0.1"
+                  value={formData.fontSizeClient}
+                  onChange={(e) => setFormData({ ...formData, fontSizeClient: parseFloat(e.target.value) })}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Piccolo (0.8x)</span>
+                  <span>Normale (1.0x)</span>
+                  <span>Grande (1.5x)</span>
+                </div>
+              </div>
             </div>
           </div>
 

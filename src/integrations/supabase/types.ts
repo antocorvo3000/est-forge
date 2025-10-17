@@ -19,6 +19,9 @@ export type Database = {
           aggiornato_il: string | null
           creato_il: string | null
           email: string
+          font_size_client: number | null
+          font_size_list: number | null
+          font_size_quote: number | null
           id: string
           logo_url: string | null
           partita_iva: string
@@ -30,6 +33,9 @@ export type Database = {
           aggiornato_il?: string | null
           creato_il?: string | null
           email: string
+          font_size_client?: number | null
+          font_size_list?: number | null
+          font_size_quote?: number | null
           id?: string
           logo_url?: string | null
           partita_iva: string
@@ -41,6 +47,9 @@ export type Database = {
           aggiornato_il?: string | null
           creato_il?: string | null
           email?: string
+          font_size_client?: number | null
+          font_size_list?: number | null
+          font_size_quote?: number | null
           id?: string
           logo_url?: string | null
           partita_iva?: string

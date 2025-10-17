@@ -9,6 +9,9 @@ const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
   phone: "+39 02 123456",
   email: "info@zetaforge.it",
   logoPath: undefined,
+  fontSizeList: 1.0,
+  fontSizeQuote: 1.0,
+  fontSizeClient: 1.0,
 };
 
 interface CompanySettingsContextType {
@@ -33,7 +36,10 @@ export const CompanySettingsProvider = ({ children }: { children: ReactNode }) =
             address: datiAzienda.sede_legale,
             phone: datiAzienda.telefono,
             email: datiAzienda.email,
-            logoPath: datiAzienda.logo_url
+            logoPath: datiAzienda.logo_url,
+            fontSizeList: datiAzienda.font_size_list ? parseFloat(String(datiAzienda.font_size_list)) : 1.0,
+            fontSizeQuote: datiAzienda.font_size_quote ? parseFloat(String(datiAzienda.font_size_quote)) : 1.0,
+            fontSizeClient: datiAzienda.font_size_client ? parseFloat(String(datiAzienda.font_size_client)) : 1.0,
           });
         }
       } catch (error) {

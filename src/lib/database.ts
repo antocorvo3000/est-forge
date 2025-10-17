@@ -23,6 +23,9 @@ export async function salvaDatiAzienda(dati: {
   telefono: string;
   email: string;
   logo_url?: string;
+  font_size_list?: number;
+  font_size_quote?: number;
+  font_size_client?: number;
 }) {
   // Prima controlla se esiste già un record
   const { data: existing } = await supabase

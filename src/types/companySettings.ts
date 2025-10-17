@@ -5,6 +5,9 @@ export interface CompanySettings {
   phone: string;
   email: string;
   logoPath?: string;
+  fontSizeList: number;
+  fontSizeQuote: number;
+  fontSizeClient: number;
 }
 
 export const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
@@ -14,4 +17,7 @@ export const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
   phone: "+39 02 123456",
   email: "info@zetaforge.it",
   logoPath: undefined,
+  fontSizeList: 1.0,
+  fontSizeQuote: 1.0,
+  fontSizeClient: 1.0,
 };
