@@ -11,9 +11,6 @@ interface QuoteItemProps {
 }
 
 export const QuoteItem = ({ quote, index, onEdit, onDelete }: QuoteItemProps) => {
-  // Debug: mostra i dati del preventivo
-  console.log("Quote data:", quote);
-  
   const formatQuoteNumber = (num?: number) => {
     if (!num) return '00';
     return num.toString().padStart(2, '0');

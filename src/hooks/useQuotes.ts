@@ -3,7 +3,7 @@ import type { Quote, QuoteFormData } from "@/types/quote";
 
 const STORAGE_KEY = "quotes-data";
 const DATA_VERSION_KEY = "quotes-data-version";
-const CURRENT_VERSION = "3"; // Incrementa per forzare il reset dei dati
+const CURRENT_VERSION = "4"; // Incrementa per forzare il reset dei dati
 
 const initialQuotes: Quote[] = [
   { id: "Q-2025-014", number: 14, year: 2025, title: "Audit sicurezza", client: "Omicron Finance", clientAddress: "Corso Buenos Aires 23, Milano (MI)", amount: 2800.0, date: "2025-09-01", createdAt: "2025-09-01T10:00:00" },
