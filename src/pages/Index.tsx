@@ -28,10 +28,16 @@ const Index = () => {
     if (!query) return quotes;
 
     return quotes.filter(
-      (q) =>
-        q.title.toLowerCase().includes(query) ||
-        q.client.toLowerCase().includes(query) ||
-        q.id.toLowerCase().includes(query)
+      (q) => {
+        const quoteNumber = `${q.number?.toString().padStart(2, '0')}-${q.year}`;
+        return (
+          q.title?.toLowerCase().includes(query) ||
+          q.client?.toLowerCase().includes(query) ||
+          q.clientAddress?.toLowerCase().includes(query) ||
+          quoteNumber.includes(query) ||
+          q.id?.toLowerCase().includes(query)
+        );
+      }
     );
   }, [quotes, searchQuery]);
 

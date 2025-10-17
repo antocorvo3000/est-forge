@@ -57,19 +57,17 @@ export const QuoteItem = ({ quote, index, onEdit, onDelete }: QuoteItemProps) =>
 
       <div className="flex items-center gap-1 sm:gap-2">
         <Button
-          variant="ghost"
           size="sm"
           onClick={() => onEdit(quote)}
-          className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5 text-primary hover:bg-primary/10 hover:text-primary"
+          className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5 bg-primary text-white hover:brightness-110"
         >
           <Pencil className="w-4 h-4" />
           <span className="hidden sm:inline text-xs font-semibold">Modifica</span>
         </Button>
         <Button
-          variant="ghost"
           size="sm"
           onClick={() => onDelete(quote.id)}
-          className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5 bg-destructive text-white hover:brightness-110"
         >
           <Trash2 className="w-4 h-4" />
           <span className="hidden sm:inline text-xs font-semibold">Elimina</span>

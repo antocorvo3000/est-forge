@@ -19,7 +19,7 @@ export const SearchBar = ({ value, onChange }: SearchBarProps) => {
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Cerca preventivo, cliente o #ID…"
+        placeholder="Cerca numero preventivo, cliente o indirizzo..."
         className="flex-1 bg-transparent border-0 outline-none text-sm text-foreground placeholder:text-muted-foreground"
       />
     </motion.div>

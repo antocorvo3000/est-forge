@@ -26,10 +26,22 @@ export const useQuotes = () => {
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        // Check if old data format - if any quote is missing number/year, use initial quotes
+        // Migrate old data format to new format
         if (parsed.length > 0 && (!parsed[0].number || !parsed[0].year || !parsed[0].clientAddress)) {
-          console.log("Old data format detected, using initial quotes");
-          return initialQuotes;
+          console.log("Migrating old data format to new format");
+          const migrated = parsed.map((quote: any, index: number) => {
+            const idParts = quote.id.split('-');
+            const year = idParts[1] ? parseInt(idParts[1]) : new Date(quote.date).getFullYear();
+            const number = idParts[2] ? parseInt(idParts[2]) : index + 1;
+            return {
+              ...quote,
+              number: number,
+              year: year,
+              clientAddress: quote.clientAddress || 'Indirizzo non disponibile'
+            };
+          });
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+          return migrated;
         }
         return parsed;
       } catch (e) {
