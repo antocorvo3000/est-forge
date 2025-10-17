@@ -387,7 +387,7 @@ const CreateQuote = () => {
                         value={line.description}
                         onChange={(e) => updateLine(index, "description", e.target.value)}
                         placeholder="Descrizione"
-                        className="min-w-[200px] bg-white resize-none min-h-[40px]"
+                        className="min-w-[200px] bg-white resize-none min-h-[40px] overflow-hidden"
                         rows={1}
                         onInput={(e) => {
                           e.currentTarget.style.height = 'auto';
