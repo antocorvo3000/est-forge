@@ -3,7 +3,7 @@ import type { Quote, QuoteFormData } from "@/types/quote";
 
 const STORAGE_KEY = "quotes-data";
 const DATA_VERSION_KEY = "quotes-data-version";
-const CURRENT_VERSION = "2"; // Incrementa per forzare il reset dei dati
+const CURRENT_VERSION = "3"; // Incrementa per forzare il reset dei dati
 
 const initialQuotes: Quote[] = [
   { id: "Q-2025-014", number: 14, year: 2025, title: "Audit sicurezza", client: "Omicron Finance", clientAddress: "Corso Buenos Aires 23, Milano (MI)", amount: 2800.0, date: "2025-09-01", createdAt: "2025-09-01T10:00:00" },
@@ -28,6 +28,7 @@ export const useQuotes = () => {
     
     // Se la versione non corrisponde, resetta i dati
     if (storedVersion !== CURRENT_VERSION) {
+      console.log("Resetting quotes data to version", CURRENT_VERSION);
       localStorage.setItem(DATA_VERSION_KEY, CURRENT_VERSION);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(initialQuotes));
       return initialQuotes;
@@ -36,8 +37,11 @@ export const useQuotes = () => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        console.log("Loaded quotes:", parsed);
+        return parsed;
       } catch (e) {
+        console.error("Error parsing stored quotes:", e);
         return initialQuotes;
       }
     }
