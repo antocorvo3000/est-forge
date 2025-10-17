@@ -164,17 +164,21 @@ const CreateQuote = () => {
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {/* Header with back button */}
-        <div className="flex items-center gap-4 mb-6">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass rounded-2xl p-3 sm:p-4 flex items-center gap-3 mb-6"
+        >
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate("/")}
-            className="rounded-full"
+            className="h-10 w-10"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-3xl font-extrabold tracking-tight">Nuovo Preventivo</h1>
-        </div>
+        </motion.div>
 
         {/* Company and Client Info */}
         <div className="grid md:grid-cols-2 gap-6 mb-6">
