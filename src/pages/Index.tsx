@@ -60,8 +60,7 @@ const Index = () => {
   }, [quotes, debouncedSearch]);
 
   const handleNewQuote = () => {
-    setEditingQuote(undefined);
-    setIsModalOpen(true);
+    navigate("/create-quote");
   };
 
   const handleEditQuote = (quote: Quote) => {
