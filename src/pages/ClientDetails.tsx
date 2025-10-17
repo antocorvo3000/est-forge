@@ -43,7 +43,11 @@ const ClientDetails = () => {
       phone: clientPhone,
       email: clientEmail,
     };
-    navigate("/create-quote", { state: { clientData } });
+    
+    const returnTo = location.state?.returnTo || "/create-quote";
+    const quote = location.state?.quote;
+    
+    navigate(returnTo, { state: { clientData, quote } });
   };
 
   return (

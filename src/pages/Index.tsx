@@ -64,8 +64,7 @@ const Index = () => {
   };
 
   const handleEditQuote = (quote: Quote) => {
-    setEditingQuote(quote);
-    setIsModalOpen(true);
+    navigate(`/modify-quote/${quote.id}`, { state: { quote } });
   };
 
   const handleDeleteClick = (quote: Quote) => {
