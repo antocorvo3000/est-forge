@@ -72,7 +72,7 @@ const CreateQuote = () => {
   // Quote details
   const [subject, setSubject] = useState("");
   const [lines, setLines] = useState<QuoteLine[]>([
-    { id: "1", description: "", unit: "pz", quantity: 1, unitPrice: 0, total: 0 }
+    { id: "1", description: "", unit: "pz", quantity: 0, unitPrice: 0, total: 0 }
   ]);
 
   // Discount
@@ -97,7 +97,7 @@ const CreateQuote = () => {
       id: Date.now().toString(),
       description: "",
       unit: "pz",
-      quantity: 1,
+      quantity: 0,
       unitPrice: 0,
       total: 0
     };
@@ -389,22 +389,24 @@ const CreateQuote = () => {
                     <td className="p-2">
                       <Input
                         type="number"
-                        value={line.quantity}
+                        value={line.quantity || ""}
                         onChange={(e) => updateLine(index, "quantity", parseFloat(e.target.value) || 0)}
                         onKeyDown={(e) => handleKeyDown(e, index, "quantity")}
                         min="0"
                         step="0.01"
+                        placeholder="0"
                         className="bg-white"
                       />
                     </td>
                     <td className="p-2">
                       <Input
                         type="number"
-                        value={line.unitPrice}
+                        value={line.unitPrice || ""}
                         onChange={(e) => updateLine(index, "unitPrice", parseFloat(e.target.value) || 0)}
                         onKeyDown={(e) => handleKeyDown(e, index, "unitPrice")}
                         min="0"
                         step="0.01"
+                        placeholder="0"
                         className="bg-white"
                       />
                     </td>
