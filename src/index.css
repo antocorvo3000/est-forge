@@ -8,50 +8,64 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* iOS-inspired light theme */
+    --background: 220 28% 86%;
+    --foreground: 215 25% 18%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 25% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 215 25% 18%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 210 100% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 210 100% 60%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 215 25% 18%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 12% 40%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 210 100% 94%;
+    --accent-foreground: 215 25% 18%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 356 85% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --destructive-glow: 356 85% 52%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 210 16% 76%;
+    --input: 210 16% 76%;
+    --ring: 210 100% 55%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+
+    /* iOS gradients */
+    --gradient-bg-1: 215 70% 84%;
+    --gradient-bg-2: 210 65% 80%;
+    
+    /* Glass effect */
+    --glass-bg: 0 0% 100%;
+    --glass-opacity: 0.58;
+    --glass-border: 210 16% 76%;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 4px hsl(215 18% 35% / 0.08);
+    --shadow-md: 0 6px 16px hsl(215 18% 35% / 0.12);
+    --shadow-lg: 0 10px 24px hsl(215 18% 35% / 0.18);
+    --shadow-primary: 0 8px 18px hsl(210 100% 40% / 0.25);
+    
+    /* Transitions */
+    --transition-smooth: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -100,6 +114,48 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground font-sans antialiased;
+    background: 
+      radial-gradient(80vw 80vw at 20% -10%, hsl(var(--gradient-bg-1)) 0%, transparent 60%),
+      radial-gradient(70vw 70vw at 100% 10%, hsl(var(--gradient-bg-2)) 0%, transparent 55%),
+      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(210 22% 84%) 100%);
+    background-attachment: fixed;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: hsl(var(--glass-bg) / var(--glass-opacity));
+    backdrop-filter: blur(14px) saturate(160%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    border: 1px solid hsl(var(--glass-border));
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Custom scrollbar for iOS feel */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 10px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.4);
   }
 }
