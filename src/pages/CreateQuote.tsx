@@ -389,13 +389,17 @@ const CreateQuote = () => {
                         value={line.unit}
                         onValueChange={(value) => updateLine(index, "unit", value)}
                       >
-                        <SelectTrigger className="bg-white">
-                          <SelectValue />
+                        <SelectTrigger className="bg-white text-left">
+                          <SelectValue className="text-left" />
                         </SelectTrigger>
-                        <SelectContent className="bg-white">
+                        <SelectContent className="bg-white z-50">
                           {UNITS.map((unit) => (
-                            <SelectItem key={unit.value} value={unit.value} className="text-left">
-                              {unit.label}
+                            <SelectItem 
+                              key={unit.value} 
+                              value={unit.value} 
+                              className="text-left justify-start cursor-pointer"
+                            >
+                              <span className="text-left w-full block">{unit.label}</span>
                             </SelectItem>
                           ))}
                         </SelectContent>
