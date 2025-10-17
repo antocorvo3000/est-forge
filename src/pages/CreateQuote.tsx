@@ -383,12 +383,16 @@ const CreateQuote = () => {
                   <tr key={line.id} className="border-b hover:bg-accent/20 transition-colors">
                     <td className="p-2 text-muted-foreground">{index + 1}</td>
                     <td className="p-2">
-                      <Input
+                      <Textarea
                         value={line.description}
                         onChange={(e) => updateLine(index, "description", e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(e, index, "description")}
                         placeholder="Descrizione"
-                        className="min-w-[200px] bg-white"
+                        className="min-w-[200px] bg-white resize-none min-h-[40px]"
+                        rows={1}
+                        onInput={(e) => {
+                          e.currentTarget.style.height = 'auto';
+                          e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
+                        }}
                       />
                     </td>
                     <td className="p-2">
