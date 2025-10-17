@@ -348,7 +348,7 @@ const CreateQuote = () => {
                 <tr className="border-b">
                   <th className="text-left p-2 w-12">#</th>
                   <th className="text-left p-2">Descrizione</th>
-                  <th className="text-left p-2 w-24">U.M.</th>
+                  <th className="text-left p-2 w-48">U.M.</th>
                   <th className="text-left p-2 w-24">Qtà</th>
                   <th className="text-left p-2 w-32">Prezzo Unit.</th>
                   <th className="text-left p-2 w-32">Totale</th>
