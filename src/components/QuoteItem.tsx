@@ -28,14 +28,15 @@ export const QuoteItem = ({ quote, index, onEdit, onDelete }: QuoteItemProps) =>
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{
         delay: index * 0.03,
-        duration: 0.3,
-        ease: [0.2, 0.8, 0.2, 1],
+        duration: 0.35,
+        ease: [0.25, 0.46, 0.45, 0.94],
       }}
       whileHover={{
-        y: -2,
-        transition: { duration: 0.2 },
+        y: -3,
+        scale: 1.01,
+        transition: { duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] },
       }}
-      className="group grid grid-cols-[auto_1fr_auto] gap-2 sm:gap-3 p-2 sm:p-3 bg-white border border-border rounded-xl shadow-sm hover:shadow-md hover:border-primary/30 hover:bg-accent/50 transition-all duration-200"
+      className="group grid grid-cols-[auto_1fr_auto] gap-2 sm:gap-3 p-2 sm:p-3 bg-white border border-border rounded-xl shadow-sm hover:shadow-md hover:border-primary/30 hover:bg-accent/50 transition-all duration-300 ease-out"
     >
       <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg bg-accent border border-border">
         <FileText className="w-4 h-4 text-foreground/70" strokeWidth={1.4} />

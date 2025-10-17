@@ -9,18 +9,17 @@ All colors MUST be HSL.
 @layer base {
   :root {
     /* iOS-inspired light theme */
-    --background: 220 28% 86%;
+    --background: 210 25% 72%;
     --foreground: 215 25% 18%;
 
-    --card: 0 0% 100%;
+    --card: 210 20% 88%;
     --card-foreground: 215 25% 18%;
 
-    --popover: 0 0% 100%;
+    --popover: 210 20% 88%;
     --popover-foreground: 215 25% 18%;
 
     --primary: 210 100% 55%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 210 100% 60%;
 
     --secondary: 210 40% 96%;
     --secondary-foreground: 215 25% 18%;
@@ -33,7 +32,6 @@ All colors MUST be HSL.
 
     --destructive: 356 85% 58%;
     --destructive-foreground: 0 0% 100%;
-    --destructive-glow: 356 85% 52%;
 
     --border: 210 16% 76%;
     --input: 210 16% 76%;
@@ -41,13 +39,13 @@ All colors MUST be HSL.
 
     --radius: 0.75rem;
 
-    /* iOS gradients */
-    --gradient-bg-1: 215 70% 84%;
-    --gradient-bg-2: 210 65% 80%;
+    /* iOS gradients - more contrasted */
+    --gradient-bg-1: 210 30% 68%;
+    --gradient-bg-2: 205 25% 72%;
     
     /* Glass effect */
-    --glass-bg: 0 0% 100%;
-    --glass-opacity: 0.58;
+    --glass-bg: 210 20% 88%;
+    --glass-opacity: 0.75;
     --glass-border: 210 16% 76%;
     
     /* Shadows */
@@ -118,7 +116,7 @@ All colors MUST be HSL.
     background: 
       radial-gradient(80vw 80vw at 20% -10%, hsl(var(--gradient-bg-1)) 0%, transparent 60%),
       radial-gradient(70vw 70vw at 100% 10%, hsl(var(--gradient-bg-2)) 0%, transparent 55%),
-      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(210 22% 84%) 100%);
+      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(210 25% 70%) 100%);
     background-attachment: fixed;
   }
 }

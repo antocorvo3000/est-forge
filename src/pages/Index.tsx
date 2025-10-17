@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Plus } from "lucide-react";
+import { Plus, Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { CompanyHeader } from "@/components/CompanyHeader";
 import { SearchBar } from "@/components/SearchBar";
 import { QuoteItem } from "@/components/QuoteItem";
@@ -12,6 +13,7 @@ import { toast } from "sonner";
 import type { Quote } from "@/types/quote";
 
 const Index = () => {
+  const navigate = useNavigate();
   const { quotes, addQuote, updateQuote, deleteQuote } = useQuotes();
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -79,7 +81,7 @@ const Index = () => {
           <SearchBar value={searchQuery} onChange={setSearchQuery} />
           <Button
             onClick={handleNewQuote}
-            className="bg-gradient-to-b from-primary to-primary-glow shadow-[var(--shadow-primary)] hover:brightness-105 h-10 sm:h-11 gap-2 font-bold"
+            className="h-10 sm:h-11 gap-2 font-bold"
           >
             <Plus className="w-5 h-5" strokeWidth={2.4} />
             <span className="hidden sm:inline">Nuovo preventivo</span>
@@ -87,32 +89,49 @@ const Index = () => {
           </Button>
         </motion.section>
 
-        <motion.main
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="glass rounded-2xl p-3 sm:p-4 mx-4 sm:mx-6"
-        >
-          <div className="space-y-2 sm:space-y-3 max-h-[calc(70px*5+0.75rem*4)] overflow-y-auto scrollbar-thin pr-1">
-            {filteredQuotes.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                {searchQuery
-                  ? "Nessun preventivo trovato"
-                  : "Nessun preventivo presente. Creane uno nuovo!"}
-              </div>
-            ) : (
-              filteredQuotes.map((quote, index) => (
-                <QuoteItem
-                  key={quote.id}
-                  quote={quote}
-                  index={index}
-                  onEdit={handleEditQuote}
-                  onDelete={() => handleDeleteClick(quote)}
-                />
-              ))
-            )}
-          </div>
-        </motion.main>
+        <div className="relative">
+          <motion.main
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="glass rounded-2xl p-3 sm:p-4 mx-4 sm:mx-6"
+          >
+            <div className="space-y-2 sm:space-y-3 max-h-[calc(70px*5+0.75rem*4)] overflow-y-auto scrollbar-thin pr-1">
+              {filteredQuotes.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  {searchQuery
+                    ? "Nessun preventivo trovato"
+                    : "Nessun preventivo presente. Creane uno nuovo!"}
+                </div>
+              ) : (
+                filteredQuotes.map((quote, index) => (
+                  <QuoteItem
+                    key={quote.id}
+                    quote={quote}
+                    index={index}
+                    onEdit={handleEditQuote}
+                    onDelete={() => handleDeleteClick(quote)}
+                  />
+                ))
+              )}
+            </div>
+          </motion.main>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.5 }}
+            className="absolute -bottom-3 right-4 sm:right-6"
+          >
+            <Button
+              size="icon"
+              onClick={() => navigate("/settings")}
+              className="h-12 w-12 rounded-full shadow-lg"
+            >
+              <Settings className="w-5 h-5" />
+            </Button>
+          </motion.div>
+        </div>
 
         <div className="h-12" aria-hidden="true" />
       </div>

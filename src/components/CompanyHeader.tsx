@@ -1,13 +1,16 @@
 import { motion } from "framer-motion";
 import { FileText } from "lucide-react";
+import { useCompanySettings } from "@/hooks/useCompanySettings";
 
 export const CompanyHeader = () => {
+  const { settings } = useCompanySettings();
+
   return (
     <>
       <motion.h1 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center text-3xl sm:text-4xl font-extrabold tracking-tight px-4 pt-3 sm:pt-5 pb-0 drop-shadow-sm"
+        className="text-center text-3xl sm:text-4xl font-extrabold tracking-tight px-6 pt-3 sm:pt-5 pb-0 bg-foreground text-background mx-auto w-fit rounded-xl border-4 border-foreground"
       >
         Gestione Preventivi
       </motion.h1>
@@ -18,8 +21,12 @@ export const CompanyHeader = () => {
         transition={{ delay: 0.1 }}
         className="flex justify-center py-2 sm:py-3"
       >
-        <div className="w-16 h-16 rounded-2xl bg-white border border-border shadow-lg flex items-center justify-center">
-          <FileText className="w-9 h-9 text-foreground/80" strokeWidth={1.8} />
+        <div className="w-16 h-16 rounded-2xl bg-white border border-border shadow-lg flex items-center justify-center overflow-hidden">
+          {settings.logoPath ? (
+            <img src={settings.logoPath} alt="Logo aziendale" className="w-full h-full object-contain p-2" />
+          ) : (
+            <FileText className="w-9 h-9 text-foreground/80" strokeWidth={1.8} />
+          )}
         </div>
       </motion.div>
 
@@ -31,13 +38,13 @@ export const CompanyHeader = () => {
       >
         <div className="flex items-center gap-2 sm:gap-3">
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            ZetaForge S.r.l.
+            {settings.name}
           </h2>
         </div>
         <div className="text-xs sm:text-sm text-muted-foreground text-left sm:text-right space-y-0.5">
-          <div>P.IVA 01234567890</div>
-          <div>Sede legale: Via Roma 1, Milano (MI)</div>
-          <div>Tel. +39 02 123456 • email: info@zetaforge.it</div>
+          <div>P.IVA {settings.vatNumber}</div>
+          <div>Sede legale: {settings.address}</div>
+          <div>Tel. {settings.phone} • email: {settings.email}</div>
         </div>
       </motion.header>
     </>
