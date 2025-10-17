@@ -7,6 +7,7 @@ import { CompanySettingsProvider } from "@/contexts/CompanySettingsContext";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
 import CreateQuote from "./pages/CreateQuote";
+import ClientDetails from "./pages/ClientDetails";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/create-quote" element={<CreateQuote />} />
+            <Route path="/client-details" element={<ClientDetails />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
