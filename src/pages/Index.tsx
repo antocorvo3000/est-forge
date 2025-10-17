@@ -92,15 +92,15 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 pb-16 space-y-3 sm:space-y-4">
+    <div className="min-h-screen flex flex-col overflow-x-hidden">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex-1 flex flex-col gap-3 sm:gap-4">
         <CompanyHeader />
 
         <motion.section
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="glass rounded-2xl p-3 sm:p-4 grid sm:grid-cols-[1fr_auto] gap-3 items-center mx-4 sm:mx-6"
+          className="glass rounded-2xl p-3 sm:p-4 grid sm:grid-cols-[1fr_auto] gap-3 items-center mx-4 sm:mx-6 flex-shrink-0"
         >
           <SearchBar value={searchQuery} onChange={setSearchQuery} />
           <Button
@@ -120,13 +120,13 @@ const Index = () => {
             y: 0,
             transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }
           }}
-          className="glass rounded-2xl p-3 sm:p-4 mx-4 sm:mx-6"
+          className="glass rounded-2xl p-3 sm:p-4 mx-4 sm:mx-6 flex-1 flex flex-col min-h-0"
           style={{
             willChange: 'auto'
           }}
         >
           <motion.div 
-            className="space-y-2 sm:space-y-3 max-h-[calc(70px*5+0.75rem*4)] overflow-y-auto scrollbar-thin pr-2"
+            className="space-y-2 sm:space-y-3 overflow-y-auto scrollbar-thin pr-2 flex-1"
             layout
             transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
           >
@@ -162,7 +162,7 @@ const Index = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5 }}
-          className="flex justify-end mx-4 sm:mx-6 mt-3"
+          className="flex justify-end mx-4 sm:mx-6 flex-shrink-0"
         >
           <Button
             size="icon"
@@ -172,8 +172,6 @@ const Index = () => {
             <Settings className="w-5 h-5" />
           </Button>
         </motion.div>
-
-        <div className="h-12" aria-hidden="true" />
       </div>
 
       <QuoteModal
