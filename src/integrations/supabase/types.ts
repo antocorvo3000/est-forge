@@ -14,7 +14,199 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      azienda: {
+        Row: {
+          aggiornato_il: string | null
+          creato_il: string | null
+          email: string
+          id: string
+          logo_url: string | null
+          partita_iva: string
+          ragione_sociale: string
+          sede_legale: string
+          telefono: string
+        }
+        Insert: {
+          aggiornato_il?: string | null
+          creato_il?: string | null
+          email: string
+          id?: string
+          logo_url?: string | null
+          partita_iva: string
+          ragione_sociale: string
+          sede_legale: string
+          telefono: string
+        }
+        Update: {
+          aggiornato_il?: string | null
+          creato_il?: string | null
+          email?: string
+          id?: string
+          logo_url?: string | null
+          partita_iva?: string
+          ragione_sociale?: string
+          sede_legale?: string
+          telefono?: string
+        }
+        Relationships: []
+      }
+      clienti: {
+        Row: {
+          aggiornato_il: string | null
+          cap: string | null
+          citta: string | null
+          codice_fiscale_piva: string | null
+          creato_il: string | null
+          email: string | null
+          id: string
+          nome_ragione_sociale: string
+          provincia: string | null
+          telefono: string | null
+          via: string | null
+        }
+        Insert: {
+          aggiornato_il?: string | null
+          cap?: string | null
+          citta?: string | null
+          codice_fiscale_piva?: string | null
+          creato_il?: string | null
+          email?: string | null
+          id?: string
+          nome_ragione_sociale: string
+          provincia?: string | null
+          telefono?: string | null
+          via?: string | null
+        }
+        Update: {
+          aggiornato_il?: string | null
+          cap?: string | null
+          citta?: string | null
+          codice_fiscale_piva?: string | null
+          creato_il?: string | null
+          email?: string | null
+          id?: string
+          nome_ragione_sociale?: string
+          provincia?: string | null
+          telefono?: string | null
+          via?: string | null
+        }
+        Relationships: []
+      }
+      preventivi: {
+        Row: {
+          aggiornato_il: string | null
+          anno: number
+          cliente_id: string | null
+          creato_il: string | null
+          id: string
+          modalita_pagamento: string | null
+          note: string | null
+          numero: number
+          oggetto: string | null
+          sconto_percentuale: number | null
+          sconto_valore: number | null
+          stato: string | null
+          subtotale: number | null
+          totale: number | null
+          ubicazione_cap: string | null
+          ubicazione_citta: string | null
+          ubicazione_provincia: string | null
+          ubicazione_via: string | null
+        }
+        Insert: {
+          aggiornato_il?: string | null
+          anno: number
+          cliente_id?: string | null
+          creato_il?: string | null
+          id?: string
+          modalita_pagamento?: string | null
+          note?: string | null
+          numero: number
+          oggetto?: string | null
+          sconto_percentuale?: number | null
+          sconto_valore?: number | null
+          stato?: string | null
+          subtotale?: number | null
+          totale?: number | null
+          ubicazione_cap?: string | null
+          ubicazione_citta?: string | null
+          ubicazione_provincia?: string | null
+          ubicazione_via?: string | null
+        }
+        Update: {
+          aggiornato_il?: string | null
+          anno?: number
+          cliente_id?: string | null
+          creato_il?: string | null
+          id?: string
+          modalita_pagamento?: string | null
+          note?: string | null
+          numero?: number
+          oggetto?: string | null
+          sconto_percentuale?: number | null
+          sconto_valore?: number | null
+          stato?: string | null
+          subtotale?: number | null
+          totale?: number | null
+          ubicazione_cap?: string | null
+          ubicazione_citta?: string | null
+          ubicazione_provincia?: string | null
+          ubicazione_via?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preventivi_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      righe_preventivo: {
+        Row: {
+          creato_il: string | null
+          descrizione: string
+          id: string
+          numero_riga: number
+          preventivo_id: string
+          prezzo_unitario: number
+          quantita: number
+          totale: number
+          unita_misura: string
+        }
+        Insert: {
+          creato_il?: string | null
+          descrizione: string
+          id?: string
+          numero_riga: number
+          preventivo_id: string
+          prezzo_unitario?: number
+          quantita?: number
+          totale?: number
+          unita_misura: string
+        }
+        Update: {
+          creato_il?: string | null
+          descrizione?: string
+          id?: string
+          numero_riga?: number
+          preventivo_id?: string
+          prezzo_unitario?: number
+          quantita?: number
+          totale?: number
+          unita_misura?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "righe_preventivo_preventivo_id_fkey"
+            columns: ["preventivo_id"]
+            isOneToOne: false
+            referencedRelation: "preventivi"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
