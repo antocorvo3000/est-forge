@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Upload, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,26 +7,52 @@ import { Label } from "@/components/ui/label";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { caricaLogo, eliminaLogo, salvaDatiAzienda } from "@/lib/database";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { settings, updateSettings } = useCompanySettings();
   const [formData, setFormData] = useState(settings);
 
-  const handleSave = () => {
-    updateSettings(formData);
-    toast.success("Impostazioni salvate con successo");
-    navigate("/");
+  const handleSave = async () => {
+    try {
+      await salvaDatiAzienda({
+        ragione_sociale: formData.name,
+        partita_iva: formData.vatNumber,
+        sede_legale: formData.address,
+        telefono: formData.phone,
+        email: formData.email,
+        logo_url: formData.logoPath
+      });
+      
+      updateSettings(formData);
+      toast.success("Impostazioni salvate con successo");
+      navigate("/");
+    } catch (error) {
+      toast.error("Errore nel salvataggio delle impostazioni");
+    }
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, logoPath: reader.result as string });
-      };
-      reader.readAsDataURL(file);
+      try {
+        const logoUrl = await caricaLogo(file);
+        setFormData({ ...formData, logoPath: logoUrl });
+        toast.success("Logo caricato con successo");
+      } catch (error) {
+        toast.error("Errore nel caricamento del logo");
+      }
+    }
+  };
+
+  const handleLogoDelete = async () => {
+    try {
+      await eliminaLogo();
+      setFormData({ ...formData, logoPath: undefined });
+      toast.success("Logo eliminato con successo");
+    } catch (error) {
+      toast.error("Errore nell'eliminazione del logo");
     }
   };
 
@@ -90,7 +116,7 @@ const Settings = () => {
                 />
                 {formData.logoPath && (
                   <Button
-                    onClick={() => setFormData({ ...formData, logoPath: undefined })}
+                    onClick={handleLogoDelete}
                     variant="destructive"
                     className="gap-2 h-10"
                   >

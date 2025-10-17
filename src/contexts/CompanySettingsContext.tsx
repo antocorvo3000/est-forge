@@ -1,8 +1,15 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import type { CompanySettings } from "@/types/companySettings";
-import { DEFAULT_COMPANY_SETTINGS } from "@/types/companySettings";
+import { caricaDatiAzienda } from "@/lib/database";
 
-const STORAGE_KEY = "company-settings";
+const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
+  name: "ZetaForge S.r.l.",
+  vatNumber: "01234567890",
+  address: "Via Roma 1, Milano (MI)",
+  phone: "+39 02 123456",
+  email: "info@zetaforge.it",
+  logoPath: undefined,
+};
 
 interface CompanySettingsContextType {
   settings: CompanySettings;
@@ -12,25 +19,40 @@ interface CompanySettingsContextType {
 const CompanySettingsContext = createContext<CompanySettingsContextType | undefined>(undefined);
 
 export const CompanySettingsProvider = ({ children }: { children: ReactNode }) => {
-  const [settings, setSettings] = useState<CompanySettings>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        return DEFAULT_COMPANY_SETTINGS;
-      }
-    }
-    return DEFAULT_COMPANY_SETTINGS;
-  });
+  const [settings, setSettings] = useState<CompanySettings>(DEFAULT_COMPANY_SETTINGS);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  }, [settings]);
+    const loadSettings = async () => {
+      try {
+        const datiAzienda = await caricaDatiAzienda();
+        if (datiAzienda) {
+          setSettings({
+            name: datiAzienda.ragione_sociale,
+            vatNumber: datiAzienda.partita_iva,
+            address: datiAzienda.sede_legale,
+            phone: datiAzienda.telefono,
+            email: datiAzienda.email,
+            logoPath: datiAzienda.logo_url
+          });
+        }
+      } catch (error) {
+        console.error("Errore nel caricamento dati azienda:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, []);
 
   const updateSettings = (newSettings: Partial<CompanySettings>) => {
     setSettings((prev) => ({ ...prev, ...newSettings }));
   };
+
+  if (loading) {
+    return null;
+  }
 
   return (
     <CompanySettingsContext.Provider value={{ settings, updateSettings }}>
