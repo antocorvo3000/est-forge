@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
+import { useQuotes } from "@/hooks/useQuotes";
 import { toast } from "sonner";
 import type { ClientData } from "./ClientDetails";
 
@@ -49,6 +50,7 @@ const CreateQuote = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { settings } = useCompanySettings();
+  const { addQuote } = useQuotes();
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Client data from navigation state
@@ -158,9 +160,22 @@ const CreateQuote = () => {
     saveQuote();
   };
 
-  const saveQuote = () => {
-    toast.success("Preventivo salvato con successo");
-    navigate("/");
+  const saveQuote = async () => {
+    try {
+      const quoteData = {
+        title: subject,
+        client: clientData?.name || "",
+        clientAddress: `${clientData?.address || ""}, ${clientData?.city || ""} (${clientData?.province || ""})`,
+        amount: calculateTotal(),
+        date: new Date().toISOString().split('T')[0],
+      };
+
+      await addQuote(quoteData);
+      toast.success("Preventivo salvato con successo");
+      navigate("/");
+    } catch (error) {
+      toast.error("Errore durante il salvataggio");
+    }
   };
 
   const handleDelete = () => {

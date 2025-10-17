@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
+import { useQuotes } from "@/hooks/useQuotes";
 import { toast } from "sonner";
 import type { ClientData } from "./ClientDetails";
 
@@ -50,15 +51,51 @@ const ModifyQuote = () => {
   const location = useLocation();
   const { id } = useParams();
   const { settings } = useCompanySettings();
+  const { getQuoteById, updateQuote, deleteQuote } = useQuotes();
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Get quote data from location state
   const quoteData = location.state?.quote;
 
   // Client data from navigation state
-  const [clientData, setClientData] = useState<ClientData | null>(
-    quoteData?.clientData || location.state?.clientData || null
-  );
+  const [clientData, setClientData] = useState<ClientData | null>(null);
+
+  // Work location
+  const [workAddress, setWorkAddress] = useState("");
+  const [workCity, setWorkCity] = useState("");
+  const [workProvince, setWorkProvince] = useState("");
+  const [workZip, setWorkZip] = useState("");
+
+  // Quote details
+  const [subject, setSubject] = useState("");
+  const [lines, setLines] = useState<QuoteLine[]>([
+    { id: "1", description: "", unit: "pz", quantity: 0, unitPrice: 0, total: 0 }
+  ]);
+
+  // Discount
+  const [discountEnabled, setDiscountEnabled] = useState(false);
+  const [discountValue, setDiscountValue] = useState(0);
+  const [showDiscountInTable, setShowDiscountInTable] = useState(false);
+
+  // Notes
+  const [notesEnabled, setNotesEnabled] = useState(false);
+  const [notes, setNotes] = useState("");
+
+  // Payment
+  const [paymentMethod, setPaymentMethod] = useState("da-concordare");
+  const [customPayment, setCustomPayment] = useState("");
+
+  // Dialogs
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  // Load quote data from database
+  useEffect(() => {
+    if (id) {
+      loadQuoteData();
+    }
+  }, [id]);
 
   // Sync client data when returning from client details
   useEffect(() => {
@@ -67,36 +104,72 @@ const ModifyQuote = () => {
     }
   }, [location.state]);
 
-  // Work location
-  const [workAddress, setWorkAddress] = useState(quoteData?.workAddress || "");
-  const [workCity, setWorkCity] = useState(quoteData?.workCity || "");
-  const [workProvince, setWorkProvince] = useState(quoteData?.workProvince || "");
-  const [workZip, setWorkZip] = useState(quoteData?.workZip || "");
+  const loadQuoteData = async () => {
+    try {
+      setLoading(true);
+      const data = await getQuoteById(id!);
+      
+      if (data) {
+        // Set client data
+        if (data.clienti) {
+          setClientData({
+            name: data.clienti.nome_ragione_sociale || "",
+            taxCode: data.clienti.codice_fiscale_piva || "",
+            address: data.clienti.via || "",
+            city: data.clienti.citta || "",
+            province: data.clienti.provincia || "",
+            zip: data.clienti.cap || "",
+            phone: data.clienti.telefono || "",
+            email: data.clienti.email || "",
+          });
+        }
 
-  // Quote details
-  const [subject, setSubject] = useState(quoteData?.subject || "");
-  const [lines, setLines] = useState<QuoteLine[]>(
-    quoteData?.lines || [
-      { id: "1", description: "", unit: "pz", quantity: 0, unitPrice: 0, total: 0 }
-    ]
-  );
+        // Set work location
+        setWorkAddress(data.ubicazione_via || "");
+        setWorkCity(data.ubicazione_citta || "");
+        setWorkProvince(data.ubicazione_provincia || "");
+        setWorkZip(data.ubicazione_cap || "");
 
-  // Discount
-  const [discountEnabled, setDiscountEnabled] = useState(quoteData?.discountEnabled || false);
-  const [discountValue, setDiscountValue] = useState(quoteData?.discountValue || 0);
-  const [showDiscountInTable, setShowDiscountInTable] = useState(quoteData?.showDiscountInTable || false);
+        // Set quote details
+        setSubject(data.oggetto || "");
 
-  // Notes
-  const [notesEnabled, setNotesEnabled] = useState(quoteData?.notesEnabled || false);
-  const [notes, setNotes] = useState(quoteData?.notes || "");
+        // Set lines
+        if (data.righe_preventivo && data.righe_preventivo.length > 0) {
+          const loadedLines = data.righe_preventivo
+            .sort((a: any, b: any) => a.numero_riga - b.numero_riga)
+            .map((riga: any) => ({
+              id: riga.id,
+              description: riga.descrizione,
+              unit: riga.unita_misura,
+              quantity: parseFloat(riga.quantita),
+              unitPrice: parseFloat(riga.prezzo_unitario),
+              total: parseFloat(riga.totale),
+            }));
+          setLines(loadedLines);
+        }
 
-  // Payment
-  const [paymentMethod, setPaymentMethod] = useState(quoteData?.paymentMethod || "da-concordare");
-  const [customPayment, setCustomPayment] = useState(quoteData?.customPayment || "");
+        // Set discount
+        const scontoPerc = data.sconto_percentuale ? String(data.sconto_percentuale) : "0";
+        const scontoVal = data.sconto_valore ? String(data.sconto_valore) : "0";
+        const hasDiscount = parseFloat(scontoPerc) > 0 || parseFloat(scontoVal) > 0;
+        setDiscountEnabled(hasDiscount);
+        setDiscountValue(parseFloat(scontoPerc));
 
-  // Dialogs
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+        // Set notes
+        setNotesEnabled(!!data.note);
+        setNotes(data.note || "");
+
+        // Set payment
+        setPaymentMethod(data.modalita_pagamento || "da-concordare");
+      }
+    } catch (error) {
+      console.error("Errore caricamento preventivo:", error);
+      toast.error("Errore nel caricamento del preventivo");
+      navigate("/");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const addLine = (afterIndex: number) => {
     const newLine: QuoteLine = {
@@ -164,19 +237,54 @@ const ModifyQuote = () => {
     saveQuote();
   };
 
-  const saveQuote = () => {
-    toast.success("Preventivo modificato con successo");
-    navigate("/");
+  const saveQuote = async () => {
+    try {
+      if (!id) return;
+
+      // Prepare client data
+      const clientDataToSave = {
+        title: subject,
+        client: clientData?.name || "",
+        clientAddress: `${clientData?.address || ""}, ${clientData?.city || ""} (${clientData?.province || ""})`,
+        amount: calculateTotal(),
+        date: new Date().toISOString().split('T')[0],
+      };
+
+      await updateQuote(id, clientDataToSave);
+      
+      // Save quote lines and other details here
+      
+      toast.success("Preventivo modificato con successo");
+      navigate("/");
+    } catch (error) {
+      toast.error("Errore durante il salvataggio");
+    }
   };
 
-  const handleDelete = () => {
-    toast.success("Preventivo eliminato");
-    navigate("/");
+  const handleDelete = async () => {
+    try {
+      if (!id) return;
+      await deleteQuote(id);
+      toast.success("Preventivo eliminato");
+      navigate("/");
+    } catch (error) {
+      toast.error("Errore durante l'eliminazione");
+    }
   };
 
   const handleViewPdf = () => {
     toast.info("Funzionalità in sviluppo");
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg">Caricamento...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

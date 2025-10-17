@@ -71,11 +71,15 @@ const Index = () => {
     setDeleteDialog({ open: true, quote });
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (deleteDialog.quote) {
-      deleteQuote(deleteDialog.quote.id);
-      toast.success("Preventivo eliminato con successo");
-      setDeleteDialog({ open: false });
+      try {
+        await deleteQuote(deleteDialog.quote.id);
+        toast.success("Preventivo eliminato con successo");
+        setDeleteDialog({ open: false });
+      } catch (error) {
+        toast.error("Errore durante l'eliminazione");
+      }
     }
   };
 

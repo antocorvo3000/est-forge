@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { Quote, QuoteFormData } from "@/types/quote";
-import { caricaPreventivi, salvaPreventivo, aggiornaPreventivo, eliminaPreventivo, salvaCliente } from "@/lib/database";
+import { caricaPreventivi, salvaPreventivo, aggiornaPreventivo, eliminaPreventivo, salvaCliente, salvaRighePreventivo } from "@/lib/database";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useQuotes = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -8,6 +9,26 @@ export const useQuotes = () => {
 
   useEffect(() => {
     loadQuotes();
+    
+    // Setup realtime subscription
+    const channel = supabase
+      .channel('preventivi-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'preventivi'
+        },
+        () => {
+          loadQuotes();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadQuotes = async () => {
@@ -29,6 +50,26 @@ export const useQuotes = () => {
       console.error("Errore caricamento preventivi:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getQuoteById = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("preventivi")
+        .select(`
+          *,
+          clienti (*),
+          righe_preventivo (*)
+        `)
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("Errore caricamento preventivo:", error);
+      throw error;
     }
   };
 
@@ -130,6 +171,7 @@ export const useQuotes = () => {
     addQuote,
     updateQuote,
     deleteQuote,
+    getQuoteById,
     loading,
   };
 };
