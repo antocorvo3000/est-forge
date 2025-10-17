@@ -29,7 +29,16 @@ export const QuoteItem = ({ quote, index, onEdit, onDelete }: QuoteItemProps) =>
         layout: { duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] },
         opacity: { duration: 0.25 }
       }}
-      className="group grid grid-cols-[auto_1fr_auto] gap-3 sm:gap-4 p-3 sm:p-4 bg-white border border-border rounded-xl shadow-sm hover:shadow-md hover:border-primary/20 hover:bg-accent/30 transition-all duration-300 ease-out"
+      className="group grid grid-cols-[auto_1fr_auto] gap-3 sm:gap-4 p-3 sm:p-4 bg-white border border-border rounded-xl shadow-sm hover:shadow-md hover:border-border transition-all duration-300 ease-out"
+      style={{
+        background: 'white'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'linear-gradient(135deg, hsl(210 20% 96%), hsl(210 15% 94%))';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'white';
+      }}
     >
       <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/20">
         <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 sm:w-7 sm:h-7">
