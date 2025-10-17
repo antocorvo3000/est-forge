@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useQuotes } from "@/hooks/useQuotes";
+import { salvaCliente, salvaPreventivo, salvaRighePreventivo } from "@/lib/database";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { ClientData } from "./ClientDetails";
 
@@ -169,18 +171,77 @@ const CreateQuote = () => {
 
   const saveQuote = async () => {
     try {
-      const quoteData = {
-        title: subject,
-        client: clientData?.name || "",
-        clientAddress: `${clientData?.address || ""}, ${clientData?.city || ""} (${clientData?.province || ""})`,
-        amount: calculateTotal(),
-        date: new Date().toISOString().split('T')[0],
-      };
+      // 1. Salva/aggiorna cliente
+      let cliente_id = null;
+      if (clientData && clientData.name) {
+        const cliente = await salvaCliente({
+          nome_ragione_sociale: clientData.name,
+          codice_fiscale_piva: clientData.taxCode || null,
+          via: clientData.address || null,
+          citta: clientData.city || null,
+          provincia: clientData.province || null,
+          cap: clientData.zip || null,
+          telefono: clientData.phone || null,
+          email: clientData.email || null,
+        });
+        cliente_id = cliente.id;
+      }
 
-      await addQuote(quoteData);
+      // 2. Calcola totali
+      const year = new Date().getFullYear();
+      const subtotale = calculateSubtotal();
+      const sconto_percentuale = discountEnabled ? discountValue : 0;
+      const sconto_valore = discountEnabled ? calculateDiscount() : 0;
+      const totale = calculateTotal();
+
+      // 3. Genera numero preventivo
+      const { data: existingQuotes } = await supabase
+        .from("preventivi")
+        .select("numero")
+        .eq("anno", year)
+        .order("numero", { ascending: false })
+        .limit(1);
+      
+      const maxNum = existingQuotes && existingQuotes.length > 0 ? existingQuotes[0].numero : 0;
+      const newNum = maxNum + 1;
+
+      // 4. Salva preventivo
+      const preventivo = await salvaPreventivo({
+        numero: newNum,
+        anno: year,
+        cliente_id,
+        oggetto: subject,
+        ubicazione_via: workAddress,
+        ubicazione_citta: workCity,
+        ubicazione_provincia: workProvince,
+        ubicazione_cap: workZip,
+        subtotale,
+        sconto_percentuale,
+        sconto_valore,
+        totale,
+        note: notesEnabled ? notes : null,
+        modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+      });
+
+      // 5. Salva righe preventivo
+      const righe = lines
+        .filter(line => line.description.trim())
+        .map(line => ({
+          descrizione: line.description,
+          unita_misura: line.unit,
+          quantita: line.quantity,
+          prezzo_unitario: line.unitPrice,
+          totale: line.total,
+        }));
+      
+      if (righe.length > 0) {
+        await salvaRighePreventivo(preventivo.id, righe);
+      }
+
       toast.success("Preventivo salvato con successo");
       navigate("/");
     } catch (error) {
+      console.error("Errore salvataggio:", error);
       toast.error("Errore durante il salvataggio");
     }
   };

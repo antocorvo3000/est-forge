@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useQuotes } from "@/hooks/useQuotes";
+import { salvaCliente, aggiornaPreventivo, salvaRighePreventivo } from "@/lib/database";
 import { toast } from "sonner";
 import type { ClientData } from "./ClientDetails";
 
@@ -248,22 +249,63 @@ const ModifyQuote = () => {
     try {
       if (!id) return;
 
-      // Prepare client data
-      const clientDataToSave = {
-        title: subject,
-        client: clientData?.name || "",
-        clientAddress: `${clientData?.address || ""}, ${clientData?.city || ""} (${clientData?.province || ""})`,
-        amount: calculateTotal(),
-        date: new Date().toISOString().split('T')[0],
-      };
+      // 1. Salva/aggiorna cliente
+      let cliente_id = null;
+      if (clientData && clientData.name) {
+        const cliente = await salvaCliente({
+          nome_ragione_sociale: clientData.name,
+          codice_fiscale_piva: clientData.taxCode || null,
+          via: clientData.address || null,
+          citta: clientData.city || null,
+          provincia: clientData.province || null,
+          cap: clientData.zip || null,
+          telefono: clientData.phone || null,
+          email: clientData.email || null,
+        });
+        cliente_id = cliente.id;
+      }
 
-      await updateQuote(id, clientDataToSave);
+      // 2. Calcola totali
+      const subtotale = calculateSubtotal();
+      const sconto_percentuale = discountEnabled ? discountValue : 0;
+      const sconto_valore = discountEnabled ? calculateDiscount() : 0;
+      const totale = calculateTotal();
+
+      // 3. Aggiorna preventivo
+      await aggiornaPreventivo(id, {
+        cliente_id,
+        oggetto: subject,
+        ubicazione_via: workAddress,
+        ubicazione_citta: workCity,
+        ubicazione_provincia: workProvince,
+        ubicazione_cap: workZip,
+        subtotale,
+        sconto_percentuale,
+        sconto_valore,
+        totale,
+        note: notesEnabled ? notes : null,
+        modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+      });
+
+      // 4. Salva righe preventivo
+      const righe = lines
+        .filter(line => line.description.trim())
+        .map(line => ({
+          descrizione: line.description,
+          unita_misura: line.unit,
+          quantita: line.quantity,
+          prezzo_unitario: line.unitPrice,
+          totale: line.total,
+        }));
       
-      // Save quote lines and other details here
+      if (righe.length > 0) {
+        await salvaRighePreventivo(id, righe);
+      }
       
       toast.success("Preventivo modificato con successo");
       navigate("/");
     } catch (error) {
+      console.error("Errore salvataggio:", error);
       toast.error("Errore durante il salvataggio");
     }
   };
