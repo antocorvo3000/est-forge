@@ -394,7 +394,7 @@ const CreateQuote = () => {
                         </SelectTrigger>
                         <SelectContent className="bg-white">
                           {UNITS.map((unit) => (
-                            <SelectItem key={unit.value} value={unit.value}>
+                            <SelectItem key={unit.value} value={unit.value} className="text-left">
                               {unit.label}
                             </SelectItem>
                           ))}
