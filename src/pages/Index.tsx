@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CompanyHeader } from "@/components/CompanyHeader";
@@ -103,21 +103,28 @@ const Index = () => {
         >
           <div className="space-y-2 sm:space-y-3 max-h-[calc(70px*5+0.75rem*4)] overflow-y-auto scrollbar-thin pr-1">
             {filteredQuotes.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-center py-12 text-muted-foreground"
+              >
                 {searchQuery
                   ? "Nessun preventivo trovato"
                   : "Nessun preventivo presente. Creane uno nuovo!"}
-              </div>
+              </motion.div>
             ) : (
-              filteredQuotes.map((quote, index) => (
-                <QuoteItem
-                  key={quote.id}
-                  quote={quote}
-                  index={index}
-                  onEdit={handleEditQuote}
-                  onDelete={() => handleDeleteClick(quote)}
-                />
-              ))
+              <AnimatePresence mode="popLayout">
+                {filteredQuotes.map((quote, index) => (
+                  <QuoteItem
+                    key={quote.id}
+                    quote={quote}
+                    index={index}
+                    onEdit={handleEditQuote}
+                    onDelete={() => handleDeleteClick(quote)}
+                  />
+                ))}
+              </AnimatePresence>
             )}
           </div>
         </motion.main>

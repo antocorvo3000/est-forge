@@ -21,12 +21,14 @@ export const QuoteItem = ({ quote, index, onEdit, onDelete }: QuoteItemProps) =>
 
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 8, scale: 0.995 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
       transition={{
-        delay: index * 0.03,
-        duration: 0.35,
-        ease: [0.25, 0.46, 0.45, 0.94],
+        layout: { duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] },
+        opacity: { duration: 0.25 },
+        scale: { duration: 0.25 }
       }}
       whileHover={{
         y: -3,
