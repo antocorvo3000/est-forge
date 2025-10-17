@@ -24,17 +24,19 @@ export const QuoteItem = ({ quote, index, onEdit, onDelete }: QuoteItemProps) =>
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, transition: { duration: 0.2 } }}
+      exit={{ opacity: 0, transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] } }}
       transition={{
-        layout: { duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] },
-        opacity: { duration: 0.25 }
+        layout: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
+        opacity: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
+        default: { ease: [0.4, 0, 0.2, 1] }
       }}
-      className="group grid grid-cols-[auto_1fr_auto] gap-3 sm:gap-4 p-3 sm:p-4 bg-white border border-border rounded-xl shadow-sm hover:shadow-md hover:border-border transition-all duration-300 ease-out"
+      className="group grid grid-cols-[auto_1fr_auto] gap-3 sm:gap-4 p-3 sm:p-4 bg-white border border-border rounded-xl shadow-sm hover:shadow-md hover:border-border ease-out"
       style={{
-        background: 'white'
+        background: 'white',
+        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.background = 'linear-gradient(135deg, hsl(210 20% 96%), hsl(210 15% 94%))';
+        e.currentTarget.style.background = 'linear-gradient(135deg, hsl(210 15% 88%), hsl(210 12% 85%))';
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.background = 'white';
