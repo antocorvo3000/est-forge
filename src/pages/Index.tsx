@@ -122,15 +122,17 @@ const Index = () => {
           }}
           className="glass rounded-2xl p-3 sm:p-4 mx-4 sm:mx-6"
           style={{
-            willChange: 'auto',
-            maxHeight: 'calc(100vh - 420px)',
-            minHeight: '300px'
+            willChange: 'auto'
           }}
         >
           <motion.div 
-            className="space-y-2 sm:space-y-3 h-full overflow-y-auto scrollbar-thin pr-2"
+            className="space-y-2 sm:space-y-3 overflow-y-auto scrollbar-thin pr-2"
             layout
             transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+            style={{
+              maxHeight: 'calc(100vh - 450px)',
+              minHeight: '300px'
+            }}
           >
             {filteredQuotes.length === 0 ? (
               <motion.div
