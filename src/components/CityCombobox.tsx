@@ -49,7 +49,7 @@ export function CityCombobox({ value, onSelect, placeholder = "Seleziona città.
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between bg-white"
+          className="w-full justify-between bg-white font-normal"
         >
           {value || placeholder}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
