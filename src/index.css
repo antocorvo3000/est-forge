@@ -134,66 +134,60 @@ All colors MUST be HSL.
     text-wrap: balance;
   }
   
-  /* Modern scrollbar */
+  /* Modern scrollbar - UPDATED */
   .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: hsl(var(--primary) / 0.25) hsl(210 20% 92%);
-    padding-right: 14px;
+    scrollbar-width: thin !important;
+    scrollbar-color: hsl(var(--primary) / 0.25) hsl(210 20% 92%) !important;
+    padding-right: 16px !important;
   }
   
   .scrollbar-thin::-webkit-scrollbar {
-    width: 12px;
-    background: transparent;
+    width: 12px !important;
+    background: transparent !important;
   }
   
   /* Rimuove completamente i pulsanti/frecce */
   .scrollbar-thin::-webkit-scrollbar-button {
-    width: 0px;
-    height: 0px;
-    display: none;
-    background: transparent;
+    width: 0px !important;
+    height: 0px !important;
+    display: none !important;
+    background: transparent !important;
   }
   
   .scrollbar-thin::-webkit-scrollbar-button:vertical:start:decrement {
-    display: none;
+    display: none !important;
   }
   
   .scrollbar-thin::-webkit-scrollbar-button:vertical:end:increment {
-    display: none;
+    display: none !important;
   }
   
   .scrollbar-thin::-webkit-scrollbar-track {
-    background: hsl(210 20% 92%);
-    border-radius: 20px;
-    margin: 2px;
-    border: 1px solid hsl(210 18% 88%);
+    background: hsl(210 20% 92%) !important;
+    border-radius: 20px !important;
+    margin: 4px 2px !important;
+    border: 1px solid hsl(210 18% 88%) !important;
   }
   
   .scrollbar-thin::-webkit-scrollbar-track-piece {
-    background: hsl(210 20% 92%);
-    border-radius: 20px;
+    background: hsl(210 20% 92%) !important;
+    border-radius: 20px !important;
   }
   
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: hsl(var(--primary) / 0.4);
-    border-radius: 20px;
-    border: 3px solid hsl(210 20% 92%);
-    min-height: 30px;
-    transition: all 0.2s ease;
+    background: hsl(var(--primary) / 0.4) !important;
+    border-radius: 20px !important;
+    border: 3px solid hsl(210 20% 92%) !important;
+    min-height: 40px !important;
+    transition: all 0.2s ease !important;
   }
   
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--primary) / 0.6);
+    background: hsl(var(--primary) / 0.6) !important;
   }
   
   .scrollbar-thin::-webkit-scrollbar-corner {
-    display: none;
-    background: transparent;
-  }
-  
-  /* Firefox */
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: hsl(var(--primary) / 0.4) hsl(210 20% 92%);
+    display: none !important;
+    background: transparent !important;
   }
 }
