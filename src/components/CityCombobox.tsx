@@ -56,16 +56,16 @@ export function CityCombobox({ value, onSelect, placeholder = "Seleziona città.
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[400px] p-0 bg-white" align="start">
-        <Command>
+        <Command className="bg-white">
           <CommandInput
             placeholder="Cerca città..."
             value={searchValue}
             onValueChange={setSearchValue}
             className="bg-white"
           />
-          <CommandList>
-            <CommandEmpty>Nessuna città trovata.</CommandEmpty>
-            <CommandGroup>
+          <CommandList className="bg-white">
+            <CommandEmpty className="bg-white">Nessuna città trovata.</CommandEmpty>
+            <CommandGroup className="bg-white">
               {filteredComuni.map((comune) => (
                 <CommandItem
                   key={comune.codice}
