@@ -627,17 +627,25 @@ const CreateQuote = () => {
         <AlertDialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
           <AlertDialogContent className="bg-white">
             <AlertDialogHeader>
-              <AlertDialogTitle>Dati incompleti</AlertDialogTitle>
-              <AlertDialogDescription>
-                {!clientData?.name && !workAddress && "Non hai inserito i dati del cliente né l'ubicazione del lavoro."}
-                {!clientData?.name && workAddress && "Non hai inserito i dati del cliente."}
-                {clientData?.name && !workAddress && "Non hai inserito l'ubicazione del lavoro."}
-                {" "}Vuoi salvare comunque come bozza?
+              <AlertDialogTitle className="text-2xl font-extrabold">Dati incompleti</AlertDialogTitle>
+              <AlertDialogDescription className="text-lg font-semibold text-foreground">
+                {!clientData?.name && !workAddress && (
+                  <>Non hai inserito <span className="font-extrabold">i dati del cliente</span> né <span className="font-extrabold">l'ubicazione del lavoro</span>.</>
+                )}
+                {!clientData?.name && workAddress && (
+                  <>Non hai inserito <span className="font-extrabold">i dati del cliente</span>.</>
+                )}
+                {clientData?.name && !workAddress && (
+                  <>Non hai inserito <span className="font-extrabold">l'ubicazione del lavoro</span>.</>
+                )}
+                <div className="mt-3 text-lg">
+                  Vuoi salvare comunque come <span className="font-extrabold">bozza</span>?
+                </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Annulla</AlertDialogCancel>
-              <AlertDialogAction onClick={saveQuote}>
+              <AlertDialogCancel className="text-base font-bold">Annulla</AlertDialogCancel>
+              <AlertDialogAction onClick={saveQuote} className="text-base font-bold">
                 Salva come Bozza
               </AlertDialogAction>
             </AlertDialogFooter>
