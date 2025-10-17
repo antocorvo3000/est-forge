@@ -92,8 +92,8 @@ const Index = () => {
   };
 
   return (
-    <div className="h-screen overflow-hidden">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-3 sm:space-y-4 h-full flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 w-full flex-1 flex flex-col gap-3 sm:gap-4 overflow-hidden">
         <CompanyHeader />
 
         <motion.section
@@ -120,7 +120,7 @@ const Index = () => {
             y: 0,
             transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }
           }}
-          className="glass rounded-2xl p-3 sm:p-4 mx-4 sm:mx-6 flex-1 flex flex-col min-h-0"
+          className="glass rounded-2xl p-3 sm:p-4 mx-4 sm:mx-6 flex-1 overflow-hidden flex flex-col"
           style={{
             willChange: 'auto'
           }}
