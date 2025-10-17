@@ -137,23 +137,29 @@ All colors MUST be HSL.
   /* Custom scrollbar for iOS feel */
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--border)) transparent;
+    scrollbar-color: hsl(var(--primary) / 0.3) transparent;
   }
   
   .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
   }
   
   .scrollbar-thin::-webkit-scrollbar-track {
     background: transparent;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
     border-radius: 10px;
   }
   
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, hsl(var(--primary) / 0.4), hsl(var(--primary) / 0.6));
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.4);
+    background: linear-gradient(180deg, hsl(var(--primary) / 0.6), hsl(var(--primary) / 0.8));
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
 }

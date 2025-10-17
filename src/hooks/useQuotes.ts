@@ -72,7 +72,13 @@ export const useQuotes = () => {
   };
 
   const sortedQuotes = [...quotes].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    (a, b) => {
+      // Prima ordina per anno decrescente, poi per numero decrescente
+      if (b.year !== a.year) {
+        return b.year - a.year;
+      }
+      return b.number - a.number;
+    }
   );
 
   return {
