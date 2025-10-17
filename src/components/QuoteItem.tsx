@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { FileText, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import type { Quote } from "@/types/quote";
 import { Button } from "./ui/button";
 
@@ -11,15 +11,8 @@ interface QuoteItemProps {
 }
 
 export const QuoteItem = ({ quote, index, onEdit, onDelete }: QuoteItemProps) => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("it-IT", {
-      style: "currency",
-      currency: "EUR",
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("it-IT");
+  const formatQuoteNumber = (num: number) => {
+    return num.toString().padStart(2, '0');
   };
 
   return (
@@ -36,18 +29,25 @@ export const QuoteItem = ({ quote, index, onEdit, onDelete }: QuoteItemProps) =>
         scale: 1.01,
         transition: { duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] },
       }}
-      className="group grid grid-cols-[auto_1fr_auto] gap-2 sm:gap-3 p-2 sm:p-3 bg-white border border-border rounded-xl shadow-sm hover:shadow-md hover:border-primary/30 hover:bg-accent/50 transition-all duration-300 ease-out"
+      className="group grid grid-cols-[auto_1fr_auto] gap-3 sm:gap-4 p-3 sm:p-4 bg-white border border-border rounded-xl shadow-sm hover:shadow-md hover:border-primary/30 hover:bg-accent/50 transition-all duration-300 ease-out"
     >
-      <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg bg-accent border border-border">
-        <FileText className="w-4 h-4 text-foreground/70" strokeWidth={1.4} />
+      <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/20">
+        <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 sm:w-7 sm:h-7">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" 
+                stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="hsl(var(--primary) / 0.1)"/>
+          <path d="M14 2v6h6" 
+                stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M16 13H8M16 17H8M10 9H8" 
+                stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
       </div>
 
-      <div className="min-w-0 flex flex-col gap-1">
-        <h3 className="font-bold text-sm sm:text-base tracking-tight truncate">
-          {quote.title}
+      <div className="min-w-0 flex flex-col gap-1 justify-center">
+        <h3 className="font-bold text-base sm:text-lg tracking-tight">
+          {formatQuoteNumber(quote.number)}-{quote.year} {quote.client}
         </h3>
-        <p className="text-xs sm:text-sm text-muted-foreground truncate">
-          {quote.id} • {quote.client} • {formatDate(quote.date)} • {formatCurrency(quote.amount)}
+        <p className="text-sm text-muted-foreground truncate">
+          {quote.clientAddress}
         </p>
       </div>
 

@@ -16,6 +16,7 @@ export const QuoteModal = ({ open, onClose, onSave, quote }: QuoteModalProps) =>
   const [formData, setFormData] = useState<QuoteFormData>({
     title: "",
     client: "",
+    clientAddress: "",
     amount: 0,
     date: new Date().toISOString().split("T")[0],
   });
@@ -25,6 +26,7 @@ export const QuoteModal = ({ open, onClose, onSave, quote }: QuoteModalProps) =>
       setFormData({
         title: quote.title,
         client: quote.client,
+        clientAddress: quote.clientAddress,
         amount: quote.amount,
         date: quote.date,
       });
@@ -32,6 +34,7 @@ export const QuoteModal = ({ open, onClose, onSave, quote }: QuoteModalProps) =>
       setFormData({
         title: "",
         client: "",
+        clientAddress: "",
         amount: 0,
         date: new Date().toISOString().split("T")[0],
       });
@@ -69,13 +72,27 @@ export const QuoteModal = ({ open, onClose, onSave, quote }: QuoteModalProps) =>
 
           <div className="space-y-2">
             <Label htmlFor="client" className="text-sm font-semibold">
-              Cliente
+              Cliente / Ragione Sociale
             </Label>
             <Input
               id="client"
               value={formData.client}
               onChange={(e) => setFormData({ ...formData, client: e.target.value })}
               placeholder="Es. Acme S.p.A."
+              required
+              className="bg-white"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="clientAddress" className="text-sm font-semibold">
+              Indirizzo Cliente
+            </Label>
+            <Input
+              id="clientAddress"
+              value={formData.clientAddress}
+              onChange={(e) => setFormData({ ...formData, clientAddress: e.target.value })}
+              placeholder="Es. Via Roma 1, Milano (MI)"
               required
               className="bg-white"
             />
