@@ -92,15 +92,15 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex-1 flex flex-col gap-3 sm:gap-4">
+    <div className="min-h-screen overflow-x-hidden pb-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-3 sm:space-y-4">
         <CompanyHeader />
 
         <motion.section
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="glass rounded-2xl p-3 sm:p-4 grid sm:grid-cols-[1fr_auto] gap-3 items-center mx-4 sm:mx-6 flex-shrink-0"
+          className="glass rounded-2xl p-3 sm:p-4 grid sm:grid-cols-[1fr_auto] gap-3 items-center mx-4 sm:mx-6"
         >
           <SearchBar value={searchQuery} onChange={setSearchQuery} />
           <Button
@@ -120,13 +120,15 @@ const Index = () => {
             y: 0,
             transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }
           }}
-          className="glass rounded-2xl p-3 sm:p-4 mx-4 sm:mx-6 flex-1 flex flex-col min-h-0"
+          className="glass rounded-2xl p-3 sm:p-4 mx-4 sm:mx-6"
           style={{
-            willChange: 'auto'
+            willChange: 'auto',
+            maxHeight: 'calc(100vh - 420px)',
+            minHeight: '300px'
           }}
         >
           <motion.div 
-            className="space-y-2 sm:space-y-3 overflow-y-auto scrollbar-thin pr-2 flex-1"
+            className="space-y-2 sm:space-y-3 h-full overflow-y-auto scrollbar-thin pr-2"
             layout
             transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
           >
@@ -162,7 +164,7 @@ const Index = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5 }}
-          className="flex justify-end mx-4 sm:mx-6 flex-shrink-0"
+          className="flex justify-end mx-4 sm:mx-6 mt-3"
         >
           <Button
             size="icon"
