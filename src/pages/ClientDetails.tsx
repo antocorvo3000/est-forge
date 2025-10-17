@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CityCombobox } from "@/components/CityCombobox";
 
 export interface ClientData {
   name: string;
@@ -105,39 +106,40 @@ const ClientDetails = () => {
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
-            <div className="col-span-2 space-y-2">
-              <Label htmlFor="clientCity">Città</Label>
-              <Input
-                id="clientCity"
-                value={clientCity}
-                onChange={(e) => setClientCity(e.target.value)}
-                placeholder="Città"
-                className="bg-white"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="clientCity">Città</Label>
+            <CityCombobox
+              value={clientCity}
+              onSelect={(city, province, cap) => {
+                setClientCity(city);
+                setClientProvince(province);
+                setClientZip(cap);
+              }}
+              placeholder="Seleziona città..."
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
             <div className="space-y-2">
               <Label htmlFor="clientProvince">Provincia</Label>
               <Input
                 id="clientProvince"
                 value={clientProvince}
-                onChange={(e) => setClientProvince(e.target.value.toUpperCase())}
+                readOnly
                 placeholder="PR"
-                maxLength={2}
-                className="bg-white"
+                className="bg-muted cursor-not-allowed"
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="clientZip">CAP</Label>
-            <Input
-              id="clientZip"
-              value={clientZip}
-              onChange={(e) => setClientZip(e.target.value)}
-              placeholder="CAP"
-              className="bg-white"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="clientZip">CAP</Label>
+              <Input
+                id="clientZip"
+                value={clientZip}
+                readOnly
+                placeholder="CAP"
+                className="bg-muted cursor-not-allowed"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">

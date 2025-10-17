@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CityCombobox } from "@/components/CityCombobox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -277,38 +278,38 @@ const CreateQuote = () => {
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
-              <div className="col-span-2 space-y-2">
-                <Label htmlFor="workCity">Città</Label>
-                <Input
-                  id="workCity"
-                  value={workCity}
-                  onChange={(e) => setWorkCity(e.target.value)}
-                  placeholder="Città"
-                  className="bg-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="workProvince">Provincia</Label>
-                <Input
-                  id="workProvince"
-                  value={workProvince}
-                  onChange={(e) => setWorkProvince(e.target.value.toUpperCase())}
-                  placeholder="PR"
-                  maxLength={2}
-                  className="bg-white"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="workCity">Città</Label>
+              <CityCombobox
+                value={workCity}
+                onSelect={(city, province, cap) => {
+                  setWorkCity(city);
+                  setWorkProvince(province);
+                  setWorkZip(cap);
+                }}
+                placeholder="Seleziona città..."
+              />
             </div>
 
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2">
+              <Label htmlFor="workProvince">Provincia</Label>
+              <Input
+                id="workProvince"
+                value={workProvince}
+                readOnly
+                placeholder="PR"
+                className="bg-muted cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="workZip">CAP</Label>
               <Input
                 id="workZip"
                 value={workZip}
-                onChange={(e) => setWorkZip(e.target.value)}
+                readOnly
                 placeholder="CAP"
-                className="bg-white"
+                className="bg-muted cursor-not-allowed"
               />
             </div>
           </div>
