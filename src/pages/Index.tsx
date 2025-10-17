@@ -89,49 +89,47 @@ const Index = () => {
           </Button>
         </motion.section>
 
-        <div className="relative">
-          <motion.main
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="glass rounded-2xl p-3 sm:p-4 mx-4 sm:mx-6"
-          >
-            <div className="space-y-2 sm:space-y-3 max-h-[calc(70px*5+0.75rem*4)] overflow-y-auto scrollbar-thin pr-1">
-              {filteredQuotes.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  {searchQuery
-                    ? "Nessun preventivo trovato"
-                    : "Nessun preventivo presente. Creane uno nuovo!"}
-                </div>
-              ) : (
-                filteredQuotes.map((quote, index) => (
-                  <QuoteItem
-                    key={quote.id}
-                    quote={quote}
-                    index={index}
-                    onEdit={handleEditQuote}
-                    onDelete={() => handleDeleteClick(quote)}
-                  />
-                ))
-              )}
-            </div>
-          </motion.main>
+        <motion.main
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="glass rounded-2xl p-3 sm:p-4 mx-4 sm:mx-6"
+        >
+          <div className="space-y-2 sm:space-y-3 max-h-[calc(70px*5+0.75rem*4)] overflow-y-auto scrollbar-thin pr-1">
+            {filteredQuotes.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                {searchQuery
+                  ? "Nessun preventivo trovato"
+                  : "Nessun preventivo presente. Creane uno nuovo!"}
+              </div>
+            ) : (
+              filteredQuotes.map((quote, index) => (
+                <QuoteItem
+                  key={quote.id}
+                  quote={quote}
+                  index={index}
+                  onEdit={handleEditQuote}
+                  onDelete={() => handleDeleteClick(quote)}
+                />
+              ))
+            )}
+          </div>
+        </motion.main>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.5 }}
-            className="absolute -bottom-3 right-4 sm:right-6"
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.5 }}
+          className="flex justify-end mx-4 sm:mx-6 mt-3"
+        >
+          <Button
+            size="icon"
+            onClick={() => navigate("/settings")}
+            className="h-12 w-12 rounded-full shadow-lg"
           >
-            <Button
-              size="icon"
-              onClick={() => navigate("/settings")}
-              className="h-12 w-12 rounded-full shadow-lg"
-            >
-              <Settings className="w-5 h-5" />
-            </Button>
-          </motion.div>
-        </div>
+            <Settings className="w-5 h-5" />
+          </Button>
+        </motion.div>
 
         <div className="h-12" aria-hidden="true" />
       </div>

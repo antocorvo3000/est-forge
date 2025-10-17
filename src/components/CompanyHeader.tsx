@@ -10,7 +10,11 @@ export const CompanyHeader = () => {
       <motion.h1 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center text-3xl sm:text-4xl font-extrabold tracking-tight px-6 pt-3 sm:pt-5 pb-0 bg-foreground text-background mx-auto w-fit rounded-xl border-4 border-foreground"
+        className="text-center text-3xl sm:text-4xl font-extrabold tracking-tight text-white mx-auto w-fit"
+        style={{ 
+          WebkitTextStroke: '4px black',
+          paintOrder: 'stroke fill'
+        }}
       >
         Gestione Preventivi
       </motion.h1>

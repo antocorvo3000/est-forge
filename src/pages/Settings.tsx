@@ -46,7 +46,7 @@ const Settings = () => {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-foreground text-background px-6 py-2 rounded-xl border-4 border-foreground">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
             Impostazioni
           </h1>
         </motion.div>
@@ -99,6 +99,7 @@ const Settings = () => {
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="bg-white"
               />
             </div>
 
@@ -108,6 +109,7 @@ const Settings = () => {
                 id="vatNumber"
                 value={formData.vatNumber}
                 onChange={(e) => setFormData({ ...formData, vatNumber: e.target.value })}
+                className="bg-white"
               />
             </div>
 
@@ -117,6 +119,7 @@ const Settings = () => {
                 id="address"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                className="bg-white"
               />
             </div>
 
@@ -126,6 +129,7 @@ const Settings = () => {
                 id="phone"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="bg-white"
               />
             </div>
 
@@ -136,6 +140,7 @@ const Settings = () => {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="bg-white"
               />
             </div>
           </div>
