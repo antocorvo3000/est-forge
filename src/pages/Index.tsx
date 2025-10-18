@@ -67,7 +67,19 @@ const Index = () => {
     navigate("/create-quote");
   };
 
-  const handleCustomQuote = (number: number, year: number) => {
+  const handleCustomQuote = async (number: number, year: number) => {
+    // Controlla se il preventivo esiste già
+    const exists = quotes.find((q) => q.number === number && q.year === year);
+    if (exists) {
+      toast.error(
+        `Il preventivo ${number.toString().padStart(2, '0')}-${year} esiste già`,
+        {
+          description: "Eliminare quello esistente per continuare o modificarlo.",
+          duration: 5000,
+        }
+      );
+      return;
+    }
     navigate("/create-quote", { state: { customNumber: number, customYear: year } });
   };
 
@@ -180,7 +192,7 @@ const Index = () => {
             className="h-11 gap-2 shadow-lg"
           >
             <FileEdit className="w-5 h-5" />
-            <span>Nuovo con Numero</span>
+            <span>Nuovo Preventivo Personalizzato</span>
           </Button>
           
           <Button

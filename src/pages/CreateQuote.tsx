@@ -201,18 +201,45 @@ const CreateQuote = () => {
       if (location.state?.customNumber && location.state?.customYear) {
         newNum = location.state.customNumber;
         year = location.state.customYear;
+        
+        // Controlla se esiste già
+        const { data: existingQuote } = await supabase
+          .from("preventivi")
+          .select("numero")
+          .eq("numero", newNum)
+          .eq("anno", year)
+          .single();
+        
+        if (existingQuote) {
+          toast.error(
+            `Il preventivo ${newNum.toString().padStart(2, '0')}-${year} esiste già`,
+            {
+              description: "Eliminare quello esistente per continuare o modificarlo.",
+              duration: 5000,
+            }
+          );
+          return;
+        }
       } else {
-        // Altrimenti genera automaticamente
+        // Altrimenti trova il primo numero disponibile riempiendo i buchi
         year = new Date().getFullYear();
         const { data: existingQuotes } = await supabase
           .from("preventivi")
           .select("numero")
           .eq("anno", year)
-          .order("numero", { ascending: false })
-          .limit(1);
+          .order("numero", { ascending: true });
         
-        const maxNum = existingQuotes && existingQuotes.length > 0 ? existingQuotes[0].numero : 0;
-        newNum = maxNum + 1;
+        const usedNumbers = existingQuotes?.map(q => q.numero) || [];
+        
+        // Trova il primo numero disponibile
+        newNum = 1;
+        for (const num of usedNumbers) {
+          if (num === newNum) {
+            newNum++;
+          } else if (num > newNum) {
+            break;
+          }
+        }
       }
 
       // 4. Salva preventivo

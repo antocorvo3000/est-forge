@@ -73,14 +73,37 @@ export const useQuotes = () => {
     }
   };
 
-  const addQuote = async (data: QuoteFormData) => {
+  const addQuote = async (data: QuoteFormData, customNumber?: number, customYear?: number) => {
     try {
-      const year = new Date().getFullYear();
-      const maxNum = quotes
-        .filter((q) => q.year === year)
-        .map((q) => q.number)
-        .reduce((max, num) => Math.max(max, num), 0);
-      const newNum = maxNum + 1;
+      let year: number;
+      let newNum: number;
+
+      if (customNumber !== undefined && customYear !== undefined) {
+        // Preventivo personalizzato - controlla se esiste già
+        const exists = quotes.find((q) => q.number === customNumber && q.year === customYear);
+        if (exists) {
+          throw new Error(`DUPLICATE:Il preventivo ${customNumber.toString().padStart(2, '0')}-${customYear} esiste già. Eliminare quello esistente per continuare o modificarlo.`);
+        }
+        year = customYear;
+        newNum = customNumber;
+      } else {
+        // Preventivo normale - trova il primo numero disponibile riempiendo i buchi
+        year = new Date().getFullYear();
+        const currentYearQuotes = quotes
+          .filter((q) => q.year === year)
+          .map((q) => q.number)
+          .sort((a, b) => a - b);
+
+        // Trova il primo buco disponibile
+        newNum = 1;
+        for (const num of currentYearQuotes) {
+          if (num === newNum) {
+            newNum++;
+          } else if (num > newNum) {
+            break;
+          }
+        }
+      }
 
       // Estrai dati cliente dall'indirizzo
       const addressParts = data.clientAddress.split(',');
