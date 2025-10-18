@@ -85,7 +85,7 @@ const Settings = () => {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight" style={{ fontSize: 'initial' }}>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
             Impostazioni
           </h1>
         </motion.div>

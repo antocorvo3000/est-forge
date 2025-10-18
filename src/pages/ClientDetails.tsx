@@ -69,7 +69,7 @@ const ClientDetails = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-3xl font-extrabold tracking-tight" style={{ fontSize: 'initial' }}>Dati Cliente</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">Dati Cliente</h1>
         </motion.div>
 
         {/* Client Form */}
@@ -80,40 +80,43 @@ const ClientDetails = () => {
           className="glass rounded-2xl p-6 space-y-4"
         >
           <div className="space-y-2">
-            <Label htmlFor="clientName">Nome/Ragione Sociale</Label>
+            <Label htmlFor="clientName" style={{ fontSize: `${settings.fontSizeClient}rem` }}>Nome/Ragione Sociale</Label>
             <Input
               id="clientName"
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
               placeholder="Inserisci nome o ragione sociale"
               className="bg-white"
+              style={{ fontSize: `${settings.fontSizeClient}rem` }}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="clientTaxCode">Codice Fiscale / P.IVA</Label>
+            <Label htmlFor="clientTaxCode" style={{ fontSize: `${settings.fontSizeClient}rem` }}>Codice Fiscale / P.IVA</Label>
             <Input
               id="clientTaxCode"
               value={clientTaxCode}
               onChange={(e) => setClientTaxCode(e.target.value)}
               placeholder="Inserisci CF o P.IVA"
               className="bg-white"
+              style={{ fontSize: `${settings.fontSizeClient}rem` }}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="clientAddress">Via</Label>
+            <Label htmlFor="clientAddress" style={{ fontSize: `${settings.fontSizeClient}rem` }}>Via</Label>
             <Input
               id="clientAddress"
               value={clientAddress}
               onChange={(e) => setClientAddress(e.target.value)}
               placeholder="Via e numero civico"
               className="bg-white"
+              style={{ fontSize: `${settings.fontSizeClient}rem` }}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="clientCity">Città</Label>
+            <Label htmlFor="clientCity" style={{ fontSize: `${settings.fontSizeClient}rem` }}>Città</Label>
             <CityCombobox
               value={clientCity}
               onSelect={(city, province, cap) => {
@@ -127,40 +130,43 @@ const ClientDetails = () => {
 
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-2">
-              <Label htmlFor="clientProvince">Provincia</Label>
+              <Label htmlFor="clientProvince" style={{ fontSize: `${settings.fontSizeClient}rem` }}>Provincia</Label>
               <Input
                 id="clientProvince"
                 value={clientProvince}
                 readOnly
                 placeholder="PR"
                 className="bg-muted cursor-not-allowed"
+                style={{ fontSize: `${settings.fontSizeClient}rem` }}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="clientZip">CAP</Label>
+              <Label htmlFor="clientZip" style={{ fontSize: `${settings.fontSizeClient}rem` }}>CAP</Label>
               <Input
                 id="clientZip"
                 value={clientZip}
                 readOnly
                 placeholder="CAP"
                 className="bg-muted cursor-not-allowed"
+                style={{ fontSize: `${settings.fontSizeClient}rem` }}
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="clientPhone">Telefono</Label>
+            <Label htmlFor="clientPhone" style={{ fontSize: `${settings.fontSizeClient}rem` }}>Telefono</Label>
             <Input
               id="clientPhone"
               value={clientPhone}
               onChange={(e) => setClientPhone(e.target.value)}
               placeholder="Numero di telefono"
               className="bg-white"
+              style={{ fontSize: `${settings.fontSizeClient}rem` }}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="clientEmail">Email</Label>
+            <Label htmlFor="clientEmail" style={{ fontSize: `${settings.fontSizeClient}rem` }}>Email</Label>
             <Input
               id="clientEmail"
               type="email"
@@ -168,6 +174,7 @@ const ClientDetails = () => {
               onChange={(e) => setClientEmail(e.target.value)}
               placeholder="Email"
               className="bg-white"
+              style={{ fontSize: `${settings.fontSizeClient}rem` }}
             />
           </div>
 
@@ -176,6 +183,7 @@ const ClientDetails = () => {
               onClick={handleSave}
               size="lg"
               className="w-full h-14 text-lg font-bold"
+              style={{ fontSize: `${settings.fontSizeClient}rem` }}
             >
               Salva
             </Button>

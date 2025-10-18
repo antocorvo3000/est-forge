@@ -272,7 +272,7 @@ const CreateQuote = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-3xl font-extrabold tracking-tight" style={{ fontSize: 'initial' }}>Nuovo Preventivo</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">Nuovo Preventivo</h1>
         </motion.div>
 
         {/* Company and Client Info */}
@@ -283,8 +283,8 @@ const CreateQuote = () => {
             animate={{ opacity: 1, x: 0 }}
             className="glass rounded-2xl p-6"
           >
-            <h2 className="text-xl font-bold mb-4" style={{ fontSize: 'initial' }}>Dati Azienda</h2>
-            <div className="space-y-2 text-sm" style={{ fontSize: 'initial' }}>
+            <h2 className="text-xl font-bold mb-4">Dati Azienda</h2>
+            <div className="space-y-2 text-sm">
               {settings.logoPath && (
                 <div className="flex justify-center mb-3">
                   <img
@@ -309,7 +309,7 @@ const CreateQuote = () => {
             className="glass rounded-2xl p-6 flex flex-col"
           >
             <div className="flex items-start justify-between mb-4">
-              <h2 className="text-xl font-bold" style={{ fontSize: 'initial' }}>Dati Cliente</h2>
+              <h2 className="text-xl font-bold">Dati Cliente</h2>
               <Button
                 onClick={() => navigate("/client-details", { state: { clientData } })}
                 size="sm"
@@ -320,7 +320,7 @@ const CreateQuote = () => {
               </Button>
             </div>
             {clientData && clientData.name ? (
-              <div className="space-y-2 text-sm" style={{ fontSize: 'initial' }}>
+              <div className="space-y-2 text-sm">
                 <div className="font-semibold text-lg">{clientData.name}</div>
                 {clientData.taxCode && <div>CF/P.IVA: {clientData.taxCode}</div>}
                 {clientData.address && <div>{clientData.address}</div>}
@@ -351,18 +351,19 @@ const CreateQuote = () => {
           
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="workAddress">Via</Label>
+              <Label htmlFor="workAddress" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Via</Label>
               <Input
                 id="workAddress"
                 value={workAddress}
                 onChange={(e) => setWorkAddress(e.target.value)}
                 placeholder="Via e numero civico"
                 className="bg-white"
+                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="workCity">Città</Label>
+              <Label htmlFor="workCity" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Città</Label>
               <CityCombobox
                 value={workCity}
                 onSelect={(city, province, cap) => {
@@ -375,24 +376,26 @@ const CreateQuote = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="workProvince">Provincia</Label>
+              <Label htmlFor="workProvince" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Provincia</Label>
               <Input
                 id="workProvince"
                 value={workProvince}
                 readOnly
                 placeholder="PR"
                 className="bg-muted cursor-not-allowed"
+                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="workZip">CAP</Label>
+              <Label htmlFor="workZip" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>CAP</Label>
               <Input
                 id="workZip"
                 value={workZip}
                 readOnly
                 placeholder="CAP"
                 className="bg-muted cursor-not-allowed"
+                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
               />
             </div>
           </div>
@@ -406,13 +409,14 @@ const CreateQuote = () => {
           className="glass rounded-2xl p-6 mb-6"
         >
           <div className="space-y-2">
-            <Label htmlFor="subject">Oggetto</Label>
+            <Label htmlFor="subject" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Oggetto</Label>
             <Input
               id="subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Oggetto del preventivo"
               className="bg-white"
+              style={{ fontSize: `${settings.fontSizeQuote}rem` }}
             />
           </div>
         </motion.div>
@@ -430,19 +434,19 @@ const CreateQuote = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left p-2 w-8">#</th>
-                  <th className="text-left p-2">Descrizione</th>
-                  <th className="text-left p-2 w-48">U.M.</th>
-                  <th className="text-left p-2 w-24">Qtà</th>
-                  <th className="text-left p-2 w-32">Prezzo Unit.</th>
-                  <th className="text-left p-2 w-28">Totale</th>
+                  <th className="text-left p-2 w-8" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>#</th>
+                  <th className="text-left p-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Descrizione</th>
+                  <th className="text-left p-2 w-48" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>U.M.</th>
+                  <th className="text-left p-2 w-24" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Qtà</th>
+                  <th className="text-left p-2 w-32" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Prezzo Unit.</th>
+                  <th className="text-left p-2 w-28" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Totale</th>
                   <th className="w-16"></th>
                 </tr>
               </thead>
               <tbody>
                 {lines.map((line, index) => (
                   <tr key={line.id} className="border-b hover:bg-accent/20 transition-colors">
-                    <td className="p-2 text-muted-foreground">{index + 1}</td>
+                    <td className="p-2 text-muted-foreground" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>{index + 1}</td>
                     <td className="p-2">
                       <Textarea
                         value={line.description}
@@ -450,6 +454,7 @@ const CreateQuote = () => {
                         placeholder="Descrizione"
                         className="min-w-[200px] bg-white resize-none min-h-[40px] overflow-hidden"
                         rows={1}
+                        style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                         onInput={(e) => {
                           e.currentTarget.style.height = 'auto';
                           e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
@@ -461,7 +466,7 @@ const CreateQuote = () => {
                         value={line.unit}
                         onValueChange={(value) => updateLine(index, "unit", value)}
                       >
-                        <SelectTrigger className="bg-white text-left">
+                        <SelectTrigger className="bg-white text-left" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
                           <SelectValue className="text-left" />
                         </SelectTrigger>
                         <SelectContent className="bg-white z-50">
@@ -470,6 +475,7 @@ const CreateQuote = () => {
                               key={unit.value} 
                               value={unit.value} 
                               className="text-left justify-start cursor-pointer"
+                              style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                             >
                               <span className="text-left w-full block">{unit.label}</span>
                             </SelectItem>
@@ -487,6 +493,7 @@ const CreateQuote = () => {
                         step="0.01"
                         placeholder="0"
                         className="bg-white"
+                        style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                       />
                     </td>
                     <td className="p-2">
@@ -499,9 +506,10 @@ const CreateQuote = () => {
                         step="0.01"
                         placeholder="0"
                         className="bg-white"
+                        style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                       />
                     </td>
-                    <td className="p-2 font-semibold">
+                    <td className="p-2 font-semibold" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
                       € {formatCurrency(line.total)}
                     </td>
                     <td className="p-2">
@@ -533,7 +541,7 @@ const CreateQuote = () => {
 
           <div className="mt-4 flex justify-end">
             <div className="text-right space-y-2">
-              <div className="text-lg font-semibold">
+              <div className="text-lg font-semibold" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
                 Subtotale: € {formatCurrency(calculateSubtotal())}
               </div>
             </div>
@@ -553,7 +561,7 @@ const CreateQuote = () => {
               checked={discountEnabled}
               onCheckedChange={(checked) => setDiscountEnabled(checked as boolean)}
             />
-            <Label htmlFor="discountEnabled" className="cursor-pointer">
+            <Label htmlFor="discountEnabled" className="cursor-pointer" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
               Applica Sconto
             </Label>
           </div>
@@ -561,7 +569,7 @@ const CreateQuote = () => {
           {discountEnabled && (
             <div className="space-y-4 pl-6">
               <div className="space-y-2 max-w-xs">
-                <Label htmlFor="discountValue">Valore Sconto (%)</Label>
+                <Label htmlFor="discountValue" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Valore Sconto (%)</Label>
                 <Input
                   id="discountValue"
                   type="number"
@@ -571,6 +579,7 @@ const CreateQuote = () => {
                   max="100"
                   step="0.01"
                   className="bg-white"
+                  style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                 />
               </div>
 
@@ -580,12 +589,12 @@ const CreateQuote = () => {
                   checked={showDiscountInTable}
                   onCheckedChange={(checked) => setShowDiscountInTable(checked as boolean)}
                 />
-                <Label htmlFor="showDiscountInTable" className="cursor-pointer">
+                <Label htmlFor="showDiscountInTable" className="cursor-pointer" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
                   Mostra sconto in tabella
                 </Label>
               </div>
 
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
                 {showDiscountInTable
                   ? "Lo sconto verrà mostrato come riga separata"
                   : "Lo sconto verrà spalmato sui prezzi unitari"}
@@ -607,7 +616,7 @@ const CreateQuote = () => {
               checked={notesEnabled}
               onCheckedChange={(checked) => setNotesEnabled(checked as boolean)}
             />
-            <Label htmlFor="notesEnabled" className="cursor-pointer">
+            <Label htmlFor="notesEnabled" className="cursor-pointer" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
               Aggiungi Note
             </Label>
           </div>
@@ -620,6 +629,7 @@ const CreateQuote = () => {
                 placeholder="Inserisci le note..."
                 rows={4}
                 className="bg-white"
+                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
               />
             </div>
           )}
@@ -633,25 +643,25 @@ const CreateQuote = () => {
           className="glass rounded-2xl p-6 mb-6 space-y-4"
         >
           <div className="space-y-2">
-            <Label htmlFor="paymentMethod">Modalità di Pagamento</Label>
+            <Label htmlFor="paymentMethod" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Modalità di Pagamento</Label>
             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger className="bg-white">
+              <SelectTrigger className="bg-white" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-white">
-                <SelectItem value="da-concordare">Da concordare</SelectItem>
-                <SelectItem value="bonifico">Bonifico bancario</SelectItem>
-                <SelectItem value="contanti">Contanti</SelectItem>
-                <SelectItem value="assegno">Assegno</SelectItem>
-                <SelectItem value="carta">Carta di credito</SelectItem>
-                <SelectItem value="personalizzato">Personalizzato</SelectItem>
+                <SelectItem value="da-concordare" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Da concordare</SelectItem>
+                <SelectItem value="bonifico" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Bonifico bancario</SelectItem>
+                <SelectItem value="contanti" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Contanti</SelectItem>
+                <SelectItem value="assegno" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Assegno</SelectItem>
+                <SelectItem value="carta" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Carta di credito</SelectItem>
+                <SelectItem value="personalizzato" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Personalizzato</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {paymentMethod === "personalizzato" && (
             <div className="space-y-2">
-              <Label htmlFor="customPayment">Modalità Personalizzata</Label>
+              <Label htmlFor="customPayment" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Modalità Personalizzata</Label>
               <Textarea
                 id="customPayment"
                 value={customPayment}
@@ -659,6 +669,7 @@ const CreateQuote = () => {
                 placeholder="Inserisci la modalità di pagamento personalizzata..."
                 rows={3}
                 className="bg-white"
+                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
               />
             </div>
           )}
@@ -672,12 +683,12 @@ const CreateQuote = () => {
           className="glass rounded-2xl p-6 mb-6"
         >
           <div className="text-center">
-            <div className="text-lg text-muted-foreground mb-2">Totale</div>
+            <div className="text-lg text-muted-foreground mb-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Totale</div>
             <div className="text-4xl font-extrabold">
               € {formatCurrency(calculateTotal())}
             </div>
             {discountEnabled && (
-              <div className="text-sm text-muted-foreground mt-2">
+              <div className="text-sm text-muted-foreground mt-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
                 Sconto applicato: € {formatCurrency(calculateDiscount())}
               </div>
             )}
@@ -696,6 +707,7 @@ const CreateQuote = () => {
               onClick={handleSave}
               size="lg"
               className="h-14 text-lg font-bold"
+              style={{ fontSize: `${settings.fontSizeQuote}rem` }}
             >
               Salva
             </Button>
@@ -703,6 +715,7 @@ const CreateQuote = () => {
               onClick={handleViewPdf}
               size="lg"
               className="h-14 text-lg font-bold"
+              style={{ fontSize: `${settings.fontSizeQuote}rem` }}
             >
               Vedi il PDF
             </Button>
@@ -712,6 +725,7 @@ const CreateQuote = () => {
             variant="destructive"
             size="lg"
             className="h-14 text-lg font-bold w-full"
+            style={{ fontSize: `${settings.fontSizeQuote}rem` }}
           >
             Elimina Preventivo
           </Button>
