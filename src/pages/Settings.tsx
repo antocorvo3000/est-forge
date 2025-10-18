@@ -21,8 +21,9 @@ const Settings = () => {
       fontSizeQuote: formData.fontSizeQuote,
       fontSizeClient: formData.fontSizeClient,
       fontSizeSettings: formData.fontSizeSettings,
+      fontSizeCustomQuote: formData.fontSizeCustomQuote,
     });
-  }, [formData.fontSizeList, formData.fontSizeQuote, formData.fontSizeClient, formData.fontSizeSettings]);
+  }, [formData.fontSizeList, formData.fontSizeQuote, formData.fontSizeClient, formData.fontSizeSettings, formData.fontSizeCustomQuote]);
 
   const handleSave = async () => {
     try {
@@ -37,6 +38,7 @@ const Settings = () => {
         font_size_quote: formData.fontSizeQuote,
         font_size_client: formData.fontSizeClient,
         font_size_settings: formData.fontSizeSettings,
+        font_size_custom_quote: formData.fontSizeCustomQuote,
       });
       
       toast.success("Impostazioni salvate con successo");
@@ -300,6 +302,29 @@ const Settings = () => {
                   step="0.1"
                   value={formData.fontSizeSettings}
                   onChange={(e) => setFormData({ ...formData, fontSizeSettings: parseFloat(e.target.value) })}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
+                  <span>Piccolo (0.8x)</span>
+                  <span>Normale (1.0x)</span>
+                  <span>Grande (1.5x)</span>
+                </div>
+              </div>
+
+              {/* Nuovo Preventivo Personalizzato */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="fontSizeCustomQuote" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>Nuovo Preventivo Personalizzato</Label>
+                  <span className="text-sm font-semibold" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>{formData.fontSizeCustomQuote.toFixed(2)}x</span>
+                </div>
+                <input
+                  id="fontSizeCustomQuote"
+                  type="range"
+                  min="0.8"
+                  max="1.5"
+                  step="0.1"
+                  value={formData.fontSizeCustomQuote}
+                  onChange={(e) => setFormData({ ...formData, fontSizeCustomQuote: parseFloat(e.target.value) })}
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>

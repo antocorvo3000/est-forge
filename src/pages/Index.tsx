@@ -7,7 +7,6 @@ import { SearchBar } from "@/components/SearchBar";
 import { QuoteItem } from "@/components/QuoteItem";
 import { QuoteModal } from "@/components/QuoteModal";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
-import { CustomQuoteNumberDialog } from "@/components/CustomQuoteNumberDialog";
 import { Button } from "@/components/ui/button";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
@@ -43,7 +42,6 @@ const Index = () => {
     open: boolean;
     quote?: Quote;
   }>({ open: false });
-  const [customNumberDialog, setCustomNumberDialog] = useState(false);
 
   const filteredQuotes = useMemo(() => {
     const query = debouncedSearch.toLowerCase().trim();
@@ -67,20 +65,8 @@ const Index = () => {
     navigate("/create-quote");
   };
 
-  const handleCustomQuote = async (number: number, year: number) => {
-    // Controlla se il preventivo esiste già
-    const exists = quotes.find((q) => q.number === number && q.year === year);
-    if (exists) {
-      toast.error(
-        `Il preventivo ${number.toString().padStart(2, '0')}-${year} esiste già`,
-        {
-          description: "Eliminare quello esistente per continuare o modificarlo.",
-          duration: 5000,
-        }
-      );
-      return;
-    }
-    navigate("/create-quote", { state: { customNumber: number, customYear: year } });
+  const handleCustomQuote = () => {
+    navigate("/custom-quote-number");
   };
 
   const handleEditQuote = (quote: Quote) => {
@@ -188,7 +174,7 @@ const Index = () => {
           className="flex justify-between mx-4 sm:mx-6 mt-3"
         >
           <Button
-            onClick={() => setCustomNumberDialog(true)}
+            onClick={handleCustomQuote}
             className="h-11 gap-2 shadow-lg"
           >
             <FileEdit className="w-5 h-5" />
@@ -217,12 +203,6 @@ const Index = () => {
         onClose={() => setDeleteDialog({ open: false })}
         onConfirm={handleDeleteConfirm}
         quoteName={deleteDialog.quote?.title || ""}
-      />
-
-      <CustomQuoteNumberDialog
-        open={customNumberDialog}
-        onClose={() => setCustomNumberDialog(false)}
-        onConfirm={handleCustomQuote}
       />
     </div>
   );

@@ -13,6 +13,7 @@ const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
   fontSizeQuote: 1.0,
   fontSizeClient: 1.0,
   fontSizeSettings: 1.0,
+  fontSizeCustomQuote: 1.0,
 };
 
 interface CompanySettingsContextType {
@@ -42,6 +43,7 @@ export const CompanySettingsProvider = ({ children }: { children: ReactNode }) =
             fontSizeQuote: datiAzienda.font_size_quote ? parseFloat(String(datiAzienda.font_size_quote)) : 1.0,
             fontSizeClient: datiAzienda.font_size_client ? parseFloat(String(datiAzienda.font_size_client)) : 1.0,
             fontSizeSettings: datiAzienda.font_size_settings ? parseFloat(String(datiAzienda.font_size_settings)) : 1.0,
+            fontSizeCustomQuote: datiAzienda.font_size_custom_quote ? parseFloat(String(datiAzienda.font_size_custom_quote)) : 1.0,
           });
         }
       } catch (error) {
