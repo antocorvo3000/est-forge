@@ -37,7 +37,7 @@ export const DeleteConfirmDialog = ({
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
-            className="bg-gradient-to-b from-destructive to-destructive-glow hover:brightness-105 text-lg font-bold px-8 py-6"
+            className="bg-red-600 hover:bg-red-700 text-white text-lg font-bold px-8 py-6"
           >
             Elimina
           </AlertDialogAction>
