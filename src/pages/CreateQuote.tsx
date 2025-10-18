@@ -571,7 +571,8 @@ const CreateQuote = () => {
                         />
                         {discountEnabled && !showDiscountInTable && discountValue > 0 && (
                           <div className="text-sm text-foreground font-medium">
-                            Scontato: € {formatCurrency(getEffectiveUnitPrice(line.unitPrice))}
+                            <div>Scontato:</div>
+                            <div>€ {formatCurrency(getEffectiveUnitPrice(line.unitPrice))}</div>
                           </div>
                         )}
                       </div>
