@@ -1,8 +1,9 @@
 import { forwardRef } from "react";
 import { motion } from "framer-motion";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Copy, Edit3 } from "lucide-react";
 import type { Quote } from "@/types/quote";
 import { Button } from "./ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface QuoteItemProps {
   quote: Quote;
@@ -14,6 +15,7 @@ interface QuoteItemProps {
 
 export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
   ({ quote, index, onEdit, onDelete, fontSize = 1 }, ref) => {
+  const navigate = useNavigate();
   const formatQuoteNumber = (num?: number) => {
     if (!num) return '00';
     return num.toString().padStart(2, '0');
@@ -73,6 +75,22 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
       </div>
 
       <div className="flex items-center gap-1 sm:gap-2" style={{ fontSize: `${fontSize}rem` }}>
+        <Button
+          size="sm"
+          onClick={() => navigate("/clone-quote", { state: { quote } })}
+          className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5 bg-green-600 text-white hover:brightness-110"
+        >
+          <Copy className="w-4 h-4" />
+          <span className="hidden sm:inline text-xs font-semibold">Clona</span>
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => navigate("/edit-quote-number", { state: { quote } })}
+          className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5 bg-purple-600 text-white hover:brightness-110"
+        >
+          <Edit3 className="w-4 h-4" />
+          <span className="hidden sm:inline text-xs font-semibold">Modifica N°/Anno</span>
+        </Button>
         <Button
           size="sm"
           onClick={() => onEdit(quote)}

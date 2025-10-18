@@ -20,7 +20,9 @@ export type Database = {
           creato_il: string | null
           email: string
           font_size_client: number | null
+          font_size_clone: number | null
           font_size_custom_quote: number | null
+          font_size_edit_number: number | null
           font_size_list: number | null
           font_size_quote: number | null
           font_size_settings: number | null
@@ -36,7 +38,9 @@ export type Database = {
           creato_il?: string | null
           email: string
           font_size_client?: number | null
+          font_size_clone?: number | null
           font_size_custom_quote?: number | null
+          font_size_edit_number?: number | null
           font_size_list?: number | null
           font_size_quote?: number | null
           font_size_settings?: number | null
@@ -52,7 +56,9 @@ export type Database = {
           creato_il?: string | null
           email?: string
           font_size_client?: number | null
+          font_size_clone?: number | null
           font_size_custom_quote?: number | null
+          font_size_edit_number?: number | null
           font_size_list?: number | null
           font_size_quote?: number | null
           font_size_settings?: number | null

@@ -22,8 +22,10 @@ const Settings = () => {
       fontSizeClient: formData.fontSizeClient,
       fontSizeSettings: formData.fontSizeSettings,
       fontSizeCustomQuote: formData.fontSizeCustomQuote,
+      fontSizeClone: formData.fontSizeClone,
+      fontSizeEditNumber: formData.fontSizeEditNumber,
     });
-  }, [formData.fontSizeList, formData.fontSizeQuote, formData.fontSizeClient, formData.fontSizeSettings, formData.fontSizeCustomQuote]);
+  }, [formData.fontSizeList, formData.fontSizeQuote, formData.fontSizeClient, formData.fontSizeSettings, formData.fontSizeCustomQuote, formData.fontSizeClone, formData.fontSizeEditNumber]);
 
   const handleSave = async () => {
     try {
@@ -39,6 +41,8 @@ const Settings = () => {
         font_size_client: formData.fontSizeClient,
         font_size_settings: formData.fontSizeSettings,
         font_size_custom_quote: formData.fontSizeCustomQuote,
+        font_size_clone: formData.fontSizeClone,
+        font_size_edit_number: formData.fontSizeEditNumber,
       });
       
       toast.success("Impostazioni salvate con successo");
@@ -325,6 +329,52 @@ const Settings = () => {
                   step="0.1"
                   value={formData.fontSizeCustomQuote}
                   onChange={(e) => setFormData({ ...formData, fontSizeCustomQuote: parseFloat(e.target.value) })}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
+                  <span>Piccolo (0.8x)</span>
+                  <span>Normale (1.0x)</span>
+                  <span>Grande (1.5x)</span>
+                </div>
+              </div>
+
+              {/* Clonazione Preventivo */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="fontSizeClone" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>Clonazione Preventivo</Label>
+                  <span className="text-sm font-semibold" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>{formData.fontSizeClone.toFixed(2)}x</span>
+                </div>
+                <input
+                  id="fontSizeClone"
+                  type="range"
+                  min="0.8"
+                  max="1.5"
+                  step="0.1"
+                  value={formData.fontSizeClone}
+                  onChange={(e) => setFormData({ ...formData, fontSizeClone: parseFloat(e.target.value) })}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
+                  <span>Piccolo (0.8x)</span>
+                  <span>Normale (1.0x)</span>
+                  <span>Grande (1.5x)</span>
+                </div>
+              </div>
+
+              {/* Modifica Numero e Anno */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="fontSizeEditNumber" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>Modifica Numero e Anno</Label>
+                  <span className="text-sm font-semibold" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>{formData.fontSizeEditNumber.toFixed(2)}x</span>
+                </div>
+                <input
+                  id="fontSizeEditNumber"
+                  type="range"
+                  min="0.8"
+                  max="1.5"
+                  step="0.1"
+                  value={formData.fontSizeEditNumber}
+                  onChange={(e) => setFormData({ ...formData, fontSizeEditNumber: parseFloat(e.target.value) })}
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>

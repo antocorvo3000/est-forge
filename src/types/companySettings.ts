@@ -10,6 +10,8 @@ export interface CompanySettings {
   fontSizeClient: number;
   fontSizeSettings: number;
   fontSizeCustomQuote: number;
+  fontSizeClone: number;
+  fontSizeEditNumber: number;
 }
 
 export const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
@@ -24,4 +26,6 @@ export const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
   fontSizeClient: 1.0,
   fontSizeSettings: 1.0,
   fontSizeCustomQuote: 1.0,
+  fontSizeClone: 1.0,
+  fontSizeEditNumber: 1.0,
 };
