@@ -188,22 +188,32 @@ const CreateQuote = () => {
       }
 
       // 2. Calcola totali
-      const year = new Date().getFullYear();
       const subtotale = calculateSubtotal();
       const sconto_percentuale = discountEnabled ? discountValue : 0;
       const sconto_valore = discountEnabled ? calculateDiscount() : 0;
       const totale = calculateTotal();
 
       // 3. Genera numero preventivo
-      const { data: existingQuotes } = await supabase
-        .from("preventivi")
-        .select("numero")
-        .eq("anno", year)
-        .order("numero", { ascending: false })
-        .limit(1);
+      let newNum: number;
+      let year: number;
       
-      const maxNum = existingQuotes && existingQuotes.length > 0 ? existingQuotes[0].numero : 0;
-      const newNum = maxNum + 1;
+      // Usa numero e anno personalizzati se presenti
+      if (location.state?.customNumber && location.state?.customYear) {
+        newNum = location.state.customNumber;
+        year = location.state.customYear;
+      } else {
+        // Altrimenti genera automaticamente
+        year = new Date().getFullYear();
+        const { data: existingQuotes } = await supabase
+          .from("preventivi")
+          .select("numero")
+          .eq("anno", year)
+          .order("numero", { ascending: false })
+          .limit(1);
+        
+        const maxNum = existingQuotes && existingQuotes.length > 0 ? existingQuotes[0].numero : 0;
+        newNum = maxNum + 1;
+      }
 
       // 4. Salva preventivo
       const preventivo = await salvaPreventivo({

@@ -1,12 +1,13 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Settings } from "lucide-react";
+import { Plus, Settings, FileEdit } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CompanyHeader } from "@/components/CompanyHeader";
 import { SearchBar } from "@/components/SearchBar";
 import { QuoteItem } from "@/components/QuoteItem";
 import { QuoteModal } from "@/components/QuoteModal";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
+import { CustomQuoteNumberDialog } from "@/components/CustomQuoteNumberDialog";
 import { Button } from "@/components/ui/button";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
@@ -42,6 +43,7 @@ const Index = () => {
     open: boolean;
     quote?: Quote;
   }>({ open: false });
+  const [customNumberDialog, setCustomNumberDialog] = useState(false);
 
   const filteredQuotes = useMemo(() => {
     const query = debouncedSearch.toLowerCase().trim();
@@ -63,6 +65,10 @@ const Index = () => {
 
   const handleNewQuote = () => {
     navigate("/create-quote");
+  };
+
+  const handleCustomQuote = (number: number, year: number) => {
+    navigate("/create-quote", { state: { customNumber: number, customYear: year } });
   };
 
   const handleEditQuote = (quote: Quote) => {
@@ -167,8 +173,16 @@ const Index = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5 }}
-          className="flex justify-end mx-4 sm:mx-6 mt-3"
+          className="flex justify-between mx-4 sm:mx-6 mt-3"
         >
+          <Button
+            onClick={() => setCustomNumberDialog(true)}
+            className="h-11 gap-2 shadow-lg"
+          >
+            <FileEdit className="w-5 h-5" />
+            <span>Nuovo con Numero</span>
+          </Button>
+          
           <Button
             onClick={() => navigate("/settings")}
             className="h-11 gap-2 shadow-lg"
@@ -191,6 +205,12 @@ const Index = () => {
         onClose={() => setDeleteDialog({ open: false })}
         onConfirm={handleDeleteConfirm}
         quoteName={deleteDialog.quote?.title || ""}
+      />
+
+      <CustomQuoteNumberDialog
+        open={customNumberDialog}
+        onClose={() => setCustomNumberDialog(false)}
+        onConfirm={handleCustomQuote}
       />
     </div>
   );
