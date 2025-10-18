@@ -48,7 +48,7 @@ const CloneQuote = () => {
 
     // Se la numerazione personalizzata è attiva, parte dal numero impostato
     // Altrimenti parte da 1
-    const baseNumber = settings.useCustomNumbering ? settings.startingQuoteNumber : 1;
+    const baseNumber = settings.customNumberingEnabled ? settings.startingQuoteNumber : 1;
     
     // Trova il primo numero disponibile >= baseNumber
     let newNum = baseNumber;

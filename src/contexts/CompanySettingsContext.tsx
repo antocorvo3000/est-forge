@@ -17,7 +17,7 @@ const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
   fontSizeClone: 1.0,
   fontSizeEditNumber: 1.0,
   startingQuoteNumber: 1,
-  useCustomNumbering: false,
+  customNumberingEnabled: false,
 };
 
 interface CompanySettingsContextType {
@@ -51,7 +51,7 @@ export const CompanySettingsProvider = ({ children }: { children: ReactNode }) =
           fontSizeClone: datiAzienda.font_size_clone ? parseFloat(String(datiAzienda.font_size_clone)) : 1.0,
           fontSizeEditNumber: datiAzienda.font_size_edit_number ? parseFloat(String(datiAzienda.font_size_edit_number)) : 1.0,
           startingQuoteNumber: datiAzienda.numero_progressivo_iniziale || 1,
-          useCustomNumbering: datiAzienda.numerazione_progressiva_attiva || false,
+          customNumberingEnabled: datiAzienda.numerazione_progressiva_attiva || false,
         });
       }
     } catch (error) {

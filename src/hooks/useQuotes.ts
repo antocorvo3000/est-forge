@@ -7,7 +7,7 @@ export const useQuotes = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [startingNumber, setStartingNumber] = useState(1);
-  const [useCustomNumbering, setUseCustomNumbering] = useState(false);
+  const [customNumberingEnabled, setCustomNumberingEnabled] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -19,7 +19,7 @@ export const useQuotes = () => {
         if (datiAzienda.numero_progressivo_iniziale) {
           setStartingNumber(datiAzienda.numero_progressivo_iniziale);
         }
-        setUseCustomNumbering(datiAzienda.numerazione_progressiva_attiva || false);
+        setCustomNumberingEnabled(datiAzienda.numerazione_progressiva_attiva || false);
       }
     };
     
@@ -111,7 +111,7 @@ export const useQuotes = () => {
 
         // Se la numerazione personalizzata è attiva, parte dal numero impostato
         // Altrimenti parte da 1
-        const baseNumber = useCustomNumbering ? startingNumber : 1;
+        const baseNumber = customNumberingEnabled ? startingNumber : 1;
         
         // Trova il primo numero disponibile >= baseNumber
         newNum = baseNumber;

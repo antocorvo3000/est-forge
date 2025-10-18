@@ -31,7 +31,7 @@ const Settings = () => {
         font_size_clone: formData.fontSizeClone,
         font_size_edit_number: formData.fontSizeEditNumber,
         numero_progressivo_iniziale: formData.startingQuoteNumber,
-        numerazione_progressiva_attiva: formData.useCustomNumbering,
+        numerazione_progressiva_attiva: formData.customNumberingEnabled,
       });
       
       // Ricarica i settings dal database dopo il salvataggio
@@ -50,7 +50,7 @@ const Settings = () => {
         fontSizeClone: formData.fontSizeClone,
         fontSizeEditNumber: formData.fontSizeEditNumber,
         startingQuoteNumber: formData.startingQuoteNumber,
-        useCustomNumbering: formData.useCustomNumbering,
+        customNumberingEnabled: formData.customNumberingEnabled,
       });
       
       toast.success("Impostazioni salvate con successo");
@@ -180,29 +180,32 @@ const Settings = () => {
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">Numerazione Preventivi</h2>
                 <div className="flex items-center gap-2">
-                  <Label htmlFor="useCustomNumbering" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
-                    Attiva
+                  <Label htmlFor="customNumbering" className="text-sm cursor-pointer" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
+                    {formData.customNumberingEnabled ? 'Attiva' : 'Disattiva'}
                   </Label>
-                  <input
-                    type="checkbox"
-                    id="useCustomNumbering"
-                    checked={formData.useCustomNumbering}
-                    onChange={(e) => setFormData({ ...formData, useCustomNumbering: e.target.checked })}
-                    className="w-5 h-5 rounded accent-primary cursor-pointer"
-                  />
+                  <Button
+                    id="customNumbering"
+                    onClick={() => setFormData({ ...formData, customNumberingEnabled: !formData.customNumberingEnabled })}
+                    variant={formData.customNumberingEnabled ? "default" : "outline"}
+                    size="sm"
+                    className="h-8 w-16"
+                    style={{ fontSize: `${formData.fontSizeSettings * 0.875}rem` }}
+                  >
+                    {formData.customNumberingEnabled ? 'ON' : 'OFF'}
+                  </Button>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground mb-4" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
-                {formData.useCustomNumbering 
-                  ? "Numerazione progressiva attiva: il prossimo preventivo partirà dal numero impostato"
-                  : "Numerazione standard: i preventivi partiranno sempre da 1"
+                {formData.customNumberingEnabled 
+                  ? 'Imposta il numero da cui iniziare la numerazione progressiva dei preventivi'
+                  : 'Attiva per personalizzare il numero di partenza della numerazione'
                 }
               </p>
               <div className="space-y-2">
                 <Label 
                   htmlFor="startingNumber" 
                   style={{ fontSize: `${formData.fontSizeSettings}rem` }}
-                  className={!formData.useCustomNumbering ? "text-muted-foreground" : ""}
+                  className={!formData.customNumberingEnabled ? 'text-muted-foreground' : ''}
                 >
                   Numero Progressivo Iniziale
                 </Label>
@@ -212,15 +215,16 @@ const Settings = () => {
                   min="1"
                   value={formData.startingQuoteNumber}
                   onChange={(e) => setFormData({ ...formData, startingQuoteNumber: parseInt(e.target.value) || 1 })}
-                  className="bg-white"
+                  className={formData.customNumberingEnabled ? 'bg-white' : 'bg-muted cursor-not-allowed'}
                   style={{ fontSize: `${formData.fontSizeSettings}rem` }}
-                  disabled={!formData.useCustomNumbering}
+                  disabled={!formData.customNumberingEnabled}
                 />
-                {formData.useCustomNumbering && (
-                  <p className="text-xs text-muted-foreground mt-2" style={{ fontSize: `${formData.fontSizeSettings * 0.875}rem` }}>
-                    Il prossimo preventivo partirà dal numero {formData.startingQuoteNumber}
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground mt-2" style={{ fontSize: `${formData.fontSizeSettings * 0.875}rem` }}>
+                  {formData.customNumberingEnabled 
+                    ? `Il prossimo preventivo partirà dal numero ${formData.startingQuoteNumber} o dal primo disponibile se già esistente`
+                    : 'La numerazione partirà automaticamente da 1'
+                  }
+                </p>
               </div>
             </div>
           </div>
