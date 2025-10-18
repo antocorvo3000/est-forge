@@ -274,7 +274,7 @@ All colors MUST be HSL.
     overflow-y: auto;
     overflow-x: visible;
     padding-right: 12px;
-    padding-top: 6px;
+    padding-top: 12px;
     display: flex;
     flex-direction: column;
     gap: 10px;

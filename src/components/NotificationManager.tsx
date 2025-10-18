@@ -128,7 +128,7 @@ const NotificationItem = ({ notification, onDismiss }: NotificationItemProps) =>
         {notification.action && (
           <button
             onClick={handleAction}
-            className="mt-3 w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded transition-colors text-sm"
+            className="mt-2 h-8 px-2 gap-1.5 bg-destructive text-white hover:brightness-110 font-semibold rounded transition-all text-xs inline-flex items-center justify-center w-fit"
           >
             {notification.action.label}
           </button>
