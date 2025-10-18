@@ -13,7 +13,7 @@ interface DeleteConfirmDialogProps {
   open: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  quoteName: string;
+  clientName: string;
   quoteNumber: number;
   quoteYear: number;
 }
@@ -22,7 +22,7 @@ export const DeleteConfirmDialog = ({
   open,
   onClose,
   onConfirm,
-  quoteName,
+  clientName,
   quoteNumber,
   quoteYear,
 }: DeleteConfirmDialogProps) => {
@@ -34,7 +34,7 @@ export const DeleteConfirmDialog = ({
         <AlertDialogHeader>
           <AlertDialogTitle className="text-2xl font-bold text-red-600">Conferma eliminazione</AlertDialogTitle>
           <AlertDialogDescription className="text-lg font-semibold text-black mt-4">
-            Sei sicuro di voler eliminare il preventivo {formattedNumber} "{quoteName}"? Questa azione non può essere annullata.
+            Sei sicuro di voler eliminare il preventivo {formattedNumber} {clientName}? Questa azione non può essere annullata.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="mt-6 gap-3">
