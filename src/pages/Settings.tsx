@@ -71,7 +71,13 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen overflow-x-hidden">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 pb-16 space-y-3 sm:space-y-4" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
+      <div 
+        className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 pb-16 space-y-3 sm:space-y-4" 
+        style={{ 
+          fontSize: `${formData.fontSizeSettings}rem`,
+          '--scale-factor': formData.fontSizeSettings 
+        } as React.CSSProperties}
+      >
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -98,6 +104,7 @@ const Settings = () => {
         >
           <div>
             <h2 className="text-xl font-bold mb-4">Logo Aziendale</h2>
+            <p className="text-sm mb-4">Scala testo: {formData.fontSizeSettings.toFixed(2)}x</p>
             <div className="flex items-center gap-4">
               {formData.logoPath ? (
                 <div className="flex items-center gap-4">
