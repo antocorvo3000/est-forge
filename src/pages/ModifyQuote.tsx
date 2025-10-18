@@ -221,13 +221,34 @@ const ModifyQuote = () => {
     }
   };
 
+  // Calcola il prezzo unitario effettivo (con sconto applicato se necessario)
+  const getEffectiveUnitPrice = (unitPrice: number) => {
+    if (discountEnabled && !showDiscountInTable && discountValue > 0) {
+      return unitPrice * (1 - discountValue / 100);
+    }
+    return unitPrice;
+  };
+
+  // Calcola il totale effettivo di una riga
+  const getEffectiveLineTotal = (line: QuoteLine) => {
+    return line.quantity * getEffectiveUnitPrice(line.unitPrice);
+  };
+
   const calculateSubtotal = () => {
+    if (discountEnabled && !showDiscountInTable) {
+      // Se lo sconto è spalmato sui prezzi, il subtotale è già scontato
+      return lines.reduce((sum, line) => sum + getEffectiveLineTotal(line), 0);
+    }
     return lines.reduce((sum, line) => sum + line.total, 0);
   };
 
   const calculateDiscount = () => {
     if (!discountEnabled) return 0;
-    return (calculateSubtotal() * discountValue) / 100;
+    // Lo sconto viene mostrato solo se showDiscountInTable è true
+    if (showDiscountInTable) {
+      return (lines.reduce((sum, line) => sum + line.total, 0) * discountValue) / 100;
+    }
+    return 0;
   };
 
   const calculateTotal = () => {
@@ -623,20 +644,27 @@ const ModifyQuote = () => {
                       />
                     </td>
                     <td className="p-2">
-                      <Input
-                        type="number"
-                        value={line.unitPrice || ""}
-                        onChange={(e) => updateLine(index, "unitPrice", parseFloat(e.target.value) || 0)}
-                        onKeyDown={(e) => handleKeyDown(e, index, "unitPrice")}
-                        min="0"
-                        step="0.01"
-                        placeholder="0"
-                        className="bg-white"
-                        style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-                      />
+                      <div className="space-y-1">
+                        <Input
+                          type="number"
+                          value={line.unitPrice || ""}
+                          onChange={(e) => updateLine(index, "unitPrice", parseFloat(e.target.value) || 0)}
+                          onKeyDown={(e) => handleKeyDown(e, index, "unitPrice")}
+                          min="0"
+                          step="0.01"
+                          placeholder="0"
+                          className="bg-white"
+                          style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                        />
+                        {discountEnabled && !showDiscountInTable && discountValue > 0 && (
+                          <div className="text-xs text-muted-foreground">
+                            Scontato: € {formatCurrency(getEffectiveUnitPrice(line.unitPrice))}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="p-2 font-semibold" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-                      € {formatCurrency(line.total)}
+                      € {formatCurrency(getEffectiveLineTotal(line))}
                     </td>
                     <td className="p-2">
                       <div className="flex gap-1">
