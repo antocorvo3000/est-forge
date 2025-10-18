@@ -71,13 +71,7 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen overflow-x-hidden">
-      <div 
-        className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 pb-16 space-y-3 sm:space-y-4" 
-        style={{ 
-          fontSize: `${formData.fontSizeSettings}rem`,
-          '--scale-factor': formData.fontSizeSettings 
-        } as React.CSSProperties}
-      >
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 pb-16 space-y-3 sm:space-y-4">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -104,7 +98,6 @@ const Settings = () => {
         >
           <div>
             <h2 className="text-xl font-bold mb-4">Logo Aziendale</h2>
-            <p className="text-sm mb-4">Scala testo: {formData.fontSizeSettings.toFixed(2)}x</p>
             <div className="flex items-center gap-4">
               {formData.logoPath ? (
                 <div className="flex items-center gap-4">
@@ -119,10 +112,11 @@ const Settings = () => {
                   Logo
                 </div>
               )}
-              <div className="flex flex-col gap-2">
+               <div className="flex flex-col gap-2">
                 <Label
                   htmlFor="logo-upload"
                   className="cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold hover:brightness-110 transition-all h-10"
+                  style={{ fontSize: `${formData.fontSizeSettings}rem` }}
                 >
                   <Upload className="w-4 h-4" />
                   Carica Logo
@@ -139,6 +133,7 @@ const Settings = () => {
                     onClick={handleLogoDelete}
                     variant="destructive"
                     className="gap-2 h-10"
+                    style={{ fontSize: `${formData.fontSizeSettings}rem` }}
                   >
                     <Trash2 className="w-4 h-4" />
                     Elimina Logo
@@ -152,53 +147,58 @@ const Settings = () => {
             <h2 className="text-xl font-bold">Dati Aziendali</h2>
             
             <div className="space-y-2">
-              <Label htmlFor="name">Ragione Sociale</Label>
+              <Label htmlFor="name" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>Ragione Sociale</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="bg-white"
+                style={{ fontSize: `${formData.fontSizeSettings}rem` }}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="vatNumber">Partita IVA</Label>
+              <Label htmlFor="vatNumber" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>Partita IVA</Label>
               <Input
                 id="vatNumber"
                 value={formData.vatNumber}
                 onChange={(e) => setFormData({ ...formData, vatNumber: e.target.value })}
                 className="bg-white"
+                style={{ fontSize: `${formData.fontSizeSettings}rem` }}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address">Sede Legale</Label>
+              <Label htmlFor="address" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>Sede Legale</Label>
               <Input
                 id="address"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 className="bg-white"
+                style={{ fontSize: `${formData.fontSizeSettings}rem` }}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Telefono</Label>
+              <Label htmlFor="phone" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>Telefono</Label>
               <Input
                 id="phone"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="bg-white"
+                style={{ fontSize: `${formData.fontSizeSettings}rem` }}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>Email</Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="bg-white"
+                style={{ fontSize: `${formData.fontSizeSettings}rem` }}
               />
             </div>
           </div>
@@ -212,16 +212,16 @@ const Settings = () => {
         >
           <div>
             <h2 className="text-xl font-bold mb-4">Dimensione Testo</h2>
-            <p className="text-sm text-muted-foreground mb-6">
-              Personalizza la dimensione del testo per diverse sezioni dell'app (esclusi titoli e dati azienda/cliente)
+            <p className="text-sm text-muted-foreground mb-6" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
+              Personalizza la dimensione del testo per diverse sezioni dell&apos;app (esclusi titoli e dati azienda/cliente)
             </p>
 
             <div className="space-y-6">
               {/* Lista Preventivi */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="fontSizeList">Lista Preventivi</Label>
-                  <span className="text-sm font-semibold">{formData.fontSizeList.toFixed(2)}x</span>
+                  <Label htmlFor="fontSizeList" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>Lista Preventivi</Label>
+                  <span className="text-sm font-semibold" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>{formData.fontSizeList.toFixed(2)}x</span>
                 </div>
                 <input
                   id="fontSizeList"
@@ -233,7 +233,7 @@ const Settings = () => {
                   onChange={(e) => setFormData({ ...formData, fontSizeList: parseFloat(e.target.value) })}
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
                 />
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="flex justify-between text-xs text-muted-foreground" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
                   <span>Piccolo (0.8x)</span>
                   <span>Normale (1.0x)</span>
                   <span>Grande (1.5x)</span>
@@ -243,8 +243,8 @@ const Settings = () => {
               {/* Nuovo/Modifica Preventivo */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="fontSizeQuote">Nuovo/Modifica Preventivo</Label>
-                  <span className="text-sm font-semibold">{formData.fontSizeQuote.toFixed(2)}x</span>
+                  <Label htmlFor="fontSizeQuote" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>Nuovo/Modifica Preventivo</Label>
+                  <span className="text-sm font-semibold" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>{formData.fontSizeQuote.toFixed(2)}x</span>
                 </div>
                 <input
                   id="fontSizeQuote"
@@ -256,7 +256,7 @@ const Settings = () => {
                   onChange={(e) => setFormData({ ...formData, fontSizeQuote: parseFloat(e.target.value) })}
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
                 />
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="flex justify-between text-xs text-muted-foreground" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
                   <span>Piccolo (0.8x)</span>
                   <span>Normale (1.0x)</span>
                   <span>Grande (1.5x)</span>
@@ -266,8 +266,8 @@ const Settings = () => {
               {/* Modifica Cliente */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="fontSizeClient">Modifica Cliente</Label>
-                  <span className="text-sm font-semibold">{formData.fontSizeClient.toFixed(2)}x</span>
+                  <Label htmlFor="fontSizeClient" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>Modifica Cliente</Label>
+                  <span className="text-sm font-semibold" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>{formData.fontSizeClient.toFixed(2)}x</span>
                 </div>
                 <input
                   id="fontSizeClient"
@@ -279,7 +279,7 @@ const Settings = () => {
                   onChange={(e) => setFormData({ ...formData, fontSizeClient: parseFloat(e.target.value) })}
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
                 />
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="flex justify-between text-xs text-muted-foreground" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
                   <span>Piccolo (0.8x)</span>
                   <span>Normale (1.0x)</span>
                   <span>Grande (1.5x)</span>
@@ -289,8 +289,8 @@ const Settings = () => {
               {/* Impostazioni */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="fontSizeSettings">Impostazioni</Label>
-                  <span className="text-sm font-semibold">{formData.fontSizeSettings.toFixed(2)}x</span>
+                  <Label htmlFor="fontSizeSettings" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>Impostazioni</Label>
+                  <span className="text-sm font-semibold" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>{formData.fontSizeSettings.toFixed(2)}x</span>
                 </div>
                 <input
                   id="fontSizeSettings"
@@ -302,7 +302,7 @@ const Settings = () => {
                   onChange={(e) => setFormData({ ...formData, fontSizeSettings: parseFloat(e.target.value) })}
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
                 />
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="flex justify-between text-xs text-muted-foreground" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
                   <span>Piccolo (0.8x)</span>
                   <span>Normale (1.0x)</span>
                   <span>Grande (1.5x)</span>
@@ -312,10 +312,10 @@ const Settings = () => {
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" onClick={() => navigate("/")}>
+            <Button variant="outline" onClick={() => navigate("/")} style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
               Annulla
             </Button>
-            <Button onClick={handleSave}>
+            <Button onClick={handleSave} style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
               Salva Modifiche
             </Button>
           </div>
