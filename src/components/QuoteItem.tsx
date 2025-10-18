@@ -56,7 +56,7 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
       transition={{
         layout: { duration: 0.3, ease: [0.4, 0, 0.2, 1] }
       }}
-      className="group grid grid-cols-[auto_auto_minmax(0,1fr)_minmax(0,2fr)] gap-3 sm:gap-4 p-3 sm:p-4 bg-white border border-border rounded-xl shadow-sm hover:shadow-md hover:border-border ease-out"
+      className="group grid grid-cols-[auto_auto_minmax(0,1fr)_minmax(0,2fr)] gap-2 sm:gap-3 p-3 sm:p-4 bg-white border border-border rounded-xl shadow-sm hover:shadow-md hover:border-border ease-out"
       style={{
         background: 'white',
         transition: 'background 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
