@@ -176,10 +176,10 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
               className="flex items-center gap-3 sm:gap-4"
               style={{ fontSize: `${fontSize}rem` }}
             >
-              <p className="text-sm font-semibold text-primary line-clamp-2 flex-1 min-w-0">
+              <p className="text-sm font-semibold text-primary line-clamp-2 break-all flex-1 min-w-0 overflow-hidden">
                 {quote.title || 'Nessun oggetto'}
               </p>
-              <p className="text-sm font-bold text-foreground whitespace-nowrap">
+              <p className="text-sm font-bold text-foreground whitespace-nowrap flex-shrink-0">
                 {formatCurrency(quote.amount)}
               </p>
             </motion.div>
