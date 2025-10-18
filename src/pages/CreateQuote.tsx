@@ -570,7 +570,7 @@ const CreateQuote = () => {
                           style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                         />
                         {discountEnabled && !showDiscountInTable && discountValue > 0 && (
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-sm text-foreground font-medium">
                             Scontato: € {formatCurrency(getEffectiveUnitPrice(line.unitPrice))}
                           </div>
                         )}
