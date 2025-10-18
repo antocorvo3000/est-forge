@@ -7,15 +7,19 @@ export const useQuotes = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [startingNumber, setStartingNumber] = useState(1);
+  const [useCustomNumbering, setUseCustomNumbering] = useState(false);
 
   useEffect(() => {
     const init = async () => {
       await loadQuotes();
       
-      // Carica il numero progressivo iniziale
+      // Carica il numero progressivo iniziale e lo stato della funzione
       const datiAzienda = await caricaDatiAzienda();
-      if (datiAzienda?.numero_progressivo_iniziale) {
-        setStartingNumber(datiAzienda.numero_progressivo_iniziale);
+      if (datiAzienda) {
+        if (datiAzienda.numero_progressivo_iniziale) {
+          setStartingNumber(datiAzienda.numero_progressivo_iniziale);
+        }
+        setUseCustomNumbering(datiAzienda.numerazione_progressiva_attiva || false);
       }
     };
     
@@ -98,20 +102,26 @@ export const useQuotes = () => {
         year = customYear;
         newNum = customNumber;
       } else {
-        // Preventivo normale - trova il primo numero disponibile riempiendo i buchi, partendo dal numero iniziale
+        // Preventivo normale - trova il primo numero disponibile
         year = new Date().getFullYear();
         const currentYearQuotes = quotes
           .filter((q) => q.year === year)
           .map((q) => q.number)
           .sort((a, b) => a - b);
 
-        // Trova il primo buco disponibile partendo dal numero progressivo iniziale
-        newNum = startingNumber;
+        // Se la numerazione personalizzata è attiva, parte dal numero impostato
+        // Altrimenti parte da 1
+        const baseNumber = useCustomNumbering ? startingNumber : 1;
+        
+        // Trova il primo numero disponibile >= baseNumber
+        newNum = baseNumber;
         for (const num of currentYearQuotes) {
-          if (num === newNum) {
-            newNum++;
-          } else if (num > newNum) {
-            break;
+          if (num >= baseNumber) {
+            if (num === newNum) {
+              newNum++;
+            } else if (num > newNum) {
+              break;
+            }
           }
         }
       }

@@ -31,6 +31,7 @@ const Settings = () => {
         font_size_clone: formData.fontSizeClone,
         font_size_edit_number: formData.fontSizeEditNumber,
         numero_progressivo_iniziale: formData.startingQuoteNumber,
+        numerazione_progressiva_attiva: formData.useCustomNumbering,
       });
       
       // Ricarica i settings dal database dopo il salvataggio
@@ -49,6 +50,7 @@ const Settings = () => {
         fontSizeClone: formData.fontSizeClone,
         fontSizeEditNumber: formData.fontSizeEditNumber,
         startingQuoteNumber: formData.startingQuoteNumber,
+        useCustomNumbering: formData.useCustomNumbering,
       });
       
       toast.success("Impostazioni salvate con successo");
@@ -175,12 +177,33 @@ const Settings = () => {
           {/* Numero Progressivo Iniziale */}
           <div className="glass rounded-2xl p-6 space-y-6">
             <div>
-              <h2 className="text-xl font-bold mb-4">Numerazione Preventivi</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Numerazione Preventivi</h2>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="useCustomNumbering" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
+                    Attiva
+                  </Label>
+                  <input
+                    type="checkbox"
+                    id="useCustomNumbering"
+                    checked={formData.useCustomNumbering}
+                    onChange={(e) => setFormData({ ...formData, useCustomNumbering: e.target.checked })}
+                    className="w-5 h-5 rounded accent-primary cursor-pointer"
+                  />
+                </div>
+              </div>
               <p className="text-sm text-muted-foreground mb-4" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
-                Imposta il numero da cui iniziare la numerazione progressiva dei preventivi
+                {formData.useCustomNumbering 
+                  ? "Numerazione progressiva attiva: il prossimo preventivo partirà dal numero impostato"
+                  : "Numerazione standard: i preventivi partiranno sempre da 1"
+                }
               </p>
               <div className="space-y-2">
-                <Label htmlFor="startingNumber" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
+                <Label 
+                  htmlFor="startingNumber" 
+                  style={{ fontSize: `${formData.fontSizeSettings}rem` }}
+                  className={!formData.useCustomNumbering ? "text-muted-foreground" : ""}
+                >
                   Numero Progressivo Iniziale
                 </Label>
                 <Input
@@ -191,10 +214,13 @@ const Settings = () => {
                   onChange={(e) => setFormData({ ...formData, startingQuoteNumber: parseInt(e.target.value) || 1 })}
                   className="bg-white"
                   style={{ fontSize: `${formData.fontSizeSettings}rem` }}
+                  disabled={!formData.useCustomNumbering}
                 />
-                <p className="text-xs text-muted-foreground mt-2" style={{ fontSize: `${formData.fontSizeSettings * 0.875}rem` }}>
-                  Il prossimo preventivo partirà dal numero {formData.startingQuoteNumber}
-                </p>
+                {formData.useCustomNumbering && (
+                  <p className="text-xs text-muted-foreground mt-2" style={{ fontSize: `${formData.fontSizeSettings * 0.875}rem` }}>
+                    Il prossimo preventivo partirà dal numero {formData.startingQuoteNumber}
+                  </p>
+                )}
               </div>
             </div>
           </div>

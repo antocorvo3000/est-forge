@@ -39,19 +39,26 @@ const CloneQuote = () => {
   }, [quoteToClone, navigate]);
 
   const handleProgressiveChoice = () => {
-    // Calcola il prossimo numero progressivo partendo dal numero iniziale impostato
+    // Calcola il prossimo numero progressivo
     const year = new Date().getFullYear();
     const currentYearQuotes = quotes
       .filter((q) => q.year === year)
       .map((q) => q.number)
       .sort((a, b) => a - b);
 
-    let newNum = settings.startingQuoteNumber;
+    // Se la numerazione personalizzata è attiva, parte dal numero impostato
+    // Altrimenti parte da 1
+    const baseNumber = settings.useCustomNumbering ? settings.startingQuoteNumber : 1;
+    
+    // Trova il primo numero disponibile >= baseNumber
+    let newNum = baseNumber;
     for (const num of currentYearQuotes) {
-      if (num === newNum) {
-        newNum++;
-      } else if (num > newNum) {
-        break;
+      if (num >= baseNumber) {
+        if (num === newNum) {
+          newNum++;
+        } else if (num > newNum) {
+          break;
+        }
       }
     }
 

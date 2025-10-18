@@ -221,7 +221,7 @@ const CreateQuote = () => {
           return;
         }
       } else {
-        // Altrimenti trova il primo numero disponibile riempiendo i buchi, partendo dal numero iniziale impostato
+        // Altrimenti trova il primo numero disponibile
         year = new Date().getFullYear();
         const { data: existingQuotes } = await supabase
           .from("preventivi")
@@ -231,13 +231,19 @@ const CreateQuote = () => {
         
         const usedNumbers = existingQuotes?.map(q => q.numero) || [];
         
-        // Trova il primo numero disponibile partendo dal numero progressivo iniziale
-        newNum = settings.startingQuoteNumber;
+        // Se la numerazione personalizzata è attiva, parte dal numero impostato
+        // Altrimenti parte da 1
+        const baseNumber = settings.useCustomNumbering ? settings.startingQuoteNumber : 1;
+        
+        // Trova il primo numero disponibile >= baseNumber
+        newNum = baseNumber;
         for (const num of usedNumbers) {
-          if (num === newNum) {
-            newNum++;
-          } else if (num > newNum) {
-            break;
+          if (num >= baseNumber) {
+            if (num === newNum) {
+              newNum++;
+            } else if (num > newNum) {
+              break;
+            }
           }
         }
       }

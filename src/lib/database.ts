@@ -31,6 +31,7 @@ export async function salvaDatiAzienda(dati: {
   font_size_clone?: number;
   font_size_edit_number?: number;
   numero_progressivo_iniziale?: number;
+  numerazione_progressiva_attiva?: boolean;
 }) {
   // Prima controlla se esiste già un record
   const { data: existing } = await supabase

@@ -28,6 +28,7 @@ export type Database = {
           font_size_settings: number | null
           id: string
           logo_url: string | null
+          numerazione_progressiva_attiva: boolean | null
           numero_progressivo_iniziale: number | null
           partita_iva: string
           ragione_sociale: string
@@ -47,6 +48,7 @@ export type Database = {
           font_size_settings?: number | null
           id?: string
           logo_url?: string | null
+          numerazione_progressiva_attiva?: boolean | null
           numero_progressivo_iniziale?: number | null
           partita_iva: string
           ragione_sociale: string
@@ -66,6 +68,7 @@ export type Database = {
           font_size_settings?: number | null
           id?: string
           logo_url?: string | null
+          numerazione_progressiva_attiva?: boolean | null
           numero_progressivo_iniziale?: number | null
           partita_iva?: string
           ragione_sociale?: string

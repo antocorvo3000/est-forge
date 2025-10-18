@@ -13,6 +13,7 @@ export interface CompanySettings {
   fontSizeClone: number;
   fontSizeEditNumber: number;
   startingQuoteNumber: number;
+  useCustomNumbering: boolean;
 }
 
 export const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
@@ -30,4 +31,5 @@ export const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
   fontSizeClone: 1.0,
   fontSizeEditNumber: 1.0,
   startingQuoteNumber: 1,
+  useCustomNumbering: false,
 };
