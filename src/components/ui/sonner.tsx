@@ -108,7 +108,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       position="top-right"
       offset={12}
       duration={Infinity}
-      visibleToasts={20}
+      visibleToasts={Infinity}
       gap={10}
       expand={false}
       richColors={false}

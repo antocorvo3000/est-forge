@@ -232,20 +232,23 @@ All colors MUST be HSL.
     overflow-y: auto !important;
     overflow-x: visible !important;
     padding-right: 4px !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
   [data-sonner-toast] {
     z-index: 99999 !important;
     margin-bottom: 10px !important;
     width: 260px !important;
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    flex-shrink: 0 !important;
   }
 
   [data-sonner-toast][data-mounted="false"] {
     animation: slideOutToRight 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
   }
 
-  /* Nascondi scrollbar */
+  /* Nascondi scrollbar ma mantieni scroll */
   [data-sonner-toaster]::-webkit-scrollbar {
     width: 0px;
     display: none;
@@ -254,5 +257,10 @@ All colors MUST be HSL.
   [data-sonner-toaster] {
     scrollbar-width: none;
     -ms-overflow-style: none;
+  }
+
+  /* Auto scroll verso il basso per nuove notifiche */
+  [data-sonner-toaster][data-y-position="top"] {
+    justify-content: flex-start !important;
   }
 }
