@@ -1,36 +1,46 @@
 import { useTheme } from "next-themes";
 import { Toaster as Sonner, toast as sonnerToast } from "sonner";
 import { X } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
+interface CustomToastProps {
+  message: string;
+  toastId: string | number;
+  onDismiss: () => void;
+}
+
 const CircularTimer = ({ 
-  duration, 
-  isPaused
+  isActive,
+  onComplete
 }: { 
-  duration: number; 
-  isPaused: boolean;
+  isActive: boolean;
+  onComplete: () => void;
 }) => {
   const [progress, setProgress] = useState(0);
-  const startTimeRef = useRef<number>(Date.now());
-  const accumulatedTimeRef = useRef<number>(0);
 
   useEffect(() => {
-    if (isPaused) {
-      accumulatedTimeRef.current += Date.now() - startTimeRef.current;
+    if (!isActive) {
+      setProgress(0);
       return;
     }
 
-    startTimeRef.current = Date.now();
+    const duration = 5000;
+    const startTime = Date.now();
+    
     const interval = setInterval(() => {
-      const elapsed = accumulatedTimeRef.current + (Date.now() - startTimeRef.current);
+      const elapsed = Date.now() - startTime;
       const newProgress = Math.min((elapsed / duration) * 100, 100);
       setProgress(newProgress);
+      
+      if (newProgress >= 100) {
+        onComplete();
+      }
     }, 16);
 
     return () => clearInterval(interval);
-  }, [duration, isPaused]);
+  }, [isActive, onComplete]);
 
   const radius = 6;
   const circumference = 2 * Math.PI * radius;
@@ -56,35 +66,60 @@ const CircularTimer = ({
         fill="none"
         strokeDasharray={circumference}
         strokeDashoffset={offset}
-        className="transition-all duration-100"
         style={{ strokeLinecap: 'round' }}
       />
     </svg>
   );
 };
 
+const CustomToast = ({ message, toastId, onDismiss }: CustomToastProps) => {
+  const [isTimerActive, setIsTimerActive] = useState(true);
+
+  return (
+    <div
+      onMouseEnter={() => setIsTimerActive(false)}
+      onMouseLeave={() => setIsTimerActive(true)}
+      className="relative bg-gray-800 text-white border border-gray-700 shadow-xl rounded-lg p-4 pr-8 min-h-[100px] w-[260px]"
+    >
+      <div className="text-sm leading-relaxed break-words pr-4">
+        {message}
+      </div>
+      <CircularTimer 
+        isActive={isTimerActive}
+        onComplete={onDismiss}
+      />
+      <button
+        onClick={onDismiss}
+        className="absolute -top-2 -right-2 w-5 h-5 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 transition-colors z-20 border-2 border-gray-800"
+        aria-label="Chiudi notifica"
+      >
+        <X className="w-3 h-3 text-white" />
+      </button>
+    </div>
+  );
+};
+
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme();
-  const [pausedToasts, setPausedToasts] = useState<Set<string | number>>(new Set());
 
   return (
     <Sonner
       theme={theme as ToasterProps["theme"]}
       position="top-right"
-      offset={16}
-      duration={5000}
+      offset={12}
+      duration={Infinity}
       visibleToasts={20}
-      gap={8}
+      gap={10}
+      expand={false}
       richColors={false}
+      closeButton={false}
+      style={{
+        right: '12px',
+        top: '80px',
+      }}
       toastOptions={{
-        classNames: {
-          toast: "bg-gray-800 text-white border border-gray-700 shadow-lg rounded-lg p-4 pr-10 min-h-[80px] w-[280px] relative",
-          title: "text-white text-sm font-medium",
-          description: "text-white/90 break-words text-sm leading-relaxed pr-6",
-          actionButton: "bg-white/20 text-white hover:bg-white/30 px-3 py-1 rounded text-sm transition-colors",
-          cancelButton: "bg-white/10 text-white/70 hover:bg-white/20 px-3 py-1 rounded text-sm transition-colors",
-          closeButton: "hidden",
-        },
+        unstyled: true,
+        className: "toast-slide-in-from-right",
       }}
       {...props}
     />
@@ -92,58 +127,14 @@ const Toaster = ({ ...props }: ToasterProps) => {
 };
 
 const toast = (message: string) => {
-  let isPaused = false;
-  let timeoutId: NodeJS.Timeout;
-  
   const toastId = sonnerToast.custom(
-    (t) => {
-      const handleMouseEnter = () => {
-        isPaused = true;
-        if (timeoutId) clearTimeout(timeoutId);
-      };
-
-      const handleMouseLeave = () => {
-        isPaused = false;
-        timeoutId = setTimeout(() => {
-          sonnerToast.dismiss(t);
-        }, 5000);
-      };
-
-      const handleDismiss = () => {
-        if (timeoutId) clearTimeout(timeoutId);
-        sonnerToast.dismiss(t);
-      };
-
-      // Auto dismiss after 5 seconds
-      if (!isPaused && !timeoutId) {
-        timeoutId = setTimeout(() => {
-          sonnerToast.dismiss(t);
-        }, 5000);
-      }
-
-      return (
-        <div
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-          className="relative w-full"
-        >
-          <div className="text-sm leading-relaxed break-words pr-6">
-            {message}
-          </div>
-          <CircularTimer 
-            duration={5000} 
-            isPaused={isPaused}
-          />
-          <button
-            onClick={handleDismiss}
-            className="absolute top-2 right-7 w-4 h-4 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 transition-colors z-20"
-            aria-label="Chiudi notifica"
-          >
-            <X className="w-2.5 h-2.5 text-white" />
-          </button>
-        </div>
-      );
-    },
+    (t) => (
+      <CustomToast 
+        message={message} 
+        toastId={t}
+        onDismiss={() => sonnerToast.dismiss(t)}
+      />
+    ),
     {
       duration: Infinity,
     }

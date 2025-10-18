@@ -121,9 +121,9 @@ All colors MUST be HSL.
   }
 }
 
-@keyframes slideInRight {
+@keyframes slideInFromRight {
   from {
-    transform: translateX(calc(100% + 32px));
+    transform: translateX(calc(100% + 40px));
     opacity: 0;
   }
   to {
@@ -132,14 +132,23 @@ All colors MUST be HSL.
   }
 }
 
-@keyframes slideOutRight {
+@keyframes slideOutToRight {
   from {
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
     opacity: 1;
   }
   to {
-    transform: translateX(calc(100% + 32px));
+    transform: translateX(calc(100% + 40px)) scale(0.95);
     opacity: 0;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-100%);
   }
 }
 
@@ -209,30 +218,41 @@ All colors MUST be HSL.
   }
 
   /* Toast animations */
-  .toast-slide-in {
-    animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  .toast-slide-in-from-right {
+    animation: slideInFromRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
-  /* Sonner toast stacking */
+  /* Sonner toast container */
   [data-sonner-toaster] {
-    z-index: 9999 !important;
-    right: 16px !important;
+    position: fixed !important;
+    z-index: 99999 !important;
+    right: 12px !important;
     top: 80px !important;
-    max-height: calc(100vh - 96px) !important;
+    max-height: calc(100vh - 92px) !important;
     overflow-y: auto !important;
+    overflow-x: visible !important;
+    padding-right: 4px !important;
   }
 
   [data-sonner-toast] {
-    z-index: 9999 !important;
-    margin-bottom: 8px !important;
-    width: 280px !important;
+    z-index: 99999 !important;
+    margin-bottom: 10px !important;
+    width: 260px !important;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
   }
 
+  [data-sonner-toast][data-mounted="false"] {
+    animation: slideOutToRight 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  }
+
+  /* Nascondi scrollbar */
   [data-sonner-toaster]::-webkit-scrollbar {
+    width: 0px;
     display: none;
   }
 
   [data-sonner-toaster] {
     scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 }
