@@ -30,7 +30,7 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
 
   return (
     <motion.div
-      layout="position"
+      layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ 
         opacity: 1, 
@@ -44,12 +44,11 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
       transition={{
         layout: { duration: 0.3, ease: [0.4, 0, 0.2, 1] }
       }}
-      className="group grid gap-3 sm:gap-4 p-3 sm:p-4 bg-white border border-border rounded-xl shadow-sm hover:shadow-md hover:border-border ease-out"
+      className="group grid grid-cols-[auto_auto_1fr_auto] gap-3 sm:gap-4 p-3 sm:p-4 bg-white border border-border rounded-xl shadow-sm hover:shadow-md hover:border-border ease-out"
       style={{
         background: 'white',
         transition: 'background 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        willChange: 'auto',
-        gridTemplateColumns: isSelectionMode ? 'auto auto 1fr' : 'auto 1fr auto'
+        willChange: 'auto'
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.background = 'linear-gradient(135deg, hsl(210 15% 88%), hsl(210 12% 85%))';
@@ -59,23 +58,26 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
       }}
       ref={ref}
     >
-      <AnimatePresence mode="wait">
+      <motion.div
+        layout
+        initial={false}
+        animate={{ 
+          opacity: isSelectionMode ? 1 : 0,
+          scale: isSelectionMode ? 1 : 0.5,
+          width: isSelectionMode ? 'auto' : 0,
+          marginRight: isSelectionMode ? undefined : 0
+        }}
+        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+        className="flex items-center justify-center overflow-hidden"
+      >
         {isSelectionMode && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, x: -10 }}
-            animate={{ opacity: 1, scale: 1, x: 0 }}
-            exit={{ opacity: 0, scale: 0.8, x: -10 }}
-            transition={{ duration: 0.2 }}
-            className="flex items-center justify-center"
-          >
-            <Checkbox
-              checked={isSelected}
-              onCheckedChange={onSelect}
-              className="w-5 h-5"
-            />
-          </motion.div>
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={onSelect}
+            className="w-5 h-5"
+          />
         )}
-      </AnimatePresence>
+      </motion.div>
       <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/20">
         <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 sm:w-7 sm:h-7">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" 
@@ -96,16 +98,21 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
         </p>
       </div>
 
-      <AnimatePresence mode="wait">
+      <motion.div
+        layout
+        initial={false}
+        animate={{ 
+          opacity: !isSelectionMode ? 1 : 0,
+          scale: !isSelectionMode ? 1 : 0.9,
+          width: !isSelectionMode ? 'auto' : 0,
+          pointerEvents: !isSelectionMode ? 'auto' : 'none'
+        }}
+        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+        className="flex items-center gap-1 sm:gap-2 overflow-hidden"
+        style={{ fontSize: `${fontSize}rem` }}
+      >
         {!isSelectionMode && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, x: 10 }}
-            animate={{ opacity: 1, scale: 1, x: 0 }}
-            exit={{ opacity: 0, scale: 0.9, x: 10 }}
-            transition={{ duration: 0.2 }}
-            className="flex items-center gap-1 sm:gap-2"
-            style={{ fontSize: `${fontSize}rem` }}
-          >
+          <>
             <Button
               size="sm"
               onClick={() => navigate("/clone-quote", { state: { quote } })}
@@ -138,9 +145,9 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
               <Trash2 className="w-4 h-4" />
               <span className="hidden sm:inline text-xs font-semibold">Elimina</span>
             </Button>
-          </motion.div>
+          </>
         )}
-      </AnimatePresence>
+      </motion.div>
     </motion.div>
   );
 });
