@@ -339,8 +339,8 @@ const ModifyQuote = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
         {/* Header with back button */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
