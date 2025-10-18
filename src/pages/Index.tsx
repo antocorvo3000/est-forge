@@ -203,6 +203,8 @@ const Index = () => {
         onClose={() => setDeleteDialog({ open: false })}
         onConfirm={handleDeleteConfirm}
         quoteName={deleteDialog.quote?.title || ""}
+        quoteNumber={deleteDialog.quote?.number || 0}
+        quoteYear={deleteDialog.quote?.year || 0}
       />
     </div>
   );
