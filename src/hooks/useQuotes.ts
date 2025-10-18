@@ -1,14 +1,25 @@
 import { useState, useEffect } from "react";
 import type { Quote, QuoteFormData } from "@/types/quote";
-import { caricaPreventivi, salvaPreventivo, aggiornaPreventivo, eliminaPreventivo, salvaCliente, salvaRighePreventivo } from "@/lib/database";
+import { caricaPreventivi, salvaPreventivo, aggiornaPreventivo, eliminaPreventivo, salvaCliente, salvaRighePreventivo, caricaDatiAzienda } from "@/lib/database";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useQuotes = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [startingNumber, setStartingNumber] = useState(1);
 
   useEffect(() => {
-    loadQuotes();
+    const init = async () => {
+      await loadQuotes();
+      
+      // Carica il numero progressivo iniziale
+      const datiAzienda = await caricaDatiAzienda();
+      if (datiAzienda?.numero_progressivo_iniziale) {
+        setStartingNumber(datiAzienda.numero_progressivo_iniziale);
+      }
+    };
+    
+    init();
     
     // Setup realtime subscription
     const channel = supabase
@@ -87,15 +98,15 @@ export const useQuotes = () => {
         year = customYear;
         newNum = customNumber;
       } else {
-        // Preventivo normale - trova il primo numero disponibile riempiendo i buchi
+        // Preventivo normale - trova il primo numero disponibile riempiendo i buchi, partendo dal numero iniziale
         year = new Date().getFullYear();
         const currentYearQuotes = quotes
           .filter((q) => q.year === year)
           .map((q) => q.number)
           .sort((a, b) => a - b);
 
-        // Trova il primo buco disponibile
-        newNum = 1;
+        // Trova il primo buco disponibile partendo dal numero progressivo iniziale
+        newNum = startingNumber;
         for (const num of currentYearQuotes) {
           if (num === newNum) {
             newNum++;

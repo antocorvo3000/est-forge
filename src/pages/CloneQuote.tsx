@@ -39,14 +39,14 @@ const CloneQuote = () => {
   }, [quoteToClone, navigate]);
 
   const handleProgressiveChoice = () => {
-    // Calcola il prossimo numero progressivo
+    // Calcola il prossimo numero progressivo partendo dal numero iniziale impostato
     const year = new Date().getFullYear();
     const currentYearQuotes = quotes
       .filter((q) => q.year === year)
       .map((q) => q.number)
       .sort((a, b) => a - b);
 
-    let newNum = 1;
+    let newNum = settings.startingQuoteNumber;
     for (const num of currentYearQuotes) {
       if (num === newNum) {
         newNum++;

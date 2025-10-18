@@ -30,6 +30,7 @@ const Settings = () => {
         font_size_custom_quote: formData.fontSizeCustomQuote,
         font_size_clone: formData.fontSizeClone,
         font_size_edit_number: formData.fontSizeEditNumber,
+        numero_progressivo_iniziale: formData.startingQuoteNumber,
       });
       
       // Ricarica i settings dal database dopo il salvataggio
@@ -47,6 +48,7 @@ const Settings = () => {
         fontSizeCustomQuote: formData.fontSizeCustomQuote,
         fontSizeClone: formData.fontSizeClone,
         fontSizeEditNumber: formData.fontSizeEditNumber,
+        startingQuoteNumber: formData.startingQuoteNumber,
       });
       
       toast.success("Impostazioni salvate con successo");
@@ -54,6 +56,20 @@ const Settings = () => {
     } catch (error) {
       toast.error("Errore nel salvataggio delle impostazioni");
     }
+  };
+
+  const handleResetFontSizes = () => {
+    setFormData({
+      ...formData,
+      fontSizeList: 1.0,
+      fontSizeQuote: 1.0,
+      fontSizeClient: 1.0,
+      fontSizeSettings: 1.0,
+      fontSizeCustomQuote: 1.0,
+      fontSizeClone: 1.0,
+      fontSizeEditNumber: 1.0,
+    });
+    toast.success("Dimensioni testo ripristinate");
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,24 +120,26 @@ const Settings = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="glass rounded-2xl p-6 mx-4 sm:mx-6 space-y-6"
+          className="grid md:grid-cols-2 gap-6 mx-4 sm:mx-6"
         >
-          <div>
-            <h2 className="text-xl font-bold mb-4">Logo Aziendale</h2>
-            <div className="flex items-center gap-4">
-              {formData.logoPath ? (
-                <div className="flex items-center gap-4">
-                  <img
-                    src={formData.logoPath}
-                    alt="Logo aziendale"
-                    className="max-h-36 w-auto object-contain rounded-lg border border-border bg-white p-2"
-                  />
-                </div>
-              ) : (
-                <div className="max-h-36 w-32 rounded-lg border border-border bg-white flex items-center justify-center text-muted-foreground p-2">
-                  Logo
-                </div>
-              )}
+          {/* Logo Aziendale */}
+          <div className="glass rounded-2xl p-6 space-y-6">
+            <div>
+              <h2 className="text-xl font-bold mb-4">Logo Aziendale</h2>
+              <div className="flex items-center gap-4">
+                {formData.logoPath ? (
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={formData.logoPath}
+                      alt="Logo aziendale"
+                      className="max-h-36 w-auto object-contain rounded-lg border border-border bg-white p-2"
+                    />
+                  </div>
+                ) : (
+                  <div className="max-h-36 w-32 rounded-lg border border-border bg-white flex items-center justify-center text-muted-foreground p-2">
+                    Logo
+                  </div>
+                )}
                <div className="flex flex-col gap-2">
                 <Label
                   htmlFor="logo-upload"
@@ -150,9 +168,45 @@ const Settings = () => {
                   </Button>
                 )}
               </div>
+              </div>
             </div>
           </div>
 
+          {/* Numero Progressivo Iniziale */}
+          <div className="glass rounded-2xl p-6 space-y-6">
+            <div>
+              <h2 className="text-xl font-bold mb-4">Numerazione Preventivi</h2>
+              <p className="text-sm text-muted-foreground mb-4" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
+                Imposta il numero da cui iniziare la numerazione progressiva dei preventivi
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="startingNumber" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
+                  Numero Progressivo Iniziale
+                </Label>
+                <Input
+                  id="startingNumber"
+                  type="number"
+                  min="1"
+                  value={formData.startingQuoteNumber}
+                  onChange={(e) => setFormData({ ...formData, startingQuoteNumber: parseInt(e.target.value) || 1 })}
+                  className="bg-white"
+                  style={{ fontSize: `${formData.fontSizeSettings}rem` }}
+                />
+                <p className="text-xs text-muted-foreground mt-2" style={{ fontSize: `${formData.fontSizeSettings * 0.875}rem` }}>
+                  Il prossimo preventivo partirà dal numero {formData.startingQuoteNumber}
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* Dati Aziendali */}
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="glass rounded-2xl p-6 mx-4 sm:mx-6 space-y-6"
+        >
           <div className="space-y-4">
             <h2 className="text-xl font-bold">Dati Aziendali</h2>
             
@@ -217,11 +271,22 @@ const Settings = () => {
         <motion.section
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.3 }}
           className="glass rounded-2xl p-6 mx-4 sm:mx-6 space-y-6"
         >
           <div>
-            <h2 className="text-xl font-bold mb-4">Dimensione Testo</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Dimensione Testo</h2>
+              <Button
+                onClick={handleResetFontSizes}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                style={{ fontSize: `${formData.fontSizeSettings}rem` }}
+              >
+                Ripristina
+              </Button>
+            </div>
             <p className="text-sm text-muted-foreground mb-6" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
               Personalizza la dimensione del testo per diverse sezioni dell&apos;app (esclusi titoli e dati azienda/cliente)
             </p>
