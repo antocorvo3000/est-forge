@@ -210,19 +210,27 @@ All colors MUST be HSL.
 
   /* Toast animations */
   .toast-slide-in {
-    animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 
-  .toast-slide-out {
-    animation: slideOutRight 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* Sonner toast container positioning */
+  /* Sonner toast stacking */
   [data-sonner-toaster] {
-    --offset: 80px;
+    right: 16px !important;
+    top: 80px !important;
+    max-height: calc(100vh - 96px) !important;
+    overflow-y: auto !important;
   }
 
   [data-sonner-toast] {
-    margin-bottom: 12px !important;
+    margin-bottom: 8px !important;
+    width: 280px !important;
+  }
+
+  [data-sonner-toaster]::-webkit-scrollbar {
+    display: none;
+  }
+
+  [data-sonner-toaster] {
+    scrollbar-width: none;
   }
 }
