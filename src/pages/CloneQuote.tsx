@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -25,8 +24,9 @@ const CloneQuote = () => {
   const { quotes } = useQuotes();
   const quoteToClone = location.state?.quote;
   
-  const [showInitialDialog, setShowInitialDialog] = useState(true);
-  const [showCustomNumberForm, setShowCustomNumberForm] = useState(false);
+  const [step, setStep] = useState<"choice" | "custom" | "modify">("choice");
+  const [cloneNumber, setCloneNumber] = useState<number | null>(null);
+  const [cloneYear, setCloneYear] = useState<number | null>(null);
   const [quoteNumber, setQuoteNumber] = useState<string>("1");
   const [quoteYear, setQuoteYear] = useState<string>(new Date().getFullYear().toString());
   const [showErrorDialog, setShowErrorDialog] = useState(false);
@@ -39,7 +39,6 @@ const CloneQuote = () => {
   }, [quoteToClone, navigate]);
 
   const handleProgressiveChoice = () => {
-    setShowInitialDialog(false);
     // Calcola il prossimo numero progressivo
     const year = new Date().getFullYear();
     const currentYearQuotes = quotes
@@ -56,20 +55,13 @@ const CloneQuote = () => {
       }
     }
 
-    // Naviga alla schermata di modifica con i dati del preventivo da clonare
-    navigate(`/modify-quote/${quoteToClone.id}`, { 
-      state: { 
-        quote: quoteToClone,
-        isCloning: true,
-        cloneNumber: newNum,
-        cloneYear: year
-      } 
-    });
+    setCloneNumber(newNum);
+    setCloneYear(year);
+    setStep("modify");
   };
 
   const handleCustomChoice = () => {
-    setShowInitialDialog(false);
-    setShowCustomNumberForm(true);
+    setStep("custom");
   };
 
   const handleCustomConfirm = () => {
@@ -97,18 +89,25 @@ const CloneQuote = () => {
       return;
     }
     
-    // Naviga alla schermata di modifica con numero personalizzato
+    setCloneNumber(num);
+    setCloneYear(year);
+    setStep("modify");
+  };
+
+  if (!quoteToClone) {
+    return null;
+  }
+
+  // Se siamo nello step "modify", naviga alla pagina di modifica
+  if (step === "modify" && cloneNumber !== null && cloneYear !== null) {
     navigate(`/modify-quote/${quoteToClone.id}`, { 
       state: { 
         quote: quoteToClone,
         isCloning: true,
-        cloneNumber: num,
-        cloneYear: year
+        cloneNumber,
+        cloneYear
       } 
     });
-  };
-
-  if (!quoteToClone) {
     return null;
   }
 
@@ -131,93 +130,110 @@ const CloneQuote = () => {
           <h1 className="text-3xl font-extrabold tracking-tight">Clonazione Preventivo</h1>
         </motion.div>
 
-        {showCustomNumberForm && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass rounded-2xl p-6"
-          >
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="quote-number" style={{ fontSize: `${settings.fontSizeClone}rem` }}>
-                  Numero Preventivo
-                </Label>
-                <Input
-                  id="quote-number"
-                  type="number"
-                  min="1"
-                  value={quoteNumber}
-                  onChange={(e) => setQuoteNumber(e.target.value)}
-                  placeholder="Es: 1"
-                  className="bg-white"
-                  style={{ fontSize: `${settings.fontSizeClone}rem` }}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="quote-year" style={{ fontSize: `${settings.fontSizeClone}rem` }}>
-                  Anno
-                </Label>
-                <Input
-                  id="quote-year"
-                  type="number"
-                  min="2000"
-                  max="2100"
-                  value={quoteYear}
-                  onChange={(e) => setQuoteYear(e.target.value)}
-                  placeholder={`Es: ${new Date().getFullYear()}`}
-                  className="bg-white"
-                  style={{ fontSize: `${settings.fontSizeClone}rem` }}
-                />
-              </div>
+        <AnimatePresence mode="wait">
+          {step === "choice" && (
+            <motion.div
+              key="choice"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="glass rounded-2xl p-6"
+            >
+              <div className="space-y-6">
+                <div className="text-center space-y-2">
+                  <h2 className="text-2xl font-bold">Scegli numerazione</h2>
+                  <p className="text-lg text-muted-foreground">
+                    Vuoi mantenere la numerazione progressiva o inserire un numero personalizzato?
+                  </p>
+                </div>
 
-              <div className="flex gap-3 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/")}
-                  className="flex-1"
-                  style={{ fontSize: `${settings.fontSizeClone}rem` }}
-                >
-                  Annulla
-                </Button>
-                <Button
-                  onClick={handleCustomConfirm}
-                  className="flex-1"
-                  style={{ fontSize: `${settings.fontSizeClone}rem` }}
-                >
-                  Conferma
-                </Button>
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={handleCustomChoice}
+                    className="flex-1 h-14 text-lg font-bold"
+                    style={{ fontSize: `${settings.fontSizeClone}rem` }}
+                  >
+                    Personalizzato
+                  </Button>
+                  <Button
+                    onClick={handleProgressiveChoice}
+                    className="flex-1 h-14 text-lg font-bold"
+                    style={{ fontSize: `${settings.fontSizeClone}rem` }}
+                  >
+                    Progressivo
+                  </Button>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
+
+          {step === "custom" && (
+            <motion.div
+              key="custom"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="glass rounded-2xl p-6"
+            >
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="quote-number" style={{ fontSize: `${settings.fontSizeClone}rem` }}>
+                    Numero Preventivo
+                  </Label>
+                  <Input
+                    id="quote-number"
+                    type="number"
+                    min="1"
+                    value={quoteNumber}
+                    onChange={(e) => setQuoteNumber(e.target.value)}
+                    placeholder="Es: 1"
+                    className="bg-white"
+                    style={{ fontSize: `${settings.fontSizeClone}rem` }}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="quote-year" style={{ fontSize: `${settings.fontSizeClone}rem` }}>
+                    Anno
+                  </Label>
+                  <Input
+                    id="quote-year"
+                    type="number"
+                    min="2000"
+                    max="2100"
+                    value={quoteYear}
+                    onChange={(e) => setQuoteYear(e.target.value)}
+                    placeholder={`Es: ${new Date().getFullYear()}`}
+                    className="bg-white"
+                    style={{ fontSize: `${settings.fontSizeClone}rem` }}
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/")}
+                    className="flex-1"
+                    style={{ fontSize: `${settings.fontSizeClone}rem` }}
+                  >
+                    Annulla
+                  </Button>
+                  <Button
+                    onClick={handleCustomConfirm}
+                    className="flex-1"
+                    style={{ fontSize: `${settings.fontSizeClone}rem` }}
+                  >
+                    Conferma
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-
-      {/* Initial Choice Dialog */}
-      <AlertDialog open={showInitialDialog} onOpenChange={setShowInitialDialog}>
-        <AlertDialogContent className="bg-white border-2 border-border max-w-lg p-8">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-bold text-foreground">Scegli numerazione</AlertDialogTitle>
-            <AlertDialogDescription className="text-lg font-semibold text-black mt-4">
-              Vuoi mantenere la numerazione progressiva o inserire un numero personalizzato?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="mt-6 gap-3">
-            <AlertDialogCancel 
-              onClick={handleCustomChoice}
-              className="text-lg font-bold px-8 py-6"
-            >
-              Personalizzato
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleProgressiveChoice}
-              className="text-lg font-bold px-8 py-6"
-            >
-              Progressivo
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Error Dialog */}
       <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
