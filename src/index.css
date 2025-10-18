@@ -215,6 +215,7 @@ All colors MUST be HSL.
 
   /* Sonner toast stacking */
   [data-sonner-toaster] {
+    z-index: 9999 !important;
     right: 16px !important;
     top: 80px !important;
     max-height: calc(100vh - 96px) !important;
@@ -222,6 +223,7 @@ All colors MUST be HSL.
   }
 
   [data-sonner-toast] {
+    z-index: 9999 !important;
     margin-bottom: 8px !important;
     width: 280px !important;
   }

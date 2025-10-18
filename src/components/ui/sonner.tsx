@@ -122,13 +122,18 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme={theme as ToasterProps["theme"]}
       position="top-right"
-      offset="16px"
+      offset={16}
       duration={Infinity}
       visibleToasts={20}
       gap={8}
+      style={{
+        zIndex: 9999,
+      }}
       toastOptions={{
-        unstyled: true,
         className: "toast-slide-in",
+        style: {
+          zIndex: 9999,
+        }
       }}
       {...props}
     />
