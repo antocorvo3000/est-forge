@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pencil, Trash2, Copy, Edit3 } from "lucide-react";
+import { Pencil, Trash2, Copy, Edit3, Info } from "lucide-react";
 import type { Quote } from "@/types/quote";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
@@ -15,14 +15,26 @@ interface QuoteItemProps {
   isSelectionMode?: boolean;
   isSelected?: boolean;
   onSelect?: () => void;
+  showInfo?: boolean;
+  onInfoToggle?: () => void;
+  onMouseLeave?: () => void;
 }
 
 export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
-  ({ quote, index, onEdit, onDelete, fontSize = 1, isSelectionMode = false, isSelected = false, onSelect }, ref) => {
+  ({ quote, index, onEdit, onDelete, fontSize = 1, isSelectionMode = false, isSelected = false, onSelect, showInfo = false, onInfoToggle, onMouseLeave }, ref) => {
   const navigate = useNavigate();
   const formatQuoteNumber = (num?: number) => {
     if (!num) return '00';
     return num.toString().padStart(2, '0');
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('it-IT', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
   };
 
   const displayYear = quote.year || new Date(quote.date).getFullYear();
@@ -55,6 +67,7 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.background = 'white';
+        if (onMouseLeave) onMouseLeave();
       }}
       ref={ref}
     >
@@ -102,17 +115,25 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
         layout
         initial={false}
         animate={{ 
-          opacity: !isSelectionMode ? 1 : 0,
-          scale: !isSelectionMode ? 1 : 0.9,
-          width: !isSelectionMode ? 'auto' : 0,
-          pointerEvents: !isSelectionMode ? 'auto' : 'none'
+          opacity: !isSelectionMode && !showInfo ? 1 : 0,
+          scale: !isSelectionMode && !showInfo ? 1 : 0.9,
+          width: !isSelectionMode && !showInfo ? 'auto' : 0,
+          pointerEvents: !isSelectionMode && !showInfo ? 'auto' : 'none'
         }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         className="flex items-center gap-1 sm:gap-2 overflow-hidden"
         style={{ fontSize: `${fontSize}rem` }}
       >
-        {!isSelectionMode && (
+        {!isSelectionMode && !showInfo && (
           <>
+            <Button
+              size="sm"
+              onClick={onInfoToggle}
+              className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5 bg-blue-600 text-white hover:brightness-110"
+            >
+              <Info className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs font-semibold">Info</span>
+            </Button>
             <Button
               size="sm"
               onClick={() => navigate("/clone-quote", { state: { quote } })}
@@ -145,6 +166,31 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
               <Trash2 className="w-4 h-4" />
               <span className="hidden sm:inline text-xs font-semibold">Elimina</span>
             </Button>
+          </>
+        )}
+      </motion.div>
+
+      <motion.div
+        layout
+        initial={false}
+        animate={{ 
+          opacity: showInfo ? 1 : 0,
+          scale: showInfo ? 1 : 0.9,
+          width: showInfo ? 'auto' : 0,
+          pointerEvents: showInfo ? 'auto' : 'none'
+        }}
+        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+        className="flex flex-col gap-1 overflow-hidden text-right"
+        style={{ fontSize: `${fontSize}rem` }}
+      >
+        {showInfo && (
+          <>
+            <p className="text-sm font-semibold text-primary truncate max-w-[200px]">
+              {quote.title || 'Nessun oggetto'}
+            </p>
+            <p className="text-sm font-bold text-foreground">
+              {formatCurrency(quote.amount)}
+            </p>
           </>
         )}
       </motion.div>

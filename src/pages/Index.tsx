@@ -45,6 +45,7 @@ const Index = () => {
   }>({ open: false });
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedQuotes, setSelectedQuotes] = useState<Set<string>>(new Set());
+  const [infoQuoteId, setInfoQuoteId] = useState<string | null>(null);
 
   const filteredQuotes = useMemo(() => {
     const query = debouncedSearch.toLowerCase().trim();
@@ -252,6 +253,9 @@ const Index = () => {
                     isSelectionMode={isSelectionMode}
                     isSelected={selectedQuotes.has(quote.id)}
                     onSelect={() => handleSelectQuote(quote.id)}
+                    showInfo={infoQuoteId === quote.id}
+                    onInfoToggle={() => setInfoQuoteId(infoQuoteId === quote.id ? null : quote.id)}
+                    onMouseLeave={() => setInfoQuoteId(null)}
                   />
                 ))}
               </AnimatePresence>
