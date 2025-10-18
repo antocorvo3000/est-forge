@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { caricaLogo, eliminaLogo, salvaDatiAzienda } from "@/lib/database";
 
 const Settings = () => {

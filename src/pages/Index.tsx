@@ -10,7 +10,7 @@ import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { Quote } from "@/types/quote";
 
 // Hook per debouncing

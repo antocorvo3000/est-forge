@@ -22,7 +22,7 @@ import {
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useQuotes } from "@/hooks/useQuotes";
 import { salvaCliente, aggiornaPreventivo, salvaRighePreventivo } from "@/lib/database";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { ClientData } from "./ClientDetails";
 
 const formatCurrency = (value: number) => {

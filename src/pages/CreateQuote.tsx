@@ -23,7 +23,7 @@ import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useQuotes } from "@/hooks/useQuotes";
 import { salvaCliente, salvaPreventivo, salvaRighePreventivo } from "@/lib/database";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { ClientData } from "./ClientDetails";
 
 const formatCurrency = (value: number) => {

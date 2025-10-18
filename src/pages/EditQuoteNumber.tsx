@@ -17,7 +17,7 @@ import {
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useQuotes } from "@/hooks/useQuotes";
 import { aggiornaPreventivo } from "@/lib/database";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 const EditQuoteNumber = () => {
   const navigate = useNavigate();
