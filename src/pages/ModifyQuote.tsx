@@ -275,38 +275,78 @@ const ModifyQuote = () => {
       const sconto_valore = discountEnabled ? calculateDiscount() : 0;
       const totale = calculateTotal();
 
-      // 3. Aggiorna preventivo
-      await aggiornaPreventivo(id, {
-        cliente_id,
-        oggetto: subject,
-        ubicazione_via: workAddress,
-        ubicazione_citta: workCity,
-        ubicazione_provincia: workProvince,
-        ubicazione_cap: workZip,
-        subtotale,
-        sconto_percentuale,
-        sconto_valore,
-        totale,
-        note: notesEnabled ? notes : null,
-        modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
-      });
+      if (isCloning && location.state?.cloneNumber && location.state?.cloneYear) {
+        // CLONAZIONE: crea un nuovo preventivo con la nuova numerazione
+        const { salvaPreventivo } = await import("@/lib/database");
+        
+        const nuovoPreventivo = await salvaPreventivo({
+          numero: location.state.cloneNumber,
+          anno: location.state.cloneYear,
+          cliente_id,
+          oggetto: subject,
+          ubicazione_via: workAddress,
+          ubicazione_citta: workCity,
+          ubicazione_provincia: workProvince,
+          ubicazione_cap: workZip,
+          subtotale,
+          sconto_percentuale,
+          sconto_valore,
+          totale,
+          note: notesEnabled ? notes : null,
+          modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+        });
 
-      // 4. Salva righe preventivo
-      const righe = lines
-        .filter(line => line.description.trim())
-        .map(line => ({
-          descrizione: line.description,
-          unita_misura: line.unit,
-          quantita: line.quantity,
-          prezzo_unitario: line.unitPrice,
-          totale: line.total,
-        }));
-      
-      if (righe.length > 0) {
-        await salvaRighePreventivo(id, righe);
+        // 4. Salva righe preventivo per il nuovo preventivo
+        const righe = lines
+          .filter(line => line.description.trim())
+          .map(line => ({
+            descrizione: line.description,
+            unita_misura: line.unit,
+            quantita: line.quantity,
+            prezzo_unitario: line.unitPrice,
+            totale: line.total,
+          }));
+        
+        if (righe.length > 0) {
+          await salvaRighePreventivo(nuovoPreventivo.id, righe);
+        }
+        
+        toast.success("Preventivo clonato con successo");
+      } else {
+        // MODIFICA: aggiorna preventivo esistente
+        await aggiornaPreventivo(id, {
+          cliente_id,
+          oggetto: subject,
+          ubicazione_via: workAddress,
+          ubicazione_citta: workCity,
+          ubicazione_provincia: workProvince,
+          ubicazione_cap: workZip,
+          subtotale,
+          sconto_percentuale,
+          sconto_valore,
+          totale,
+          note: notesEnabled ? notes : null,
+          modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+        });
+
+        // 4. Salva righe preventivo
+        const righe = lines
+          .filter(line => line.description.trim())
+          .map(line => ({
+            descrizione: line.description,
+            unita_misura: line.unit,
+            quantita: line.quantity,
+            prezzo_unitario: line.unitPrice,
+            totale: line.total,
+          }));
+        
+        if (righe.length > 0) {
+          await salvaRighePreventivo(id, righe);
+        }
+        
+        toast.success("Preventivo modificato con successo");
       }
       
-      toast.success("Preventivo modificato con successo");
       navigate("/");
     } catch (error) {
       console.error("Errore salvataggio:", error);
@@ -797,24 +837,28 @@ const ModifyQuote = () => {
             >
               Salva
             </Button>
+            {!isCloning && (
+              <Button
+                onClick={handleViewPdf}
+                size="lg"
+                className="h-14 text-lg font-bold"
+                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+              >
+                Vedi il PDF
+              </Button>
+            )}
+          </div>
+          {!isCloning && (
             <Button
-              onClick={handleViewPdf}
+              onClick={() => setShowDeleteDialog(true)}
+              variant="destructive"
               size="lg"
-              className="h-14 text-lg font-bold"
+              className="h-14 text-lg font-bold w-full"
               style={{ fontSize: `${settings.fontSizeQuote}rem` }}
             >
-              Vedi il PDF
+              Elimina Preventivo
             </Button>
-          </div>
-          <Button
-            onClick={() => setShowDeleteDialog(true)}
-            variant="destructive"
-            size="lg"
-            className="h-14 text-lg font-bold w-full"
-            style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-          >
-            Elimina Preventivo
-          </Button>
+          )}
         </motion.div>
 
         {/* Save Confirmation Dialog */}
