@@ -111,7 +111,7 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
         </p>
       </div>
 
-      <div className="flex-1 min-w-0 relative">
+      <div className="flex-shrink-0 relative">
         <AnimatePresence mode="wait">
           {!isSelectionMode && !showInfo && (
             <motion.div
@@ -173,12 +173,14 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-              className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0"
+              className="flex items-center gap-3 sm:gap-4"
               style={{ fontSize: `${fontSize}rem` }}
             >
-              <p className="text-sm font-semibold text-primary line-clamp-2 break-all overflow-hidden flex-1 min-w-0">
-                {quote.title || 'Nessun oggetto'}
-              </p>
+              <div className="flex flex-col gap-0.5 min-w-0 max-w-xs">
+                <p className="text-sm font-semibold text-primary line-clamp-2 break-all overflow-hidden">
+                  {quote.title || 'Nessun oggetto'}
+                </p>
+              </div>
               <p className="text-sm font-bold text-foreground whitespace-nowrap flex-shrink-0">
                 {formatCurrency(quote.amount)}
               </p>
