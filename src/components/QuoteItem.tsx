@@ -89,11 +89,11 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
         </svg>
       </div>
 
-      <div className="min-w-0 flex flex-col gap-1 justify-center" style={{ fontSize: `${fontSize}rem` }}>
-        <h3 className="font-bold text-base sm:text-lg tracking-tight">
+      <div className="min-w-0 flex flex-col gap-1 justify-center">
+        <h3 className="font-bold text-base sm:text-lg tracking-tight" style={{ fontSize: `${fontSize}rem` }}>
           {formatQuoteNumber(quote.number)}-{displayYear} {quote.client}
         </h3>
-        <p className="text-sm text-muted-foreground truncate">
+        <p className="text-sm text-muted-foreground truncate" style={{ fontSize: `${fontSize * 0.875}rem` }}>
           {displayAddress}
         </p>
       </div>
