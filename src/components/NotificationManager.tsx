@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { X } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 interface Notification {
   id: string;
@@ -12,6 +12,9 @@ interface NotificationContextType {
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
+
+// Variabile globale per accedere al context dall'esterno
+let globalShowNotification: ((message: string) => void) | null = null;
 
 const CircularTimer = ({ 
   isActive,
@@ -137,6 +140,14 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
   }, []);
 
+  // Rendi la funzione disponibile globalmente
+  useEffect(() => {
+    globalShowNotification = showNotification;
+    return () => {
+      globalShowNotification = null;
+    };
+  }, [showNotification]);
+
   return (
     <NotificationContext.Provider value={{ showNotification }}>
       {children}
@@ -159,4 +170,28 @@ export const useNotification = () => {
     throw new Error('useNotification must be used within NotificationProvider');
   }
   return context;
+};
+
+// API compatibile con il vecchio sistema toast
+export const toast = {
+  success: (message: string) => {
+    if (globalShowNotification) {
+      globalShowNotification(message);
+    }
+  },
+  error: (message: string, options?: any) => {
+    if (globalShowNotification) {
+      globalShowNotification(message);
+    }
+  },
+  info: (message: string) => {
+    if (globalShowNotification) {
+      globalShowNotification(message);
+    }
+  },
+  warning: (message: string) => {
+    if (globalShowNotification) {
+      globalShowNotification(message);
+    }
+  },
 };
