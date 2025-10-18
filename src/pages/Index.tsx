@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Settings, FileEdit } from "lucide-react";
+import { Plus, Settings, FileEdit, CheckSquare, X, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CompanyHeader } from "@/components/CompanyHeader";
 import { SearchBar } from "@/components/SearchBar";
@@ -42,6 +42,8 @@ const Index = () => {
     open: boolean;
     quote?: Quote;
   }>({ open: false });
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedQuotes, setSelectedQuotes] = useState<Set<string>>(new Set());
 
   const filteredQuotes = useMemo(() => {
     const query = debouncedSearch.toLowerCase().trim();
@@ -96,6 +98,37 @@ const Index = () => {
     } else {
       addQuote(data);
       toast.success("Preventivo creato con successo");
+    }
+  };
+
+  const handleToggleSelection = () => {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedQuotes(new Set());
+  };
+
+  const handleSelectQuote = (quoteId: string) => {
+    const newSelected = new Set(selectedQuotes);
+    if (newSelected.has(quoteId)) {
+      newSelected.delete(quoteId);
+    } else {
+      newSelected.add(quoteId);
+    }
+    setSelectedQuotes(newSelected);
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedQuotes(new Set());
+    setIsSelectionMode(false);
+  };
+
+  const handleDeleteSelected = async () => {
+    try {
+      await Promise.all(Array.from(selectedQuotes).map(id => deleteQuote(id)));
+      toast.success(`${selectedQuotes.size} preventiv${selectedQuotes.size === 1 ? 'o eliminato' : 'i eliminati'} con successo`);
+      setSelectedQuotes(new Set());
+      setIsSelectionMode(false);
+    } catch (error) {
+      toast.error("Errore durante l'eliminazione");
     }
   };
 
@@ -160,6 +193,9 @@ const Index = () => {
                     onEdit={handleEditQuote}
                     onDelete={() => handleDeleteClick(quote)}
                     fontSize={settings.fontSizeList}
+                    isSelectionMode={isSelectionMode}
+                    isSelected={selectedQuotes.has(quote.id)}
+                    onSelect={() => handleSelectQuote(quote.id)}
                   />
                 ))}
               </AnimatePresence>
@@ -171,15 +207,64 @@ const Index = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5 }}
-          className="flex justify-between mx-4 sm:mx-6 mt-3"
+          className="flex justify-between items-center mx-4 sm:mx-6 mt-3 gap-3"
         >
-          <Button
-            onClick={handleCustomQuote}
-            className="h-11 gap-2 shadow-lg"
-          >
-            <FileEdit className="w-5 h-5" />
-            <span>Nuovo Preventivo Personalizzato</span>
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={handleCustomQuote}
+              className="h-11 gap-2 shadow-lg"
+            >
+              <FileEdit className="w-5 h-5" />
+              <span>Nuovo Preventivo Personalizzato</span>
+            </Button>
+            
+            <AnimatePresence mode="wait">
+              {selectedQuotes.size === 0 ? (
+                <motion.div
+                  key="select-btn"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Button
+                    onClick={handleToggleSelection}
+                    variant={isSelectionMode ? "secondary" : "default"}
+                    className="h-11 gap-2 shadow-lg"
+                  >
+                    <CheckSquare className="w-5 h-5" />
+                    <span>Seleziona preventivi</span>
+                  </Button>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="action-btns"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex gap-3"
+                >
+                  <Button
+                    onClick={handleDeselectAll}
+                    variant="outline"
+                    className="h-11 gap-2 shadow-lg"
+                  >
+                    <X className="w-5 h-5" />
+                    <span>Deseleziona tutti</span>
+                  </Button>
+                  <Button
+                    onClick={handleDeleteSelected}
+                    variant="destructive"
+                    className="h-11 gap-2 shadow-lg"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                    <span>Elimina selezionati ({selectedQuotes.size})</span>
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           
           <Button
             onClick={() => navigate("/settings")}
