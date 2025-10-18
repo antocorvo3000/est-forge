@@ -212,11 +212,7 @@ const CreateQuote = () => {
         
         if (existingQuote) {
           toast.error(
-            `Il preventivo ${newNum.toString().padStart(2, '0')}-${year} esiste già`,
-            {
-              description: "Eliminare quello esistente per continuare o modificarlo.",
-              duration: 5000,
-            }
+            `Il preventivo ${newNum.toString().padStart(2, '0')}-${year} esiste già. Eliminare quello esistente per continuare o modificarlo.`
           );
           return;
         }

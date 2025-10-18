@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { toast } from "@/lib/toast";
+import { supabase } from "@/integrations/supabase/client";
 import type { Quote } from "@/types/quote";
 
 // Hook per debouncing
@@ -32,7 +33,7 @@ function useDebounce(value: string, delay: number) {
 
 const Index = () => {
   const navigate = useNavigate();
-  const { quotes, addQuote, updateQuote, deleteQuote } = useQuotes();
+  const { quotes, addQuote, updateQuote, deleteQuote, getQuoteById } = useQuotes();
   const { settings } = useCompanySettings();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 150);
@@ -81,9 +82,64 @@ const Index = () => {
 
   const handleDeleteConfirm = async () => {
     if (deleteDialog.quote) {
+      const deletedQuote = deleteDialog.quote;
       try {
-        await deleteQuote(deleteDialog.quote.id);
-        toast.success("Preventivo eliminato con successo");
+        // Salva i dati del preventivo prima di eliminarlo
+        const quoteData = await getQuoteById(deletedQuote.id);
+        
+        await deleteQuote(deletedQuote.id);
+        
+        toast.success("Preventivo eliminato con successo", {
+          action: {
+            label: "Annulla",
+            onClick: async () => {
+              try {
+                // Ripristina il preventivo con gli stessi dati
+                const { data: restoredQuote, error } = await supabase
+                  .from('preventivi')
+                  .insert({
+                    id: quoteData.id,
+                    numero: quoteData.numero,
+                    anno: quoteData.anno,
+                    cliente_id: quoteData.cliente_id,
+                    oggetto: quoteData.oggetto,
+                    totale: quoteData.totale,
+                    ubicazione_via: quoteData.ubicazione_via,
+                    ubicazione_citta: quoteData.ubicazione_citta,
+                    ubicazione_provincia: quoteData.ubicazione_provincia,
+                    creato_il: quoteData.creato_il,
+                  })
+                  .select()
+                  .single();
+
+                if (error) throw error;
+
+                // Ripristina anche le righe se esistevano
+                if (quoteData.righe_preventivo && quoteData.righe_preventivo.length > 0) {
+                  await supabase
+                    .from('righe_preventivo')
+                    .insert(
+                      quoteData.righe_preventivo.map((riga: any, index: number) => ({
+                        preventivo_id: restoredQuote.id,
+                        numero_riga: index + 1,
+                        descrizione: riga.descrizione,
+                        unita_misura: riga.unita_misura || '',
+                        quantita: riga.quantita,
+                        prezzo_unitario: riga.prezzo_unitario,
+                        totale: riga.totale,
+                      }))
+                    );
+                }
+
+                toast.success("Preventivo ripristinato con successo");
+              } catch (error) {
+                console.error("Errore ripristino:", error);
+                toast.error("Errore durante il ripristino");
+              }
+            }
+          }
+        });
+        
         setDeleteDialog({ open: false });
       } catch (error) {
         toast.error("Errore durante l'eliminazione");

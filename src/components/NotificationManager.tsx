@@ -2,19 +2,25 @@ import { createContext, useContext, useState, useCallback, ReactNode } from 'rea
 import { X } from 'lucide-react';
 import { useEffect } from 'react';
 
+interface NotificationAction {
+  label: string;
+  onClick: () => void;
+}
+
 interface Notification {
   id: string;
   message: string;
+  action?: NotificationAction;
 }
 
 interface NotificationContextType {
-  showNotification: (message: string) => void;
+  showNotification: (message: string, action?: NotificationAction) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 // Variabile globale per accedere al context dall'esterno
-let globalShowNotification: ((message: string) => void) | null = null;
+let globalShowNotification: ((message: string, action?: NotificationAction) => void) | null = null;
 
 const CircularTimer = ({ 
   isActive,
@@ -102,26 +108,41 @@ const NotificationItem = ({ notification, onDismiss }: NotificationItemProps) =>
     handleDismiss();
   };
 
+  const handleAction = () => {
+    if (notification.action) {
+      notification.action.onClick();
+      handleDismiss();
+    }
+  };
+
   return (
     <div
       className={`notification-item ${isVisible ? 'notification-item-enter' : ''}`}
       onMouseEnter={() => setIsTimerActive(false)}
       onMouseLeave={() => setIsTimerActive(true)}
     >
-      <div className="relative bg-gray-800 text-white border border-gray-700 shadow-2xl rounded-lg p-4 pr-8 min-h-[100px] w-[260px] flex items-start">
-        <div className="text-sm leading-relaxed break-words pr-4 flex-1">
+      <div className="relative bg-gray-800 text-white border border-gray-700 shadow-2xl rounded-lg p-4 pr-10 min-h-[100px] w-[260px] flex flex-col">
+        <div className="text-sm leading-relaxed break-words pr-2 flex-1">
           {notification.message}
         </div>
+        {notification.action && (
+          <button
+            onClick={handleAction}
+            className="mt-3 w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded transition-colors text-sm"
+          >
+            {notification.action.label}
+          </button>
+        )}
         <CircularTimer 
           isActive={isTimerActive}
           onComplete={handleComplete}
         />
         <button
           onClick={handleDismiss}
-          className="absolute -top-2 -right-2 w-5 h-5 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 transition-colors z-20 border-2 border-gray-800 shadow-lg"
+          className="absolute -top-2.5 -right-2.5 w-6 h-6 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 transition-colors z-20 border-2 border-gray-800 shadow-lg"
           aria-label="Chiudi notifica"
         >
-          <X className="w-3 h-3 text-white" />
+          <X className="w-3.5 h-3.5 text-white" />
         </button>
       </div>
     </div>
@@ -131,9 +152,9 @@ const NotificationItem = ({ notification, onDismiss }: NotificationItemProps) =>
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const showNotification = useCallback((message: string) => {
+  const showNotification = useCallback((message: string, action?: NotificationAction) => {
     const id = `notification-${Date.now()}-${Math.random()}`;
-    setNotifications(prev => [...prev, { id, message }]);
+    setNotifications(prev => [...prev, { id, message, action }]);
   }, []);
 
   const dismissNotification = useCallback((id: string) => {
@@ -174,24 +195,24 @@ export const useNotification = () => {
 
 // API compatibile con il vecchio sistema toast
 export const toast = {
-  success: (message: string) => {
+  success: (message: string, options?: { action?: NotificationAction }) => {
     if (globalShowNotification) {
-      globalShowNotification(message);
+      globalShowNotification(message, options?.action);
     }
   },
-  error: (message: string, options?: any) => {
+  error: (message: string, options?: { action?: NotificationAction }) => {
     if (globalShowNotification) {
-      globalShowNotification(message);
+      globalShowNotification(message, options?.action);
     }
   },
-  info: (message: string) => {
+  info: (message: string, options?: { action?: NotificationAction }) => {
     if (globalShowNotification) {
-      globalShowNotification(message);
+      globalShowNotification(message, options?.action);
     }
   },
-  warning: (message: string) => {
+  warning: (message: string, options?: { action?: NotificationAction }) => {
     if (globalShowNotification) {
-      globalShowNotification(message);
+      globalShowNotification(message, options?.action);
     }
   },
 };
