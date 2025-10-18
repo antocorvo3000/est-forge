@@ -70,7 +70,7 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden" style={{ fontSize: `${settings.fontSizeSettings}rem` }}>
+    <div className="min-h-screen overflow-x-hidden" style={{ fontSize: `${formData.fontSizeSettings}rem` }}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 pb-16 space-y-3 sm:space-y-4">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
