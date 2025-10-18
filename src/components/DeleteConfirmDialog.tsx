@@ -24,18 +24,20 @@ export const DeleteConfirmDialog = ({
 }: DeleteConfirmDialogProps) => {
   return (
     <AlertDialog open={open} onOpenChange={onClose}>
-      <AlertDialogContent className="glass border-border">
+      <AlertDialogContent className="bg-white border-2 border-border max-w-lg p-8">
         <AlertDialogHeader>
-          <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
-          <AlertDialogDescription>
+          <AlertDialogTitle className="text-2xl font-bold text-red-600">Conferma eliminazione</AlertDialogTitle>
+          <AlertDialogDescription className="text-lg font-semibold text-black mt-4">
             Sei sicuro di voler eliminare il preventivo "{quoteName}"? Questa azione non può essere annullata.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Annulla</AlertDialogCancel>
+        <AlertDialogFooter className="mt-6 gap-3">
+          <AlertDialogCancel className="text-lg font-bold px-8 py-6">
+            Annulla
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
-            className="bg-gradient-to-b from-destructive to-destructive-glow hover:brightness-105"
+            className="bg-gradient-to-b from-destructive to-destructive-glow hover:brightness-105 text-lg font-bold px-8 py-6"
           >
             Elimina
           </AlertDialogAction>
