@@ -111,10 +111,10 @@ const EditQuoteNumber = () => {
         >
           <div className="mb-6 p-4 bg-muted rounded-lg">
             <h2 className="font-bold mb-2" style={{ fontSize: `${settings.fontSizeEditNumber}rem` }}>
-              Preventivo: {quoteToEdit.title || "Senza titolo"}
+              Preventivo: {quoteToEdit.number.toString().padStart(2, '0')}-{quoteToEdit.year} {quoteToEdit.client}
             </h2>
             <p className="text-sm text-muted-foreground" style={{ fontSize: `${settings.fontSizeEditNumber}rem` }}>
-              Cliente: {quoteToEdit.client}
+              {quoteToEdit.title || "Senza oggetto"}
             </p>
           </div>
 
