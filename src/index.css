@@ -121,6 +121,28 @@ All colors MUST be HSL.
   }
 }
 
+@keyframes slideInRight {
+  from {
+    transform: translateX(calc(100% + 32px));
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(calc(100% + 32px));
+    opacity: 0;
+  }
+}
+
 @layer utilities {
   .glass {
     background: hsl(var(--glass-bg) / var(--glass-opacity));
@@ -184,5 +206,23 @@ All colors MUST be HSL.
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--primary) / 0.4) hsl(210 20% 92%);
+  }
+
+  /* Toast animations */
+  .toast-slide-in {
+    animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .toast-slide-out {
+    animation: slideOutRight 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Sonner toast container positioning */
+  [data-sonner-toaster] {
+    --offset: 80px;
+  }
+
+  [data-sonner-toast] {
+    margin-bottom: 12px !important;
   }
 }
