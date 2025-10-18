@@ -21,6 +21,7 @@ const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
 interface CompanySettingsContextType {
   settings: CompanySettings;
   updateSettings: (newSettings: Partial<CompanySettings>) => void;
+  reloadSettings: () => Promise<void>;
 }
 
 const CompanySettingsContext = createContext<CompanySettingsContextType | undefined>(undefined);
@@ -29,34 +30,34 @@ export const CompanySettingsProvider = ({ children }: { children: ReactNode }) =
   const [settings, setSettings] = useState<CompanySettings>(DEFAULT_COMPANY_SETTINGS);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const datiAzienda = await caricaDatiAzienda();
-        if (datiAzienda) {
-          setSettings({
-            name: datiAzienda.ragione_sociale,
-            vatNumber: datiAzienda.partita_iva,
-            address: datiAzienda.sede_legale,
-            phone: datiAzienda.telefono,
-            email: datiAzienda.email,
-            logoPath: datiAzienda.logo_url,
-            fontSizeList: datiAzienda.font_size_list ? parseFloat(String(datiAzienda.font_size_list)) : 1.0,
-            fontSizeQuote: datiAzienda.font_size_quote ? parseFloat(String(datiAzienda.font_size_quote)) : 1.0,
-            fontSizeClient: datiAzienda.font_size_client ? parseFloat(String(datiAzienda.font_size_client)) : 1.0,
-            fontSizeSettings: datiAzienda.font_size_settings ? parseFloat(String(datiAzienda.font_size_settings)) : 1.0,
-            fontSizeCustomQuote: datiAzienda.font_size_custom_quote ? parseFloat(String(datiAzienda.font_size_custom_quote)) : 1.0,
-            fontSizeClone: datiAzienda.font_size_clone ? parseFloat(String(datiAzienda.font_size_clone)) : 1.0,
-            fontSizeEditNumber: datiAzienda.font_size_edit_number ? parseFloat(String(datiAzienda.font_size_edit_number)) : 1.0,
-          });
-        }
-      } catch (error) {
-        console.error("Errore nel caricamento dati azienda:", error);
-      } finally {
-        setLoading(false);
+  const loadSettings = async () => {
+    try {
+      const datiAzienda = await caricaDatiAzienda();
+      if (datiAzienda) {
+        setSettings({
+          name: datiAzienda.ragione_sociale,
+          vatNumber: datiAzienda.partita_iva,
+          address: datiAzienda.sede_legale,
+          phone: datiAzienda.telefono,
+          email: datiAzienda.email,
+          logoPath: datiAzienda.logo_url,
+          fontSizeList: datiAzienda.font_size_list ? parseFloat(String(datiAzienda.font_size_list)) : 1.0,
+          fontSizeQuote: datiAzienda.font_size_quote ? parseFloat(String(datiAzienda.font_size_quote)) : 1.0,
+          fontSizeClient: datiAzienda.font_size_client ? parseFloat(String(datiAzienda.font_size_client)) : 1.0,
+          fontSizeSettings: datiAzienda.font_size_settings ? parseFloat(String(datiAzienda.font_size_settings)) : 1.0,
+          fontSizeCustomQuote: datiAzienda.font_size_custom_quote ? parseFloat(String(datiAzienda.font_size_custom_quote)) : 1.0,
+          fontSizeClone: datiAzienda.font_size_clone ? parseFloat(String(datiAzienda.font_size_clone)) : 1.0,
+          fontSizeEditNumber: datiAzienda.font_size_edit_number ? parseFloat(String(datiAzienda.font_size_edit_number)) : 1.0,
+        });
       }
-    };
+    } catch (error) {
+      console.error("Errore nel caricamento dati azienda:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadSettings();
   }, []);
 
@@ -64,12 +65,16 @@ export const CompanySettingsProvider = ({ children }: { children: ReactNode }) =
     setSettings((prev) => ({ ...prev, ...newSettings }));
   };
 
+  const reloadSettings = async () => {
+    await loadSettings();
+  };
+
   if (loading) {
     return null;
   }
 
   return (
-    <CompanySettingsContext.Provider value={{ settings, updateSettings }}>
+    <CompanySettingsContext.Provider value={{ settings, updateSettings, reloadSettings }}>
       {children}
     </CompanySettingsContext.Provider>
   );

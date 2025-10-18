@@ -14,19 +14,6 @@ const Settings = () => {
   const { settings, updateSettings } = useCompanySettings();
   const [formData, setFormData] = useState(settings);
 
-  // Aggiorna il context in tempo reale quando cambiano i font size
-  useEffect(() => {
-    updateSettings({
-      fontSizeList: formData.fontSizeList,
-      fontSizeQuote: formData.fontSizeQuote,
-      fontSizeClient: formData.fontSizeClient,
-      fontSizeSettings: formData.fontSizeSettings,
-      fontSizeCustomQuote: formData.fontSizeCustomQuote,
-      fontSizeClone: formData.fontSizeClone,
-      fontSizeEditNumber: formData.fontSizeEditNumber,
-    });
-  }, [formData.fontSizeList, formData.fontSizeQuote, formData.fontSizeClient, formData.fontSizeSettings, formData.fontSizeCustomQuote, formData.fontSizeClone, formData.fontSizeEditNumber]);
-
   const handleSave = async () => {
     try {
       await salvaDatiAzienda({
@@ -43,6 +30,23 @@ const Settings = () => {
         font_size_custom_quote: formData.fontSizeCustomQuote,
         font_size_clone: formData.fontSizeClone,
         font_size_edit_number: formData.fontSizeEditNumber,
+      });
+      
+      // Ricarica i settings dal database dopo il salvataggio
+      await updateSettings({
+        name: formData.name,
+        vatNumber: formData.vatNumber,
+        address: formData.address,
+        phone: formData.phone,
+        email: formData.email,
+        logoPath: formData.logoPath,
+        fontSizeList: formData.fontSizeList,
+        fontSizeQuote: formData.fontSizeQuote,
+        fontSizeClient: formData.fontSizeClient,
+        fontSizeSettings: formData.fontSizeSettings,
+        fontSizeCustomQuote: formData.fontSizeCustomQuote,
+        fontSizeClone: formData.fontSizeClone,
+        fontSizeEditNumber: formData.fontSizeEditNumber,
       });
       
       toast.success("Impostazioni salvate con successo");
