@@ -837,16 +837,14 @@ const ModifyQuote = () => {
             >
               Salva
             </Button>
-            {!isCloning && (
-              <Button
-                onClick={handleViewPdf}
-                size="lg"
-                className="h-14 text-lg font-bold"
-                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-              >
-                Vedi il PDF
-              </Button>
-            )}
+            <Button
+              onClick={handleViewPdf}
+              size="lg"
+              className="h-14 text-lg font-bold"
+              style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+            >
+              Vedi il PDF
+            </Button>
           </div>
           {!isCloning && (
             <Button
