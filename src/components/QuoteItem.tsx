@@ -56,7 +56,7 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
       transition={{
         layout: { duration: 0.3, ease: [0.4, 0, 0.2, 1] }
       }}
-      className="group grid grid-cols-[auto_auto_1fr_auto] gap-3 sm:gap-4 p-3 sm:p-4 bg-white border border-border rounded-xl shadow-sm hover:shadow-md hover:border-border ease-out"
+      className="group grid grid-cols-[auto_auto_minmax(0,1fr)_minmax(0,2fr)] gap-3 sm:gap-4 p-3 sm:p-4 bg-white border border-border rounded-xl shadow-sm hover:shadow-md hover:border-border ease-out"
       style={{
         background: 'white',
         transition: 'background 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -111,7 +111,7 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
         </p>
       </div>
 
-      <div className="flex-shrink-0 relative">
+      <div className="flex items-center justify-end gap-3 sm:gap-4 min-w-0">
         <AnimatePresence mode="wait">
           {!isSelectionMode && !showInfo && (
             <motion.div
@@ -120,7 +120,7 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-              className="flex items-center gap-1 sm:gap-2"
+              className="flex items-center gap-1 sm:gap-2 flex-shrink-0"
               style={{ fontSize: `${fontSize}rem` }}
             >
               <Button
@@ -173,14 +173,12 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-              className="flex items-center gap-3 sm:gap-4"
+              className="flex items-center gap-3 sm:gap-4 min-w-0 w-full"
               style={{ fontSize: `${fontSize}rem` }}
             >
-              <div className="flex flex-col gap-0.5 min-w-0 max-w-xs">
-                <p className="text-sm font-semibold text-primary line-clamp-2 break-all overflow-hidden">
-                  {quote.title || 'Nessun oggetto'}
-                </p>
-              </div>
+              <p className="text-sm font-semibold text-primary line-clamp-2 break-all overflow-hidden flex-1 min-w-0">
+                {quote.title || 'Nessun oggetto'}
+              </p>
               <p className="text-sm font-bold text-foreground whitespace-nowrap flex-shrink-0">
                 {formatCurrency(quote.amount)}
               </p>
