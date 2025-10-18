@@ -65,6 +65,7 @@ const ModifyQuote = () => {
 
   // Get quote data from location state
   const quoteData = location.state?.quote;
+  const isCloning = location.state?.isCloning || false;
 
   // Client data from navigation state
   const [clientData, setClientData] = useState<ClientData | null>(null);
@@ -355,7 +356,9 @@ const ModifyQuote = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-3xl font-extrabold tracking-tight">Modifica Preventivo</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">
+            {isCloning ? "Clona Preventivo" : "Modifica Preventivo"}
+          </h1>
         </motion.div>
 
         {/* Company and Client Info */}
