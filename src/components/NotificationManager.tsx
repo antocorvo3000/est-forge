@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { X } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface NotificationAction {
   label: string;
@@ -30,28 +30,49 @@ const CircularTimer = ({
   onComplete: () => void;
 }) => {
   const [progress, setProgress] = useState(0);
+  const startTimeRef = useRef<number>(Date.now());
+  const accumulatedTimeRef = useRef<number>(0);
+  const animationFrameRef = useRef<number>();
+  const hasCompletedRef = useRef(false);
 
   useEffect(() => {
+    if (hasCompletedRef.current) return;
+
     if (!isActive) {
-      setProgress(0);
+      // Quando è in pausa, accumula il tempo trascorso
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      accumulatedTimeRef.current += Date.now() - startTimeRef.current;
       return;
     }
 
+    // Quando riprende, aggiorna startTime
+    startTimeRef.current = Date.now();
+
     const duration = 5000;
-    const startTime = Date.now();
     
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - startTime;
+    const updateProgress = () => {
+      const elapsed = accumulatedTimeRef.current + (Date.now() - startTimeRef.current);
       const newProgress = Math.min((elapsed / duration) * 100, 100);
       setProgress(newProgress);
       
-      if (newProgress >= 100) {
+      if (newProgress >= 100 && !hasCompletedRef.current) {
+        hasCompletedRef.current = true;
         onComplete();
+      } else if (newProgress < 100) {
+        animationFrameRef.current = requestAnimationFrame(updateProgress);
       }
-    }, 16);
+    };
 
-    return () => clearInterval(interval);
-  }, [isActive, onComplete]);
+    animationFrameRef.current = requestAnimationFrame(updateProgress);
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [isActive]);
 
   const radius = 6;
   const circumference = 2 * Math.PI * radius;
@@ -91,22 +112,32 @@ interface NotificationItemProps {
 const NotificationItem = ({ notification, onDismiss }: NotificationItemProps) => {
   const [isTimerActive, setIsTimerActive] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
+  const dismissCallbackRef = useRef<() => void>();
 
   useEffect(() => {
     // Trigger slide-in animation
     setTimeout(() => setIsVisible(true), 10);
   }, []);
 
-  const handleDismiss = () => {
+  // Memorizza la callback di dismiss per evitare che cambi riferimento
+  dismissCallbackRef.current = () => {
     setIsVisible(false);
     setTimeout(() => {
       onDismiss(notification.id);
     }, 300);
   };
 
-  const handleComplete = () => {
-    handleDismiss();
+  const handleDismiss = () => {
+    if (dismissCallbackRef.current) {
+      dismissCallbackRef.current();
+    }
   };
+
+  const handleComplete = useCallback(() => {
+    if (dismissCallbackRef.current) {
+      dismissCallbackRef.current();
+    }
+  }, []);
 
   const handleAction = () => {
     if (notification.action) {
