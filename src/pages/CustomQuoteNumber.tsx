@@ -141,15 +141,18 @@ const CustomQuoteNumber = () => {
 
       {/* Error Dialog */}
       <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white border-2 border-border max-w-lg p-8">
           <AlertDialogHeader>
-            <AlertDialogTitle>Errore</AlertDialogTitle>
-            <AlertDialogDescription className="text-base">
+            <AlertDialogTitle className="text-2xl font-bold text-black">Errore</AlertDialogTitle>
+            <AlertDialogDescription className="text-lg font-semibold text-black mt-4">
               {errorMessage}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowErrorDialog(false)}>
+          <AlertDialogFooter className="mt-6">
+            <AlertDialogAction 
+              onClick={() => setShowErrorDialog(false)}
+              className="text-lg font-bold px-8 py-6"
+            >
               OK
             </AlertDialogAction>
           </AlertDialogFooter>
