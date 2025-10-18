@@ -170,11 +170,11 @@ const Index = () => {
           className="flex justify-end mx-4 sm:mx-6 mt-3"
         >
           <Button
-            size="icon"
             onClick={() => navigate("/settings")}
-            className="h-12 w-12 rounded-full shadow-lg"
+            className="h-11 gap-2 shadow-lg"
           >
             <Settings className="w-5 h-5" />
+            <span>Impostazioni</span>
           </Button>
         </motion.div>
       </div>
