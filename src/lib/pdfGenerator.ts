@@ -57,12 +57,12 @@ export const generateQuotePDF = async (
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 15;
+  const margin = 12.7; // Margini stretti Word (0.5 inch = 12.7mm)
   let yPos = margin;
 
   // Helper per aggiungere numero di pagina
   const addPageNumber = (currentPage: number, totalPages: number) => {
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
     doc.text(
       `Pagina ${currentPage} di ${totalPages}`,
@@ -146,31 +146,28 @@ export const generateQuotePDF = async (
     });
   }
 
-  // Oggetto centrato
+  // Preventivo numero e oggetto allineati a sinistra
   yPos = Math.max(yPos, clientYPos) + 10;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
+  doc.setFontSize(9);
   doc.text(
     `Preventivo N. ${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}`,
-    pageWidth / 2,
-    yPos,
-    { align: "center" }
+    margin,
+    yPos
   );
   yPos += 6;
   doc.setFontSize(11);
-  doc.text(`Oggetto: ${quoteData.oggetto}`, pageWidth / 2, yPos, {
-    align: "center",
-  });
+  doc.text(`Oggetto: ${quoteData.oggetto}`, margin, yPos);
   yPos += 8;
 
   // Ubicazione lavoro
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   const ubicazioneText = `Ubicazione lavoro: ${quoteData.ubicazione.via}, ${quoteData.ubicazione.cap} ${quoteData.ubicazione.citta} (${quoteData.ubicazione.provincia})`;
-  doc.text(ubicazioneText, pageWidth / 2, yPos, { align: "center" });
+  doc.text(ubicazioneText, margin, yPos);
   yPos += 8;
 
-  // Tabella delle voci
+  // Tabella delle voci con subtotale e totale integrati
   const tableData = quoteData.righe.map((riga, index) => [
     (index + 1).toString(),
     riga.descrizione,
@@ -180,6 +177,30 @@ export const generateQuotePDF = async (
     `€ ${formatCurrency(riga.totale)}`,
   ]);
 
+  // Aggiungi riga subtotale
+  tableData.push([
+    { content: "Subtotale:", colSpan: 5, styles: { halign: "right", fontStyle: "bold" } },
+    `€ ${formatCurrency(quoteData.subtotale)}`,
+  ] as any);
+
+  // Aggiungi riga sconto se necessario
+  if (
+    quoteData.showDiscountInTable &&
+    quoteData.sconto_percentuale &&
+    quoteData.sconto_percentuale > 0
+  ) {
+    tableData.push([
+      { content: "Sconto:", colSpan: 5, styles: { halign: "right", fontStyle: "bold", textColor: [255, 0, 0] } },
+      { content: `-${quoteData.sconto_percentuale}%`, styles: { textColor: [255, 0, 0] } },
+    ] as any);
+  }
+
+  // Aggiungi riga totale
+  tableData.push([
+    { content: "TOTALE:", colSpan: 5, styles: { halign: "right", fontStyle: "bold" } },
+    `€ ${formatCurrency(quoteData.totale)}`,
+  ] as any);
+
   autoTable(doc, {
     startY: yPos,
     head: [["Nr", "Descrizione", "U.M.", "Qtà", "Prezzo Unit.", "Totale"]],
@@ -188,10 +209,12 @@ export const generateQuotePDF = async (
     styles: {
       fontSize: 9,
       cellPadding: 2,
+      lineColor: [0, 0, 0],
+      lineWidth: 0.1,
     },
     headStyles: {
-      fillColor: [66, 66, 66],
-      textColor: [255, 255, 255],
+      fillColor: [200, 200, 200],
+      textColor: [0, 0, 0],
       fontStyle: "bold",
       halign: "center",
     },
@@ -212,46 +235,7 @@ export const generateQuotePDF = async (
   });
 
   // Posizione dopo la tabella
-  yPos = (doc as any).lastAutoTable.finalY + 5;
-
-  // Subtotale, sconto e totale
-  const summaryX = pageWidth - margin - 50;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-
-  doc.text("Subtotale:", summaryX, yPos);
-  doc.text(`€ ${formatCurrency(quoteData.subtotale)}`, pageWidth - margin, yPos, {
-    align: "right",
-  });
-  yPos += 6;
-
-  // Sconto (solo se showDiscountInTable è true)
-  if (
-    quoteData.showDiscountInTable &&
-    quoteData.sconto_percentuale &&
-    quoteData.sconto_percentuale > 0
-  ) {
-    doc.setTextColor(255, 0, 0);
-    doc.text(
-      `Sconto -${quoteData.sconto_percentuale}%:`,
-      summaryX,
-      yPos
-    );
-    doc.text(
-      `€ ${formatCurrency(quoteData.sconto_valore || 0)}`,
-      pageWidth - margin,
-      yPos,
-      { align: "right" }
-    );
-    doc.setTextColor(0, 0, 0);
-    yPos += 6;
-  }
-
-  doc.setFontSize(12);
-  doc.text("TOTALE:", summaryX, yPos);
-  doc.text(`€ ${formatCurrency(quoteData.totale)}`, pageWidth - margin, yPos, {
-    align: "right",
-  });
+  yPos = (doc as any).lastAutoTable.finalY + 8;
 
   // Note (se presenti)
   if (quoteData.note) {
@@ -277,7 +261,17 @@ export const generateQuotePDF = async (
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.text(quoteData.modalita_pagamento, margin, yPos);
+    yPos += 10;
   }
+
+  // Firma per accettazione
+  yPos += 5;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("Firma per Accettazione", pageWidth - margin, yPos, { align: "right" });
+  yPos += 15;
+  doc.setFont("helvetica", "normal");
+  doc.line(pageWidth - margin - 60, yPos, pageWidth - margin, yPos);
 
   // Aggiungi numeri di pagina su tutte le pagine
   const totalPages = (doc as any).internal.getNumberOfPages();
