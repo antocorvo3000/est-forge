@@ -181,21 +181,32 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
 
   // Prepara i dati della tabella
   const tableData: any[] = [];
-  const rowMetadata: Map<number, { um: string; qty: string; price: string; total: string }> = new Map();
+  const rowMetadata: Map<number, { nr: string; um: string; qty: string; price: string; total: string }> = new Map();
 
   quoteData.righe.forEach((riga, index) => {
+    const nr = (index + 1).toString();
     const um = riga.unita_misura;
     const qty = riga.quantita.toString();
     const price = `€ ${formatCurrency(riga.prezzo_unitario)}`;
     const total = `€ ${formatCurrency(riga.totale)}`;
 
-    rowMetadata.set(index, { um, qty, price, total });
+    rowMetadata.set(index, { nr, um, qty, price, total });
 
-    tableData.push([(index + 1).toString(), riga.descrizione, um, qty, price, total]);
+    tableData.push([nr, riga.descrizione, um, qty, price, total]);
   });
 
-  // Tracciamento delle righe divise
-  const rowPageMap: Map<number, { pages: number[]; cells: any[] }> = new Map();
+  // Tracciamento delle celle per ogni riga
+  const rowCellsMap: Map<
+    number,
+    Array<{
+      columnIndex: number;
+      page: number;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }>
+  > = new Map();
 
   autoTable(doc, {
     startY: yPos,
@@ -232,20 +243,11 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
       if (data.section === "body") {
         const rowIndex = data.row.index;
 
-        // Inizializza il tracking per questa riga se non esiste
-        if (!rowPageMap.has(rowIndex)) {
-          rowPageMap.set(rowIndex, { pages: [], cells: [] });
+        if (!rowCellsMap.has(rowIndex)) {
+          rowCellsMap.set(rowIndex, []);
         }
 
-        const rowData = rowPageMap.get(rowIndex)!;
-
-        // Aggiungi la pagina se non è già presente
-        if (!rowData.pages.includes(data.pageNumber)) {
-          rowData.pages.push(data.pageNumber);
-        }
-
-        // Salva i dati della cella
-        rowData.cells.push({
+        rowCellsMap.get(rowIndex)!.push({
           columnIndex: data.column.index,
           page: data.pageNumber,
           x: data.cell.x,
@@ -263,79 +265,88 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     },
   });
 
-  // Post-processing: nascondi i valori nelle prime parti e ridisegnali nell'ultima
-  rowPageMap.forEach((rowData, rowIndex) => {
-    if (rowData.pages.length > 1) {
+  // Post-processing: gestisci le righe divise
+  rowCellsMap.forEach((cells, rowIndex) => {
+    const metadata = rowMetadata.get(rowIndex);
+    if (!metadata) return;
+
+    // Ottieni tutte le pagine uniche dove appare questa riga
+    const pages = [...new Set(cells.map((c) => c.page))].sort((a, b) => a - b);
+
+    if (pages.length > 1) {
       // Questa riga è divisa su più pagine
-      const lastPage = Math.max(...rowData.pages);
-      const metadata = rowMetadata.get(rowIndex);
+      const firstPage = pages[0];
+      const lastPage = pages[pages.length - 1];
 
-      if (!metadata) return;
+      // Per ogni cella della riga
+      cells.forEach((cell) => {
+        const isFirstPage = cell.page === firstPage;
+        const isLastPage = cell.page === lastPage;
 
-      // Filtra le celle per colonne 2-5 (U.M., Qtà, Prezzo, Totale)
-      const valueCells = rowData.cells.filter((cell) => cell.columnIndex >= 2 && cell.columnIndex <= 5);
+        doc.setPage(cell.page);
 
-      // Nascondi i valori in tutte le pagine tranne l'ultima
-      valueCells.forEach((cell) => {
-        if (cell.page !== lastPage) {
-          doc.setPage(cell.page);
+        // Colonna 0 (Nr): mostra solo nella prima pagina
+        if (cell.columnIndex === 0 && !isFirstPage) {
+          // Nascondi il numero nelle pagine successive
           doc.setFillColor(255, 255, 255);
           doc.rect(cell.x, cell.y, cell.width, cell.height, "F");
-
-          // Ridisegna solo i bordi
           doc.setDrawColor(0, 0, 0);
           doc.setLineWidth(0.3);
           doc.rect(cell.x, cell.y, cell.width, cell.height, "S");
         }
-      });
 
-      // Ridisegna i valori nell'ultima pagina, allineati in basso
-      const lastPageCells = valueCells.filter((cell) => cell.page === lastPage);
+        // Colonne 2-5 (U.M., Qtà, Prezzo, Totale): mostra solo nell'ultima pagina
+        if (cell.columnIndex >= 2 && cell.columnIndex <= 5) {
+          if (!isLastPage) {
+            // Nascondi i valori in tutte le pagine tranne l'ultima
+            doc.setFillColor(255, 255, 255);
+            doc.rect(cell.x, cell.y, cell.width, cell.height, "F");
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.3);
+            doc.rect(cell.x, cell.y, cell.width, cell.height, "S");
+          } else {
+            // Ridisegna i valori nell'ultima pagina, allineati in basso
+            doc.setFillColor(255, 255, 255);
+            doc.rect(cell.x, cell.y, cell.width, cell.height, "F");
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.3);
+            doc.rect(cell.x, cell.y, cell.width, cell.height, "S");
 
-      doc.setPage(lastPage);
-      doc.setFontSize(9);
-      doc.setTextColor(0, 0, 0);
-      doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.setTextColor(0, 0, 0);
+            doc.setFont("helvetica", "normal");
 
-      lastPageCells.forEach((cell) => {
-        let text = "";
-        let align: "center" | "right" = "center";
+            let text = "";
+            let align: "center" | "right" = "center";
 
-        switch (cell.columnIndex) {
-          case 2: // U.M.
-            text = metadata.um;
-            align = "center";
-            break;
-          case 3: // Qtà
-            text = metadata.qty;
-            align = "right";
-            break;
-          case 4: // Prezzo Unit.
-            text = metadata.price;
-            align = "right";
-            break;
-          case 5: // Totale
-            text = metadata.total;
-            align = "right";
-            break;
-        }
+            switch (cell.columnIndex) {
+              case 2: // U.M.
+                text = metadata.um;
+                align = "center";
+                break;
+              case 3: // Qtà
+                text = metadata.qty;
+                align = "right";
+                break;
+              case 4: // Prezzo Unit.
+                text = metadata.price;
+                align = "right";
+                break;
+              case 5: // Totale
+                text = metadata.total;
+                align = "right";
+                break;
+            }
 
-        // Cancella il contenuto esistente
-        doc.setFillColor(255, 255, 255);
-        doc.rect(cell.x, cell.y, cell.width, cell.height, "F");
+            // Allinea il testo in basso della cella
+            const textY = cell.y + cell.height - 2;
 
-        // Ridisegna i bordi
-        doc.setDrawColor(0, 0, 0);
-        doc.setLineWidth(0.3);
-        doc.rect(cell.x, cell.y, cell.width, cell.height, "S");
-
-        // Calcola la posizione Y per allineare il testo in basso
-        const textY = cell.y + cell.height - 2;
-
-        if (align === "center") {
-          doc.text(text, cell.x + cell.width / 2, textY, { align: "center" });
-        } else {
-          doc.text(text, cell.x + cell.width - 2, textY, { align: "right" });
+            if (align === "center") {
+              doc.text(text, cell.x + cell.width / 2, textY, { align: "center" });
+            } else {
+              doc.text(text, cell.x + cell.width - 2, textY, { align: "right" });
+            }
+          }
         }
       });
     }
