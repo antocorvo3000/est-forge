@@ -751,8 +751,8 @@ const ModifyQuote = () => {
                 </div>
               </div>
 
-              <div className="flex-1 text-right">
-                <div className="text-sm leading-relaxed" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+              <div className="flex-1">
+                <div className="text-sm leading-relaxed text-muted-foreground" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
                   <p className="mb-2 font-semibold">Come funziona lo sconto:</p>
                   <p className="mb-3">
                     <span className="font-medium">Se NON selezioni "Mostra sconto in tabella":</span><br />
