@@ -373,6 +373,7 @@ const CreateQuote = () => {
         state: {
           quoteData: pdfData,
           settings: settings,
+          from: location.pathname,
         },
       });
     } catch (error) {

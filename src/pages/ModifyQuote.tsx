@@ -466,6 +466,7 @@ const ModifyQuote = () => {
         state: {
           quoteData: pdfData,
           settings: settings,
+          from: location.pathname,
         },
       });
     } catch (error) {

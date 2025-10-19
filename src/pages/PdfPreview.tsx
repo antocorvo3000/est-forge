@@ -53,15 +53,22 @@ const PdfPreview = () => {
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [returnPath, setReturnPath] = useState<string>("/");
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     const data = location.state?.quoteData as QuoteData;
     const companySettings = location.state?.settings as CompanySettings;
+    const fromPath = location.state?.from as string;
+    
+    // Salva il percorso di provenienza
+    if (fromPath) {
+      setReturnPath(fromPath);
+    }
     
     if (!data || !companySettings) {
       toast.error("Nessun dato disponibile per generare il PDF");
-      navigate(-1);
+      navigate("/");
       return;
     }
 
@@ -142,22 +149,8 @@ const PdfPreview = () => {
   const handleGoBack = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('handleGoBack called');
-    console.log('pdfBlobUrl:', pdfBlobUrl);
-    console.log('quoteData:', quoteData);
-    try {
-      // Verifica se c'è una pagina precedente
-      if (window.history.length > 1) {
-        navigate(-1);
-        console.log('navigate(-1) called successfully');
-      } else {
-        navigate('/');
-        console.log('navigate to home called (no history)');
-      }
-    } catch (error) {
-      console.error('Error navigating back:', error);
-      navigate('/');
-    }
+    console.log('handleGoBack called, returnPath:', returnPath);
+    navigate(returnPath, { replace: true });
   };
 
   const handlePrevPage = () => {
