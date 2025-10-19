@@ -205,13 +205,13 @@ const PdfPreview = () => {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex-1 glass rounded-2xl p-6 overflow-y-auto scrollbar-thin pr-6"
+            className="flex-1 glass rounded-2xl p-4 overflow-hidden flex flex-col"
             style={{
               maxHeight: "calc(100vh - 180px)",
             }}
           >
             <div 
-              className="flex justify-center"
+              className="flex justify-center overflow-y-auto scrollbar-thin pr-2"
               style={{
                 transform: `scale(${zoom / 100})`,
                 transformOrigin: "top center",
