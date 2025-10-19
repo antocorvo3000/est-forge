@@ -208,19 +208,90 @@ export const generateQuotePDF = async (
   doc.text(ubicazioneText, margin, yPos);
   yPos += 8;
 
-  // Tabella delle voci (solo righe items, senza subtotale/totale)
-  const tableData = quoteData.righe.map((riga, index) => [
-    (index + 1).toString(),
-    riga.descrizione,
-    riga.unita_misura,
-    riga.quantita.toString(),
-    `€ ${formatCurrency(riga.prezzo_unitario)}`,
-    `€ ${formatCurrency(riga.totale)}`,
-  ]);
+  // Funzione helper per pre-splittare le descrizioni lunghe
+  const splitDescriptionIntoRows = (
+    itemNumber: string,
+    descriptionText: string,
+    um: string,
+    qty: string,
+    priceUnit: string,
+    total: string,
+    maxLinesPerChunk: number = 14
+  ): any[] => {
+    // Imposta font per calcolare correttamente le dimensioni
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    
+    // Calcola larghezza disponibile per la descrizione
+    const otherColumnsWidth = 8 + 15 + 12 + 24 + 24; // Nr + U.M. + Qtà + Prezzo + Totale
+    const descColumnWidth = pageWidth - 2 * margin - otherColumnsWidth;
+    
+    // Spezza il testo in righe
+    const lines = doc.splitTextToSize(descriptionText, descColumnWidth);
+    
+    if (lines.length === 0) {
+      lines.push('');
+    }
+    
+    // Se ci sono poche righe (1-2), crea una singola riga normale
+    if (lines.length <= 2) {
+      return [[itemNumber, descriptionText, um, qty, priceUnit, total]];
+    }
+    
+    // Spezza in chunks
+    const rows: any[] = [];
+    const chunks: string[][] = [];
+    
+    for (let i = 0; i < lines.length; i += maxLinesPerChunk) {
+      chunks.push(lines.slice(i, i + maxLinesPerChunk));
+    }
+    
+    // Prima riga: numero + primo chunk descrizione (se più di un chunk)
+    if (chunks.length === 1) {
+      // Un solo chunk: riga completa con tutti i valori
+      rows.push([itemNumber, chunks[0].join('\n'), um, qty, priceUnit, total]);
+    } else {
+      // Prima riga: numero + descrizione che occupa le restanti colonne
+      rows.push([
+        itemNumber,
+        { content: chunks[0].join('\n'), colSpan: 5 }
+      ]);
+      
+      // Righe intermedie (se ci sono): solo descrizione su tutta la larghezza
+      for (let i = 1; i < chunks.length - 1; i++) {
+        rows.push([
+          { content: chunks[i].join('\n'), colSpan: 6 }
+        ]);
+      }
+      
+      // Ultima riga: ultimo chunk + valori numerici (allineati in basso)
+      rows.push([
+        '',
+        { content: chunks[chunks.length - 1].join('\n'), styles: { valign: 'bottom' } },
+        { content: um, styles: { valign: 'bottom' } },
+        { content: qty, styles: { valign: 'bottom' } },
+        { content: priceUnit, styles: { valign: 'bottom' } },
+        { content: total, styles: { valign: 'bottom' } }
+      ]);
+    }
+    
+    return rows;
+  };
 
-  // Traccia celle disegnate per identificare righe divise
-  const drawnCells = new Map<number, Map<number, { page: number, x: number, y: number, width: number, height: number }>>();
-  const rowPages = new Map<number, Set<number>>();
+  // Pre-split delle descrizioni e costruzione righe tabella
+  const tableData: any[] = [];
+  quoteData.righe.forEach((riga, index) => {
+    const rows = splitDescriptionIntoRows(
+      (index + 1).toString(),
+      riga.descrizione,
+      riga.unita_misura,
+      riga.quantita.toString(),
+      `€ ${formatCurrency(riga.prezzo_unitario)}`,
+      `€ ${formatCurrency(riga.totale)}`,
+      14 // maxLinesPerChunk - regolabile
+    );
+    tableData.push(...rows);
+  });
 
   autoTable(doc, {
     startY: yPos,
@@ -252,63 +323,11 @@ export const generateQuotePDF = async (
       5: { cellWidth: 24, halign: "right", valign: "bottom" },
     },
     margin: { bottom: 25 },
-    didDrawCell: (data) => {
-      const { cell, row, column, pageNumber } = data;
-      const rowIndex = row.index;
-      const colIndex = column.index;
-      
-      // Traccia tutte le celle disegnate
-      if (!drawnCells.has(rowIndex)) {
-        drawnCells.set(rowIndex, new Map());
-      }
-      
-      drawnCells.get(rowIndex)!.set(colIndex, {
-        page: pageNumber,
-        x: cell.x,
-        y: cell.y,
-        width: cell.width,
-        height: cell.height
-      });
-      
-      // Traccia le pagine su cui appare ogni riga
-      if (!rowPages.has(rowIndex)) {
-        rowPages.set(rowIndex, new Set());
-      }
-      rowPages.get(rowIndex)!.add(pageNumber);
-    },
     didDrawPage: (data) => {
       const pageCount = (doc as any).internal.getNumberOfPages();
       const currentPage = data.pageNumber;
       addFooter(currentPage, pageCount, currentPage !== 1);
     },
-  });
-
-  // Post-processing: sovrascrivi celle nelle righe divise
-  rowPages.forEach((pages, rowIndex) => {
-    if (pages.size > 1) {
-      // Questa riga è divisa su più pagine
-      const sortedPages = Array.from(pages).sort((a, b) => a - b);
-      const firstPage = sortedPages[0];
-      
-      // Per ogni pagina tranne l'ultima, sovrascrivi le colonne 2-5
-      for (let i = 0; i < sortedPages.length - 1; i++) {
-        const page = sortedPages[i];
-        doc.setPage(page);
-        
-        const cellsInRow = drawnCells.get(rowIndex);
-        if (cellsInRow) {
-          // Sovrascrivi colonne 2-5 (U.M., Qtà, Prezzo Unit., Totale)
-          for (let colIndex = 2; colIndex <= 5; colIndex++) {
-            const cellInfo = cellsInRow.get(colIndex);
-            if (cellInfo && cellInfo.page === page) {
-              // Disegna un rettangolo bianco sopra la cella
-              doc.setFillColor(255, 255, 255);
-              doc.rect(cellInfo.x + 0.3, cellInfo.y + 0.3, cellInfo.width - 0.6, cellInfo.height - 0.6, 'F');
-            }
-          }
-        }
-      }
-    }
   });
 
   // Posizione dopo la tabella
