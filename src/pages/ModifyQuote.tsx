@@ -922,11 +922,11 @@ const ModifyQuote = () => {
           
           <div className="absolute top-[88px] -right-20 flex flex-col gap-0">
             {lines.map((line, index) => (
-              <div key={line.id} data-button-row className="flex gap-1 items-end justify-end">
+              <div key={line.id} data-button-row className="flex gap-1 items-center justify-end">
                 <Button
                   size="icon"
                   onClick={() => addLine(index)}
-                  className="h-8 w-8 mb-2"
+                  className="h-8 w-8"
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
@@ -935,7 +935,7 @@ const ModifyQuote = () => {
                     size="icon"
                     variant="destructive"
                     onClick={() => removeLine(index)}
-                    className="h-8 w-8 mb-2"
+                    className="h-8 w-8"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
