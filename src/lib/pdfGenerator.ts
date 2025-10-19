@@ -60,14 +60,41 @@ export const generateQuotePDF = async (
   const margin = 12.7; // Margini stretti Word (0.5 inch = 12.7mm)
   let yPos = margin;
 
-  // Helper per aggiungere numero di pagina
-  const addPageNumber = (currentPage: number, totalPages: number) => {
+  // Helper per aggiungere footer con logo, dati azienda e numero pagina
+  const addFooter = (currentPage: number, totalPages: number) => {
+    const footerY = pageHeight - 10;
+    
+    // Logo a sinistra (piccolo)
+    if (settings.logoPath) {
+      try {
+        doc.addImage(settings.logoPath, "PNG", margin, footerY - 6, 15, 8);
+      } catch (error) {
+        console.warn("Logo footer non caricato:", error);
+      }
+    }
+    
+    // Dati azienda al centro
+    doc.setFontSize(7);
+    doc.setTextColor(80, 80, 80);
+    const centerX = pageWidth / 2;
+    let footerTextY = footerY - 6;
+    
+    doc.setFont("helvetica", "bold");
+    doc.text(settings.name, centerX, footerTextY, { align: "center" });
+    footerTextY += 3;
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(`P.IVA ${settings.vatNumber} - ${settings.address}`, centerX, footerTextY, { align: "center" });
+    footerTextY += 3;
+    doc.text(`Tel. ${settings.phone} - Email: ${settings.email}`, centerX, footerTextY, { align: "center" });
+    
+    // Numero pagina a destra
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
     doc.text(
       `Pagina ${currentPage} di ${totalPages}`,
       pageWidth - margin,
-      pageHeight - 10,
+      footerY,
       { align: "right" }
     );
   };
@@ -207,10 +234,10 @@ export const generateQuotePDF = async (
       5: { cellWidth: 24, halign: "right", valign: "bottom" },
     },
     didDrawPage: (data) => {
-      // Aggiungi numero pagina su ogni pagina
+      // Aggiungi footer su ogni pagina
       const pageCount = (doc as any).internal.getNumberOfPages();
       const currentPage = (doc as any).internal.getCurrentPageInfo().pageNumber;
-      addPageNumber(currentPage, pageCount);
+      addFooter(currentPage, pageCount);
     },
   });
 
@@ -275,7 +302,7 @@ export const generateQuotePDF = async (
     didDrawPage: (data) => {
       const pageCount = (doc as any).internal.getNumberOfPages();
       const currentPage = (doc as any).internal.getCurrentPageInfo().pageNumber;
-      addPageNumber(currentPage, pageCount);
+      addFooter(currentPage, pageCount);
     },
   });
 
@@ -317,11 +344,11 @@ export const generateQuotePDF = async (
   doc.setFont("helvetica", "normal");
   doc.line(pageWidth - margin - 60, yPos, pageWidth - margin, yPos);
 
-  // Aggiungi numeri di pagina su tutte le pagine
+  // Aggiungi footer su tutte le pagine
   const totalPages = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    addPageNumber(i, totalPages);
+    addFooter(i, totalPages);
   }
 
   return doc;
