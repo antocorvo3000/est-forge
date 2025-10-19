@@ -58,7 +58,7 @@ const PdfPreview = () => {
     
     if (!data || !companySettings) {
       toast.error("Nessun dato disponibile per generare il PDF");
-      navigate(-1);
+      navigate("/");
       return;
     }
 
@@ -67,16 +67,17 @@ const PdfPreview = () => {
 
     // Genera il PDF
     const generatePdf = async () => {
+      let blobUrl = "";
       try {
         const pdf = await generateQuotePDF(data, companySettings);
         // Usa Blob URL invece di data URL per evitare blocchi di Chrome
         const blob = pdf.output("blob");
-        const blobUrl = URL.createObjectURL(blob);
+        blobUrl = URL.createObjectURL(blob);
         setPdfDataUrl(blobUrl);
       } catch (error) {
         console.error("Errore generazione PDF:", error);
         toast.error("Errore durante la generazione del PDF");
-        navigate(-1);
+        navigate("/");
       } finally {
         setLoading(false);
       }
@@ -159,7 +160,7 @@ const PdfPreview = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/")}
             className="h-10 w-10"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -181,17 +182,25 @@ const PdfPreview = () => {
             }}
           >
             <div className="flex justify-center">
-              <iframe
-                src={pdfDataUrl}
+              <object
+                data={pdfDataUrl}
+                type="application/pdf"
                 className="border-0 rounded-lg shadow-lg"
                 style={{
                   width: `${zoom}%`,
-                  height: `${(297 / 210) * zoom * 2.83}px`, // Proporzioni A4: 297mm / 210mm
-                  minHeight: "842px", // A4 height in pixels at 72 DPI
+                  height: `${(297 / 210) * zoom * 2.83}px`,
+                  minHeight: "842px",
                   transition: "all 0.3s ease",
                 }}
-                title="PDF Preview"
-              />
+              >
+                <p className="text-center p-4">
+                  Il tuo browser non supporta la visualizzazione PDF.
+                  <br />
+                  <Button onClick={handleSave} className="mt-4">
+                    Scarica PDF
+                  </Button>
+                </p>
+              </object>
             </div>
           </motion.div>
 
