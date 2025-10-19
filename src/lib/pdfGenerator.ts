@@ -179,126 +179,23 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
   doc.text(ubicazioneText, margin, yPos);
   yPos += 8;
 
-  // ===== FUNZIONE SPLIT CORRETTA =====
-  const splitDescriptionIntoRows = (
-    itemNumber: string,
-    descriptionText: string,
-    um: string,
-    qty: string,
-    priceUnit: string,
-    total: string,
-    maxLinesPerChunk: number = 14,
-  ): any[] => {
-    // Imposta font per calcolare correttamente le dimensioni
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-
-    // Larghezze colonne dalla configurazione
-    const col0Width = 8; // Nr
-    const col2Width = 15; // U.M.
-    const col3Width = 12; // Qtà
-    const col4Width = 24; // Prezzo Unit.
-    const col5Width = 24; // Totale
-
-    // Calcola larghezza disponibile per la colonna descrizione
-    const usedWidth = col0Width + col2Width + col3Width + col4Width + col5Width;
-    const descColumnWidth = pageWidth - 2 * margin - usedWidth;
-
-    // Spezza il testo in righe
-    const lines = doc.splitTextToSize(descriptionText, descColumnWidth);
-
-    if (lines.length === 0) {
-      lines.push("");
-    }
-
-    // Se ci sono poche righe (1-2), crea una singola riga normale
-    if (lines.length <= 2) {
-      return [[itemNumber, descriptionText, um, qty, priceUnit, total]];
-    }
-
-    // Spezza in chunks
-    const chunks: string[][] = [];
-    for (let i = 0; i < lines.length; i += maxLinesPerChunk) {
-      chunks.push(lines.slice(i, i + maxLinesPerChunk));
-    }
-
-    const rows: any[] = [];
-
-    if (chunks.length === 1) {
-      // Un solo chunk: riga completa
-      rows.push([itemNumber, descriptionText, um, qty, priceUnit, total]);
-    } else {
-      // Prima riga: numero + primo chunk + celle vuote (per mantenere 6 colonne)
-      rows.push([
-        itemNumber,
-        {
-          content: chunks[0].join("\n"),
-          colSpan: 5,
-        },
-        "",
-        "",
-        "",
-        "", // Celle vuote per mantenere la struttura
-      ]);
-
-      // Righe intermedie (se ci sono): numero vuoto + descrizione + celle vuote
-      for (let i = 1; i < chunks.length - 1; i++) {
-        rows.push([
-          "",
-          {
-            content: chunks[i].join("\n"),
-            colSpan: 5,
-          },
-          "",
-          "",
-          "",
-          "", // Celle vuote per mantenere la struttura
-        ]);
-      }
-
-      // Ultima riga: numero vuoto + ultimo chunk + valori (allineati in basso)
-      rows.push([
-        "",
-        {
-          content: chunks[chunks.length - 1].join("\n"),
-          styles: { valign: "bottom" },
-        },
-        {
-          content: um,
-          styles: { halign: "center", valign: "bottom" },
-        },
-        {
-          content: qty,
-          styles: { halign: "right", valign: "bottom" },
-        },
-        {
-          content: priceUnit,
-          styles: { halign: "right", valign: "bottom" },
-        },
-        {
-          content: total,
-          styles: { halign: "right", valign: "bottom" },
-        },
-      ]);
-    }
-
-    return rows;
-  };
-
-  // Pre-split delle descrizioni e costruzione righe tabella
+  // Prepara i dati della tabella
   const tableData: any[] = [];
+  const rowMetadata: Map<number, { um: string; qty: string; price: string; total: string }> = new Map();
+
   quoteData.righe.forEach((riga, index) => {
-    const rows = splitDescriptionIntoRows(
-      (index + 1).toString(),
-      riga.descrizione,
-      riga.unita_misura,
-      riga.quantita.toString(),
-      `€ ${formatCurrency(riga.prezzo_unitario)}`,
-      `€ ${formatCurrency(riga.totale)}`,
-      14,
-    );
-    tableData.push(...rows);
+    const um = riga.unita_misura;
+    const qty = riga.quantita.toString();
+    const price = `€ ${formatCurrency(riga.prezzo_unitario)}`;
+    const total = `€ ${formatCurrency(riga.totale)}`;
+
+    rowMetadata.set(index, { um, qty, price, total });
+
+    tableData.push([(index + 1).toString(), riga.descrizione, um, qty, price, total]);
   });
+
+  // Tracciamento delle righe divise
+  const rowPageMap: Map<number, { pages: number[]; cells: any[] }> = new Map();
 
   autoTable(doc, {
     startY: yPos,
@@ -330,11 +227,118 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
       5: { cellWidth: 24, halign: "right", valign: "top" },
     },
     margin: { bottom: 25 },
+
+    didDrawCell: (data) => {
+      if (data.section === "body") {
+        const rowIndex = data.row.index;
+
+        // Inizializza il tracking per questa riga se non esiste
+        if (!rowPageMap.has(rowIndex)) {
+          rowPageMap.set(rowIndex, { pages: [], cells: [] });
+        }
+
+        const rowData = rowPageMap.get(rowIndex)!;
+
+        // Aggiungi la pagina se non è già presente
+        if (!rowData.pages.includes(data.pageNumber)) {
+          rowData.pages.push(data.pageNumber);
+        }
+
+        // Salva i dati della cella
+        rowData.cells.push({
+          columnIndex: data.column.index,
+          page: data.pageNumber,
+          x: data.cell.x,
+          y: data.cell.y,
+          width: data.cell.width,
+          height: data.cell.height,
+        });
+      }
+    },
+
     didDrawPage: (data) => {
       const pageCount = (doc as any).internal.getNumberOfPages();
       const currentPage = data.pageNumber;
       addFooter(currentPage, pageCount, currentPage !== 1);
     },
+  });
+
+  // Post-processing: nascondi i valori nelle prime parti e ridisegnali nell'ultima
+  rowPageMap.forEach((rowData, rowIndex) => {
+    if (rowData.pages.length > 1) {
+      // Questa riga è divisa su più pagine
+      const lastPage = Math.max(...rowData.pages);
+      const metadata = rowMetadata.get(rowIndex);
+
+      if (!metadata) return;
+
+      // Filtra le celle per colonne 2-5 (U.M., Qtà, Prezzo, Totale)
+      const valueCells = rowData.cells.filter((cell) => cell.columnIndex >= 2 && cell.columnIndex <= 5);
+
+      // Nascondi i valori in tutte le pagine tranne l'ultima
+      valueCells.forEach((cell) => {
+        if (cell.page !== lastPage) {
+          doc.setPage(cell.page);
+          doc.setFillColor(255, 255, 255);
+          doc.rect(cell.x, cell.y, cell.width, cell.height, "F");
+
+          // Ridisegna solo i bordi
+          doc.setDrawColor(0, 0, 0);
+          doc.setLineWidth(0.3);
+          doc.rect(cell.x, cell.y, cell.width, cell.height, "S");
+        }
+      });
+
+      // Ridisegna i valori nell'ultima pagina, allineati in basso
+      const lastPageCells = valueCells.filter((cell) => cell.page === lastPage);
+
+      doc.setPage(lastPage);
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("helvetica", "normal");
+
+      lastPageCells.forEach((cell) => {
+        let text = "";
+        let align: "center" | "right" = "center";
+
+        switch (cell.columnIndex) {
+          case 2: // U.M.
+            text = metadata.um;
+            align = "center";
+            break;
+          case 3: // Qtà
+            text = metadata.qty;
+            align = "right";
+            break;
+          case 4: // Prezzo Unit.
+            text = metadata.price;
+            align = "right";
+            break;
+          case 5: // Totale
+            text = metadata.total;
+            align = "right";
+            break;
+        }
+
+        // Cancella il contenuto esistente
+        doc.setFillColor(255, 255, 255);
+        doc.rect(cell.x, cell.y, cell.width, cell.height, "F");
+
+        // Ridisegna i bordi
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.3);
+        doc.rect(cell.x, cell.y, cell.width, cell.height, "S");
+
+        // Calcola la posizione Y per allineare il testo in basso
+        const textY = cell.y + cell.height - 2;
+
+        if (align === "center") {
+          doc.text(text, cell.x + cell.width / 2, textY, { align: "center" });
+        } else {
+          doc.text(text, cell.x + cell.width - 2, textY, { align: "right" });
+        }
+      });
+    }
   });
 
   yPos = (doc as any).lastAutoTable.finalY + 8;
