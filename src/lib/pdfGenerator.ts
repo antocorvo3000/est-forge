@@ -244,7 +244,6 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     const price = `€ ${formatCurrency(riga.prezzo_unitario)}`;
     const total = `€ ${formatCurrency(riga.totale)}`;
 
-    // Split descrizione in righe
     const descLines = doc.splitTextToSize(riga.descrizione, colWidths.desc - 4);
     const lineHeight = 4;
     const minChunkHeight = 10;
@@ -253,19 +252,16 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     let isFirstChunk = true;
 
     while (lineIndex < descLines.length) {
-      // Calcola quante righe possiamo mettere in questa pagina
       const spaceLeft = availableHeight - yPos;
       const maxLinesInChunk = Math.floor((spaceLeft - 4) / lineHeight);
 
       if (maxLinesInChunk < 2 && lineIndex < descLines.length) {
-        // Non c'è abbastanza spazio, vai a nuova pagina
         doc.addPage();
         yPos = margin;
         yPos = drawTableHeader(yPos);
         continue;
       }
 
-      // Determina quante righe mettere in questo chunk
       const remainingLines = descLines.length - lineIndex;
       const linesToDraw = Math.min(maxLinesInChunk, remainingLines);
       const chunkHeight = Math.max(linesToDraw * lineHeight + 4, minChunkHeight);
@@ -292,20 +288,23 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
       // Contenuto
       x = margin;
 
-      // Nr - solo nel primo chunk, in alto
+      // Nr - solo primo chunk, normale
       if (isFirstChunk) {
+        doc.setFont("helvetica", "normal");
         doc.text(nr, x + colWidths.nr / 2, rowStartY + 5, { align: "center" });
       }
       x += colWidths.nr;
 
-      // Descrizione
+      // Descrizione - normale
+      doc.setFont("helvetica", "normal");
       for (let i = 0; i < linesToDraw; i++) {
         doc.text(descLines[lineIndex + i], x + 2, rowStartY + 5 + i * lineHeight);
       }
       x += colWidths.desc;
 
-      // Valori - solo nell'ultimo chunk, in basso
+      // Valori - solo ultimo chunk, normale
       if (isLastChunk) {
+        doc.setFont("helvetica", "normal");
         const bottomTextY = rowStartY + chunkHeight - 2;
 
         doc.text(um, x + colWidths.um / 2, bottomTextY, { align: "center" });
@@ -326,25 +325,57 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     }
   });
 
-  // Totali
-  yPos += 5;
+  // Calcola spazio necessario per tutto il resto
+  const summaryHeight = 6;
+  let numSummaryRows = 2; // Subtotale + Totale
+  if (quoteData.showDiscountInTable && quoteData.sconto_percentuale && quoteData.sconto_percentuale > 0) {
+    numSummaryRows++;
+  }
 
-  if (yPos + 25 > availableHeight) {
+  const totalSummaryHeight = numSummaryRows * summaryHeight + 10; // +10 per spaziatura
+
+  // Calcola altezza note
+  let notesHeight = 0;
+  if (quoteData.note) {
+    const noteLines = doc.splitTextToSize(quoteData.note, pageWidth - 2 * margin);
+    notesHeight = 10 + 5 + noteLines.length * 4 + 5; // titolo + spaziatura + testo + spaziatura
+  }
+
+  // Calcola altezza pagamento
+  let paymentHeight = 0;
+  if (quoteData.modalita_pagamento) {
+    paymentHeight = 5 + 5 + 5 + 10; // spaziatura + titolo + spaziatura + testo + spaziatura
+  }
+
+  const signatureHeight = 5 + 5 + 15 + 5; // spaziatura + testo + linea + spaziatura
+
+  const totalNeededSpace = totalSummaryHeight + notesHeight + paymentHeight + signatureHeight;
+
+  // Se non c'è spazio, vai a nuova pagina per TUTTO
+  if (yPos + totalNeededSpace > availableHeight) {
     doc.addPage();
     yPos = margin;
   }
 
-  const summaryHeight = 6;
-  let x = margin;
+  // Totali
+  yPos += 5;
+
+  const summaryStartX = margin;
 
   doc.setFont("helvetica", "bold");
   doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.3);
+  doc.setTextColor(0, 0, 0);
 
   // Subtotale
-  doc.rect(x, yPos, colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price, summaryHeight);
   doc.rect(
-    x + colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
+    summaryStartX,
+    yPos,
+    colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
+    summaryHeight,
+  );
+  doc.rect(
+    summaryStartX + colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
     yPos,
     colWidths.total,
     summaryHeight,
@@ -359,9 +390,14 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
 
   // Sconto
   if (quoteData.showDiscountInTable && quoteData.sconto_percentuale && quoteData.sconto_percentuale > 0) {
-    doc.rect(x, yPos, colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price, summaryHeight);
     doc.rect(
-      x + colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
+      summaryStartX,
+      yPos,
+      colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
+      summaryHeight,
+    );
+    doc.rect(
+      summaryStartX + colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
       yPos,
       colWidths.total,
       summaryHeight,
@@ -376,9 +412,14 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
   }
 
   // Totale
-  doc.rect(x, yPos, colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price, summaryHeight);
   doc.rect(
-    x + colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
+    summaryStartX,
+    yPos,
+    colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
+    summaryHeight,
+  );
+  doc.rect(
+    summaryStartX + colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
     yPos,
     colWidths.total,
     summaryHeight,
@@ -393,6 +434,7 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
 
   // Note
   if (quoteData.note) {
+    yPos += 10;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.text("Note:", margin, yPos);
@@ -406,6 +448,7 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
 
   // Modalità pagamento
   if (quoteData.modalita_pagamento) {
+    yPos += 5;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.text("Modalità di pagamento:", margin, yPos);
