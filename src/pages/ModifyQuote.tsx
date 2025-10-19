@@ -784,142 +784,146 @@ const ModifyQuote = () => {
         >
           <h2 className="text-xl font-bold mb-4">Preventivo</h2>
           
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2 w-8" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>#</th>
-                  <th className="text-left p-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Descrizione</th>
-                  <th className="text-left p-2 w-24" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>U.M.</th>
-                  <th className="text-left p-2 w-24" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Qtà</th>
-                  <th className="text-left p-2 w-32" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Prezzo Unit.</th>
-                  <th className="text-left p-2 w-28" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Totale</th>
-                  <th className="w-16"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {lines.map((line, index) => (
-                  <tr key={line.id} className="border-b hover:bg-accent/20 transition-colors">
-                    <td className="p-2 text-muted-foreground align-bottom" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>{index + 1}</td>
-                    <td className="p-2 align-top">
-                      <Textarea
-                        id={`desc-${index}`}
-                        value={line.description}
-                        onChange={(e) => updateLine(index, "description", e.target.value)}
-                        placeholder="Descrizione"
-                        className="min-w-[200px] bg-white resize-none min-h-[40px] overflow-hidden"
-                        rows={1}
-                        style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-                        onInput={(e) => {
-                          e.currentTarget.style.height = 'auto';
-                          e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
-                        }}
-                      />
-                    </td>
-                    <td className="p-2 align-bottom">
-                      <Select
-                        value={line.unit}
-                        onValueChange={(value) => updateLine(index, "unit", value)}
-                      >
-                        <SelectTrigger className="bg-white text-left w-24" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-                          <span>{line.unit}</span>
-                        </SelectTrigger>
-                        <SelectContent className="bg-white z-50">
-                          {UNITS.map((unit) => (
-                            <SelectItem 
-                              key={unit.value} 
-                              value={unit.value} 
-                              className="text-left justify-start cursor-pointer"
-                              style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-                            >
-                              <span className="text-left w-full block">{unit.label}</span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </td>
-                    <td className="p-2 align-bottom">
-                      <Input
-                        type="text"
-                        id={`qty-${index}`}
-                        value={line.quantity === 0 ? "" : formatNumberInput(line.quantity)}
-                        onChange={(e) => {
-                          const cleaned = e.target.value.replace(/[^\d,]/g, '');
-                          const num = parseItalianNumber(cleaned);
-                          updateLine(index, "quantity", num);
-                        }}
-                        onBlur={(e) => handleNumberBlur(index, "quantity", e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(e, index, "quantity")}
-                        placeholder="0,00"
-                        className="bg-white"
-                        style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-                      />
-                    </td>
-                    <td className="p-2 align-bottom">
-                      <div className="space-y-1">
+          <div className="flex gap-2">
+            <div className="overflow-x-auto flex-1">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-2 w-8" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>#</th>
+                    <th className="text-left p-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Descrizione</th>
+                    <th className="text-left p-2 w-24" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>U.M.</th>
+                    <th className="text-left p-2 w-32" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Qtà</th>
+                    <th className="text-left p-2 w-40" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Prezzo Unit.</th>
+                    <th className="text-left p-2 w-36" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Totale</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lines.map((line, index) => (
+                    <tr key={line.id} className="border-b hover:bg-accent/20 transition-colors">
+                      <td className="p-2 text-muted-foreground align-bottom" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>{index + 1}</td>
+                      <td className="p-2 align-top">
+                        <Textarea
+                          id={`desc-${index}`}
+                          value={line.description}
+                          onChange={(e) => updateLine(index, "description", e.target.value)}
+                          placeholder="Descrizione"
+                          className="min-w-[200px] bg-white resize-none min-h-[40px] overflow-hidden"
+                          rows={1}
+                          style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                          onInput={(e) => {
+                            e.currentTarget.style.height = 'auto';
+                            e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
+                          }}
+                        />
+                      </td>
+                      <td className="p-2 align-bottom">
+                        <Select
+                          value={line.unit}
+                          onValueChange={(value) => updateLine(index, "unit", value)}
+                        >
+                          <SelectTrigger className="bg-white text-left w-24" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                            <span>{line.unit}</span>
+                          </SelectTrigger>
+                          <SelectContent className="bg-white z-50">
+                            {UNITS.map((unit) => (
+                              <SelectItem 
+                                key={unit.value} 
+                                value={unit.value} 
+                                className="text-left justify-start cursor-pointer"
+                                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                              >
+                                <span className="text-left w-full block">{unit.label}</span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="p-2 align-bottom">
                         <Input
                           type="text"
-                          id={`price-${index}`}
-                          value={line.unitPrice === 0 ? "" : formatNumberInput(line.unitPrice)}
+                          id={`qty-${index}`}
+                          value={line.quantity === 0 ? "" : formatNumberInput(line.quantity)}
                           onChange={(e) => {
                             const cleaned = e.target.value.replace(/[^\d,]/g, '');
                             const num = parseItalianNumber(cleaned);
-                            updateLine(index, "unitPrice", num);
+                            updateLine(index, "quantity", num);
                           }}
-                          onBlur={(e) => handleNumberBlur(index, "unitPrice", e.target.value)}
-                          onKeyDown={(e) => handleKeyDown(e, index, "unitPrice")}
+                          onBlur={(e) => handleNumberBlur(index, "quantity", e.target.value)}
+                          onKeyDown={(e) => handleKeyDown(e, index, "quantity")}
                           placeholder="0,00"
                           className="bg-white"
                           style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                         />
-                        {discountEnabled && !showDiscountInTable && typeof discountValue === 'number' && discountValue > 0 && (
-                          <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Scontato:</Label>
-                            <Input
-                              type="text"
-                              value={`€ ${formatCurrency(getEffectiveUnitPrice(line.unitPrice))}`}
-                              readOnly
-                              className="bg-muted cursor-default"
-                              style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-2 align-bottom">
-                      <Input
-                        type="text"
-                        value={`€ ${formatCurrency(getEffectiveLineTotal(line))}`}
-                        readOnly
-                        className="bg-muted cursor-default font-semibold"
-                        style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-                      />
-                    </td>
-                    <td className="p-2 align-bottom">
-                      <div className="flex gap-1">
-                        <Button
-                          size="icon"
-                          onClick={() => addLine(index)}
-                          className="h-8 w-8"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                        {lines.length > 1 && (
-                          <Button
-                            size="icon"
-                            variant="destructive"
-                            onClick={() => removeLine(index)}
-                            className="h-8 w-8"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </td>
+                      <td className="p-2 align-bottom">
+                        <div className="space-y-1">
+                          <Input
+                            type="text"
+                            id={`price-${index}`}
+                            value={line.unitPrice === 0 ? "" : formatNumberInput(line.unitPrice)}
+                            onChange={(e) => {
+                              const cleaned = e.target.value.replace(/[^\d,]/g, '');
+                              const num = parseItalianNumber(cleaned);
+                              updateLine(index, "unitPrice", num);
+                            }}
+                            onBlur={(e) => handleNumberBlur(index, "unitPrice", e.target.value)}
+                            onKeyDown={(e) => handleKeyDown(e, index, "unitPrice")}
+                            placeholder="0,00"
+                            className="bg-white"
+                            style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                          />
+                          {discountEnabled && !showDiscountInTable && typeof discountValue === 'number' && discountValue > 0 && (
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">Scontato:</Label>
+                              <Input
+                                type="text"
+                                value={`€ ${formatCurrency(getEffectiveUnitPrice(line.unitPrice))}`}
+                                readOnly
+                                className="bg-muted cursor-default"
+                                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-2 align-bottom">
+                        <Input
+                          type="text"
+                          value={`€ ${formatCurrency(getEffectiveLineTotal(line))}`}
+                          readOnly
+                          className="bg-muted cursor-default font-semibold"
+                          style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="flex flex-col gap-0 pt-[52px]">
+              {lines.map((line, index) => (
+                <div key={line.id} className="flex gap-1 items-end border-b" style={{ minHeight: '57px' }}>
+                  <Button
+                    size="icon"
+                    onClick={() => addLine(index)}
+                    className="h-8 w-8 mb-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                  {lines.length > 1 && (
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      onClick={() => removeLine(index)}
+                      className="h-8 w-8 mb-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="mt-4 flex justify-end">
