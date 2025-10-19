@@ -223,12 +223,12 @@ export const generateQuotePDF = async (
       textColor: [0, 0, 0],
     },
     columnStyles: {
-      0: { cellWidth: 10, halign: "center", valign: "bottom" },
-      1: { cellWidth: "auto", halign: "left", valign: "bottom" },
-      2: { cellWidth: 20, halign: "center", valign: "bottom" },
-      3: { cellWidth: 18, halign: "right", valign: "bottom" },
-      4: { cellWidth: 28, halign: "right", valign: "bottom" },
-      5: { cellWidth: 28, halign: "right", valign: "bottom" },
+      0: { cellWidth: 8, halign: "center", valign: "middle" },
+      1: { cellWidth: "auto", halign: "left", valign: "middle", overflow: "linebreak" },
+      2: { cellWidth: 15, halign: "center", valign: "middle" },
+      3: { cellWidth: 12, halign: "right", valign: "middle" },
+      4: { cellWidth: 24, halign: "right", valign: "middle" },
+      5: { cellWidth: 24, halign: "right", valign: "middle" },
     },
     didDrawPage: (data) => {
       // Aggiungi numero pagina su ogni pagina
