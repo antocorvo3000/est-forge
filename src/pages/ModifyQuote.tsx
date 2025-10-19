@@ -873,15 +873,27 @@ const ModifyQuote = () => {
                           style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                         />
                         {discountEnabled && !showDiscountInTable && typeof discountValue === 'number' && discountValue > 0 && (
-                          <div className="text-sm text-foreground font-medium">
-                            <div>Scontato:</div>
-                            <div>€ {formatCurrency(getEffectiveUnitPrice(line.unitPrice))}</div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Scontato:</Label>
+                            <Input
+                              type="text"
+                              value={`€ ${formatCurrency(getEffectiveUnitPrice(line.unitPrice))}`}
+                              readOnly
+                              className="bg-muted cursor-default"
+                              style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                            />
                           </div>
                         )}
                       </div>
                     </td>
-                    <td className="p-2 font-semibold align-bottom" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-                      € {formatCurrency(getEffectiveLineTotal(line))}
+                    <td className="p-2 align-bottom">
+                      <Input
+                        type="text"
+                        value={`€ ${formatCurrency(getEffectiveLineTotal(line))}`}
+                        readOnly
+                        className="bg-muted cursor-default font-semibold"
+                        style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                      />
                     </td>
                     <td className="p-2 align-bottom">
                       <div className="flex gap-1">
