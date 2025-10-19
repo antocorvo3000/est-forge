@@ -195,7 +195,6 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
 
     // Larghezze colonne dalla configurazione
     const col0Width = 8; // Nr
-    const col1Width = 999; // Descrizione (auto, calcolata)
     const col2Width = 15; // U.M.
     const col3Width = 12; // Qtà
     const col4Width = 24; // Prezzo Unit.
@@ -229,26 +228,35 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
       // Un solo chunk: riga completa
       rows.push([itemNumber, descriptionText, um, qty, priceUnit, total]);
     } else {
-      // Prima riga: numero + primo chunk su colSpan 5
+      // Prima riga: numero + primo chunk + celle vuote (per mantenere 6 colonne)
       rows.push([
         itemNumber,
         {
           content: chunks[0].join("\n"),
           colSpan: 5,
         },
+        "",
+        "",
+        "",
+        "", // Celle vuote per mantenere la struttura
       ]);
 
-      // Righe intermedie (se ci sono): solo descrizione su colSpan 6
+      // Righe intermedie (se ci sono): numero vuoto + descrizione + celle vuote
       for (let i = 1; i < chunks.length - 1; i++) {
         rows.push([
+          "",
           {
             content: chunks[i].join("\n"),
-            colSpan: 6,
+            colSpan: 5,
           },
+          "",
+          "",
+          "",
+          "", // Celle vuote per mantenere la struttura
         ]);
       }
 
-      // Ultima riga: ultimo chunk + valori (allineati in basso)
+      // Ultima riga: numero vuoto + ultimo chunk + valori (allineati in basso)
       rows.push([
         "",
         {
