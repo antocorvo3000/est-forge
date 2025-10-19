@@ -63,6 +63,32 @@ const ModifyQuote = () => {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const formatItalianNumber = (value: number): string => {
+    return new Intl.NumberFormat('it-IT', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  };
+
+  const parseItalianNumber = (value: string): number => {
+    // Rimuove i separatori di migliaia e sostituisce la virgola con il punto
+    const cleaned = value.replace(/\./g, '').replace(',', '.');
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const handleNumberBlur = (index: number, field: "quantity" | "unitPrice", value: string) => {
+    const numValue = parseItalianNumber(value);
+    updateLine(index, field, numValue);
+  };
+
+  const formatNumberInput = (value: number | string): string => {
+    if (value === "" || value === null || value === undefined) return "";
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(num)) return "";
+    return formatItalianNumber(num);
+  };
+
   // Get quote data from location state
   const quoteData = location.state?.quote;
   const isCloning = location.state?.isCloning || false;
@@ -84,7 +110,7 @@ const ModifyQuote = () => {
 
   // Discount
   const [discountEnabled, setDiscountEnabled] = useState(false);
-  const [discountValue, setDiscountValue] = useState(0);
+  const [discountValue, setDiscountValue] = useState<number | "">(0);
   const [showDiscountInTable, setShowDiscountInTable] = useState(false);
 
   // Notes
@@ -251,8 +277,9 @@ const ModifyQuote = () => {
 
   // Calcola il prezzo unitario effettivo (con sconto applicato se necessario)
   const getEffectiveUnitPrice = (unitPrice: number) => {
-    if (discountEnabled && !showDiscountInTable && discountValue > 0) {
-      return unitPrice * (1 - discountValue / 100);
+    const discount = typeof discountValue === 'number' ? discountValue : 0;
+    if (discountEnabled && !showDiscountInTable && discount > 0) {
+      return unitPrice * (1 - discount / 100);
     }
     return unitPrice;
   };
@@ -272,9 +299,10 @@ const ModifyQuote = () => {
 
   const calculateDiscount = () => {
     if (!discountEnabled) return 0;
+    const discount = typeof discountValue === 'number' ? discountValue : 0;
     // Lo sconto viene mostrato solo se showDiscountInTable è true
     if (showDiscountInTable) {
-      return (lines.reduce((sum, line) => sum + line.total, 0) * discountValue) / 100;
+      return (lines.reduce((sum, line) => sum + line.total, 0) * discount) / 100;
     }
     return 0;
   };
@@ -752,6 +780,7 @@ const ModifyQuote = () => {
                     <td className="p-2 text-muted-foreground" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>{index + 1}</td>
                     <td className="p-2">
                       <Textarea
+                        id={`desc-${index}`}
                         value={line.description}
                         onChange={(e) => updateLine(index, "description", e.target.value)}
                         placeholder="Descrizione"
@@ -788,13 +817,17 @@ const ModifyQuote = () => {
                     </td>
                     <td className="p-2">
                       <Input
-                        type="number"
-                        value={line.quantity || ""}
-                        onChange={(e) => updateLine(index, "quantity", parseFloat(e.target.value) || 0)}
+                        type="text"
+                        id={`qty-${index}`}
+                        value={line.quantity === 0 ? "" : formatNumberInput(line.quantity)}
+                        onChange={(e) => {
+                          const cleaned = e.target.value.replace(/[^\d,]/g, '');
+                          const num = parseItalianNumber(cleaned);
+                          updateLine(index, "quantity", num);
+                        }}
+                        onBlur={(e) => handleNumberBlur(index, "quantity", e.target.value)}
                         onKeyDown={(e) => handleKeyDown(e, index, "quantity")}
-                        min="0"
-                        step="0.01"
-                        placeholder="0"
+                        placeholder="0,00"
                         className="bg-white"
                         style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                       />
@@ -802,17 +835,21 @@ const ModifyQuote = () => {
                     <td className="p-2">
                       <div className="space-y-1">
                         <Input
-                          type="number"
-                          value={line.unitPrice || ""}
-                          onChange={(e) => updateLine(index, "unitPrice", parseFloat(e.target.value) || 0)}
+                          type="text"
+                          id={`price-${index}`}
+                          value={line.unitPrice === 0 ? "" : formatNumberInput(line.unitPrice)}
+                          onChange={(e) => {
+                            const cleaned = e.target.value.replace(/[^\d,]/g, '');
+                            const num = parseItalianNumber(cleaned);
+                            updateLine(index, "unitPrice", num);
+                          }}
+                          onBlur={(e) => handleNumberBlur(index, "unitPrice", e.target.value)}
                           onKeyDown={(e) => handleKeyDown(e, index, "unitPrice")}
-                          min="0"
-                          step="0.01"
-                          placeholder="0"
+                          placeholder="0,00"
                           className="bg-white"
                           style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                         />
-                        {discountEnabled && !showDiscountInTable && discountValue > 0 && (
+                        {discountEnabled && !showDiscountInTable && typeof discountValue === 'number' && discountValue > 0 && (
                           <div className="text-sm text-foreground font-medium">
                             <div>Scontato:</div>
                             <div>€ {formatCurrency(getEffectiveUnitPrice(line.unitPrice))}</div>
@@ -884,12 +921,25 @@ const ModifyQuote = () => {
                   <Label htmlFor="discountValue" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Valore Sconto (%)</Label>
                   <Input
                     id="discountValue"
-                    type="number"
-                    value={discountValue}
-                    onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
-                    min="0"
-                    max="100"
-                    step="0.01"
+                    type="text"
+                    value={discountValue === "" ? "" : discountValue}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "") {
+                        setDiscountValue("");
+                      } else {
+                        const num = parseFloat(value.replace(',', '.'));
+                        if (!isNaN(num) && num >= 0 && num <= 100) {
+                          setDiscountValue(num);
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      if (discountValue === "") {
+                        setDiscountValue(0);
+                      }
+                    }}
+                    placeholder="0"
                     className="bg-white"
                     style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                   />
