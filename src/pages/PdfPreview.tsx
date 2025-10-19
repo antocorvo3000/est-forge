@@ -200,7 +200,7 @@ const PdfPreview = () => {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="w-32 flex flex-col gap-3 sticky top-4"
+            className="w-20 flex flex-col gap-3 sticky top-4"
           >
             <Button
               onClick={handleSave}
@@ -223,23 +223,23 @@ const PdfPreview = () => {
             <Button
               onClick={handleZoomIn}
               variant="outline"
-              className="h-20 w-full flex flex-col items-center justify-center gap-1 text-xs"
+              className="h-24 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
               title="Zoom In"
               disabled={zoom >= 200}
             >
               <ZoomIn className="w-5 h-5" />
-              <span className="text-center leading-tight">Zoom in avanti</span>
+              <span className="text-center leading-tight whitespace-normal">Zoom in avanti</span>
             </Button>
 
             <Button
               onClick={handleZoomOut}
               variant="outline"
-              className="h-20 w-full flex flex-col items-center justify-center gap-1 text-xs"
+              className="h-24 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
               title="Zoom Out"
               disabled={zoom <= 50}
             >
               <ZoomOut className="w-5 h-5" />
-              <span className="text-center leading-tight">Zoom indietro</span>
+              <span className="text-center leading-tight whitespace-normal">Zoom indietro</span>
             </Button>
 
             {/* Zoom indicator */}
