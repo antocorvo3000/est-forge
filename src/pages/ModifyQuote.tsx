@@ -1118,8 +1118,8 @@ const ModifyQuote = () => {
                 Sconto applicato: € {formatCurrency(calculateDiscount())}
               </div>
             )}
-          </div>
-        </motion.div>
+            </div>
+          </motion.div>
           <div className="w-20"></div>
         </div>
 
