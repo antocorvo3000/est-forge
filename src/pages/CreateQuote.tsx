@@ -62,7 +62,7 @@ const CreateQuote = () => {
   const { addQuote } = useQuotes();
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
-  const totalInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const buttonContainerRef = useRef<HTMLDivElement>(null);
 
   const formatItalianNumber = (value: number): string => {
     return new Intl.NumberFormat("it-IT", {
@@ -115,6 +115,29 @@ const CreateQuote = () => {
         textarea.style.height = textarea.scrollHeight + "px";
       }
     });
+  }, [lines]);
+
+  useEffect(() => {
+    const updateButtonPositions = () => {
+      lines.forEach((_, index) => {
+        const row = rowRefs.current[index];
+        const buttonContainer = document.querySelector(`[data-button-index="${index}"]`) as HTMLElement;
+
+        if (row && buttonContainer) {
+          const rowHeight = row.offsetHeight;
+          buttonContainer.style.height = `${rowHeight}px`;
+        }
+      });
+    };
+
+    const timer = setTimeout(updateButtonPositions, 100);
+
+    window.addEventListener("resize", updateButtonPositions);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", updateButtonPositions);
+    };
   }, [lines]);
 
   const [discountEnabled, setDiscountEnabled] = useState(false);
@@ -699,7 +722,6 @@ const CreateQuote = () => {
                       </td>
                       <td className="p-2 align-bottom">
                         <Input
-                          ref={(el) => (totalInputRefs.current[index] = el)}
                           type="text"
                           value={`€ ${formatCurrency(getEffectiveLineTotal(line))}`}
                           readOnly
@@ -722,33 +744,24 @@ const CreateQuote = () => {
             </div>
           </motion.div>
 
-          <div className="absolute top-0 -right-20 flex flex-col">
-            {lines.map((line, index) => {
-              const totalInput = totalInputRefs.current[index];
-              const totalInputTop = totalInput?.offsetTop || 0;
-              const totalInputHeight = totalInput?.offsetHeight || 40;
-
-              return (
-                <div
-                  key={line.id}
-                  data-button-row
-                  className="absolute flex gap-1 items-center justify-end"
-                  style={{
-                    top: `${totalInputTop}px`,
-                    height: `${totalInputHeight}px`,
-                  }}
-                >
-                  <Button size="icon" onClick={() => addLine(index)} className="h-8 w-8">
-                    <Plus className="w-4 h-4" />
+          <div className="absolute top-[88px] -right-20 flex flex-col gap-0">
+            {lines.map((line, index) => (
+              <div
+                key={line.id}
+                data-button-index={index}
+                className="flex gap-1 items-center justify-end transition-all"
+                style={{ minHeight: "60px" }}
+              >
+                <Button size="icon" onClick={() => addLine(index)} className="h-8 w-8">
+                  <Plus className="w-4 h-4" />
+                </Button>
+                {lines.length > 1 && (
+                  <Button size="icon" variant="destructive" onClick={() => removeLine(index)} className="h-8 w-8">
+                    <Trash2 className="w-4 h-4" />
                   </Button>
-                  {lines.length > 1 && (
-                    <Button size="icon" variant="destructive" onClick={() => removeLine(index)} className="h-8 w-8">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              );
-            })}
+                )}
+              </div>
+            ))}
           </div>
         </div>
 
