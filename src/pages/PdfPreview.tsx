@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Download, Printer, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowLeft, Download, Printer, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
@@ -51,6 +51,8 @@ const PdfPreview = () => {
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
   const [settings, setSettings] = useState<CompanySettings | null>(null);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -70,6 +72,9 @@ const PdfPreview = () => {
       try {
         // Genera il PDF
         const pdf = await generateQuotePDF(data, companySettings);
+        const numPages = pdf.getNumberOfPages();
+        setTotalPages(numPages);
+        
         const blob = pdf.output("blob");
         
         // Crea Blob URL per iframe
@@ -132,6 +137,14 @@ const PdfPreview = () => {
     setZoom((prev) => Math.max(prev - 25, 50));
   };
 
+  const handlePrevPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -185,7 +198,7 @@ const PdfPreview = () => {
             >
               <iframe
                 ref={iframeRef}
-                src={`${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+                src={`${pdfBlobUrl}#page=${currentPage}&toolbar=0&navpanes=0&scrollbar=0`}
                 className="border-0 rounded-lg shadow-lg bg-white"
                 style={{
                   width: "595px", // A4 width in pixels at 72 DPI
@@ -245,6 +258,33 @@ const PdfPreview = () => {
             {/* Zoom indicator */}
             <div className="text-center text-xs text-muted-foreground mt-2">
               {zoom}%
+            </div>
+
+            {/* Page navigation */}
+            <div className="mt-4 space-y-2">
+              <Button
+                onClick={handlePrevPage}
+                variant="outline"
+                className="h-12 w-full flex items-center justify-center gap-1 text-xs"
+                title="Pagina precedente"
+                disabled={currentPage <= 1}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+
+              <div className="text-center text-xs text-muted-foreground py-1">
+                Pagina {currentPage} di {totalPages}
+              </div>
+
+              <Button
+                onClick={handleNextPage}
+                variant="outline"
+                className="h-12 w-full flex items-center justify-center gap-1 text-xs"
+                title="Pagina successiva"
+                disabled={currentPage >= totalPages}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
             </div>
           </motion.div>
         </div>
