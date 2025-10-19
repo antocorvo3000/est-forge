@@ -179,7 +179,7 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
   doc.text(ubicazioneText, margin, yPos);
   yPos += 8;
 
-  // Prepara i dati della tabella
+  // Prepara i dati della tabella - SENZA valori nelle colonne 2-5
   const tableData: any[] = [];
   const rowMetadata: Map<number, { nr: string; um: string; qty: string; price: string; total: string }> = new Map();
 
@@ -192,10 +192,18 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
 
     rowMetadata.set(index, { nr, um, qty, price, total });
 
-    tableData.push([nr, riga.descrizione, um, qty, price, total]);
+    // IMPORTANTE: Le colonne 2-5 sono vuote, le riempiremo dopo
+    tableData.push([
+      nr,
+      riga.descrizione,
+      "", // U.M. vuota
+      "", // Qtà vuota
+      "", // Prezzo vuoto
+      "", // Totale vuoto
+    ]);
   });
 
-  // Tracciamento delle celle per ogni riga
+  // Tracciamento delle celle per ogni riga e pagina
   const rowCellsMap: Map<
     number,
     Array<{
@@ -206,6 +214,16 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
       width: number;
       height: number;
     }>
+  > = new Map();
+
+  // Traccia l'ultima cella disegnata per ogni riga
+  const rowLastCellMap: Map<
+    number,
+    {
+      page: number;
+      y: number;
+      height: number;
+    }
   > = new Map();
 
   autoTable(doc, {
@@ -232,10 +250,10 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     columnStyles: {
       0: { cellWidth: 8, halign: "center", valign: "top" },
       1: { cellWidth: "auto", halign: "left", valign: "top", overflow: "linebreak" },
-      2: { cellWidth: 15, halign: "center", valign: "top" },
-      3: { cellWidth: 12, halign: "right", valign: "top" },
-      4: { cellWidth: 24, halign: "right", valign: "top" },
-      5: { cellWidth: 24, halign: "right", valign: "top" },
+      2: { cellWidth: 15, halign: "center", valign: "bottom" },
+      3: { cellWidth: 12, halign: "right", valign: "bottom" },
+      4: { cellWidth: 24, halign: "right", valign: "bottom" },
+      5: { cellWidth: 24, halign: "right", valign: "bottom" },
     },
     margin: { bottom: 25 },
 
@@ -247,14 +265,25 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
           rowCellsMap.set(rowIndex, []);
         }
 
-        rowCellsMap.get(rowIndex)!.push({
+        const cellInfo = {
           columnIndex: data.column.index,
           page: data.pageNumber,
           x: data.cell.x,
           y: data.cell.y,
           width: data.cell.width,
           height: data.cell.height,
-        });
+        };
+
+        rowCellsMap.get(rowIndex)!.push(cellInfo);
+
+        // Aggiorna l'ultima cella della riga (usiamo colonna descrizione come riferimento)
+        if (data.column.index === 1) {
+          rowLastCellMap.set(rowIndex, {
+            page: data.pageNumber,
+            y: data.cell.y,
+            height: data.cell.height,
+          });
+        }
       }
     },
 
@@ -265,29 +294,40 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     },
   });
 
-  // Post-processing: gestisci le righe divise
+  // Post-processing: riempi le celle vuote con i valori corretti
   rowCellsMap.forEach((cells, rowIndex) => {
     const metadata = rowMetadata.get(rowIndex);
     if (!metadata) return;
 
-    // Ottieni tutte le pagine uniche dove appare questa riga
-    const pages = [...new Set(cells.map((c) => c.page))].sort((a, b) => a - b);
+    // Raggruppa celle per pagina
+    const cellsByPage: Map<number, typeof cells> = new Map();
+    cells.forEach((cell) => {
+      if (!cellsByPage.has(cell.page)) {
+        cellsByPage.set(cell.page, []);
+      }
+      cellsByPage.get(cell.page)!.push(cell);
+    });
 
-    if (pages.length > 1) {
-      // Questa riga è divisa su più pagine
-      const firstPage = pages[0];
-      const lastPage = pages[pages.length - 1];
+    const pages = [...cellsByPage.keys()].sort((a, b) => a - b);
+    const isMultiPage = pages.length > 1;
+    const firstPage = pages[0];
+    const lastPage = pages[pages.length - 1];
 
-      // Per ogni cella della riga
-      cells.forEach((cell) => {
-        const isFirstPage = cell.page === firstPage;
-        const isLastPage = cell.page === lastPage;
+    // Per ogni pagina dove appare la riga
+    pages.forEach((page, pageIdx) => {
+      const isFirst = pageIdx === 0;
+      const isLast = pageIdx === pages.length - 1;
+      const pageCells = cellsByPage.get(page)!;
 
-        doc.setPage(cell.page);
+      doc.setPage(page);
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("helvetica", "normal");
 
-        // Colonna 0 (Nr): mostra solo nella prima pagina
-        if (cell.columnIndex === 0 && !isFirstPage) {
-          // Nascondi il numero nelle pagine successive
+      pageCells.forEach((cell) => {
+        // Colonna Nr (0)
+        if (cell.columnIndex === 0 && isMultiPage && !isFirst) {
+          // Cancella il numero nelle pagine successive
           doc.setFillColor(255, 255, 255);
           doc.rect(cell.x, cell.y, cell.width, cell.height, "F");
           doc.setDrawColor(0, 0, 0);
@@ -295,27 +335,10 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
           doc.rect(cell.x, cell.y, cell.width, cell.height, "S");
         }
 
-        // Colonne 2-5 (U.M., Qtà, Prezzo, Totale): mostra solo nell'ultima pagina
+        // Colonne valori (2-5): mostra solo nell'ultima pagina
         if (cell.columnIndex >= 2 && cell.columnIndex <= 5) {
-          if (!isLastPage) {
-            // Nascondi i valori in tutte le pagine tranne l'ultima
-            doc.setFillColor(255, 255, 255);
-            doc.rect(cell.x, cell.y, cell.width, cell.height, "F");
-            doc.setDrawColor(0, 0, 0);
-            doc.setLineWidth(0.3);
-            doc.rect(cell.x, cell.y, cell.width, cell.height, "S");
-          } else {
-            // Ridisegna i valori nell'ultima pagina, allineati in basso
-            doc.setFillColor(255, 255, 255);
-            doc.rect(cell.x, cell.y, cell.width, cell.height, "F");
-            doc.setDrawColor(0, 0, 0);
-            doc.setLineWidth(0.3);
-            doc.rect(cell.x, cell.y, cell.width, cell.height, "S");
-
-            doc.setFontSize(9);
-            doc.setTextColor(0, 0, 0);
-            doc.setFont("helvetica", "normal");
-
+          if (!isMultiPage || isLast) {
+            // Disegna i valori
             let text = "";
             let align: "center" | "right" = "center";
 
@@ -349,7 +372,7 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
           }
         }
       });
-    }
+    });
   });
 
   yPos = (doc as any).lastAutoTable.finalY + 8;
