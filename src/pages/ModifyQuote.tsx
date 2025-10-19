@@ -114,6 +114,29 @@ const ModifyQuote = () => {
     }
   }, [id]);
 
+  // Save initial state after data is loaded (only if not cloning)
+  useEffect(() => {
+    if (!loading && !isCloning && clientData) {
+      const initialState = JSON.stringify({
+        clientData,
+        workAddress,
+        workCity,
+        workProvince,
+        workZip,
+        subject,
+        lines,
+        discountEnabled,
+        discountValue,
+        showDiscountInTable,
+        notesEnabled,
+        notes,
+        paymentMethod,
+        customPayment,
+      });
+      setInitialData(initialState);
+    }
+  }, [loading, isCloning]);
+
   // Sync client data when returning from client details - PRIORITÀ AI DATI MODIFICATI
   useEffect(() => {
     if (location.state?.clientData) {
@@ -178,27 +201,6 @@ const ModifyQuote = () => {
 
         // Set payment
         setPaymentMethod(data.modalita_pagamento || "da-concordare");
-      }
-      
-      // Save initial state for tracking modifications (only if not cloning)
-      if (!isCloning) {
-        const initialState = JSON.stringify({
-          clientData,
-          workAddress,
-          workCity,
-          workProvince,
-          workZip,
-          subject,
-          lines,
-          discountEnabled,
-          discountValue,
-          showDiscountInTable,
-          notesEnabled,
-          notes,
-          paymentMethod,
-          customPayment,
-        });
-        setInitialData(initialState);
       }
     } catch (error) {
       console.error("Errore caricamento preventivo:", error);
