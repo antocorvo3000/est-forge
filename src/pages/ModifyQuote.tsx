@@ -102,6 +102,7 @@ const ModifyQuote = () => {
   
   // Track modifications
   const [initialData, setInitialData] = useState<string>("");
+  const [isCloningSaved, setIsCloningSaved] = useState(false);
 
   // Load quote data from database
   useEffect(() => {
@@ -390,6 +391,10 @@ const ModifyQuote = () => {
           await salvaRighePreventivo(id, righe);
         }
         
+        if (isCloning) {
+          setIsCloningSaved(true);
+        }
+        
         toast.success("Preventivo modificato con successo");
       }
       
@@ -435,6 +440,12 @@ const ModifyQuote = () => {
   };
 
   const handleViewPdf = async () => {
+    // Se siamo in cloning e non abbiamo salvato, mostra il dialog
+    if (isCloning && !isCloningSaved) {
+      setShowPdfWarningDialog(true);
+      return;
+    }
+    
     // Check for unsaved modifications (only if not cloning)
     if (!isCloning && hasModifications()) {
       setShowPdfWarningDialog(true);
@@ -1092,9 +1103,14 @@ const ModifyQuote = () => {
         <AlertDialog open={showPdfWarningDialog} onOpenChange={setShowPdfWarningDialog}>
           <AlertDialogContent className="bg-white border-2 border-border max-w-lg p-8">
             <AlertDialogHeader>
-              <AlertDialogTitle className="text-2xl font-bold">Modifiche non salvate</AlertDialogTitle>
+              <AlertDialogTitle className="text-2xl font-bold">
+                {isCloning ? "Preventivo clonato non salvato" : "Modifiche non salvate"}
+              </AlertDialogTitle>
               <AlertDialogDescription className="text-lg font-semibold text-black mt-4">
-                Hai effettuato modifiche al preventivo. Vuoi salvarle prima di generare il PDF?
+                {isCloning 
+                  ? "Il preventivo clonato non è ancora stato salvato. Vuoi salvarlo prima di generare il PDF?"
+                  : "Hai effettuato modifiche al preventivo. Vuoi salvarle prima di generare il PDF?"
+                }
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="mt-6">
