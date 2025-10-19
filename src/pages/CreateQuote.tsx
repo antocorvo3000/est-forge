@@ -756,7 +756,7 @@ const CreateQuote = () => {
           
           <div className="absolute top-[88px] -right-20 flex flex-col gap-0">
             {lines.map((line, index) => (
-              <div key={line.id} data-button-row className="flex gap-1 items-end justify-end h-[72px]">
+              <div key={line.id} data-button-row className="flex gap-1 items-start justify-end pt-[20px]">
                 <Button
                   size="icon"
                   onClick={() => addLine(index)}
