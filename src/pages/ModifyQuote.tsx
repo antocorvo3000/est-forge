@@ -98,6 +98,10 @@ const ModifyQuote = () => {
   // Dialogs
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showPdfWarningDialog, setShowPdfWarningDialog] = useState(false);
+  
+  // Track modifications
+  const [initialData, setInitialData] = useState<string>("");
 
   // Load quote data from database
   useEffect(() => {
@@ -173,6 +177,27 @@ const ModifyQuote = () => {
 
         // Set payment
         setPaymentMethod(data.modalita_pagamento || "da-concordare");
+      }
+      
+      // Save initial state for tracking modifications (only if not cloning)
+      if (!isCloning) {
+        const initialState = JSON.stringify({
+          clientData,
+          workAddress,
+          workCity,
+          workProvince,
+          workZip,
+          subject,
+          lines,
+          discountEnabled,
+          discountValue,
+          showDiscountInTable,
+          notesEnabled,
+          notes,
+          paymentMethod,
+          customPayment,
+        });
+        setInitialData(initialState);
       }
     } catch (error) {
       console.error("Errore caricamento preventivo:", error);
@@ -386,7 +411,40 @@ const ModifyQuote = () => {
     }
   };
 
+  const hasModifications = () => {
+    if (isCloning) return false; // In cloning mode, no need to check modifications
+    
+    const currentState = JSON.stringify({
+      clientData,
+      workAddress,
+      workCity,
+      workProvince,
+      workZip,
+      subject,
+      lines,
+      discountEnabled,
+      discountValue,
+      showDiscountInTable,
+      notesEnabled,
+      notes,
+      paymentMethod,
+      customPayment,
+    });
+    
+    return initialData !== currentState;
+  };
+
   const handleViewPdf = async () => {
+    // Check for unsaved modifications (only if not cloning)
+    if (!isCloning && hasModifications()) {
+      setShowPdfWarningDialog(true);
+      return;
+    }
+    
+    await proceedToGeneratePdf();
+  };
+
+  const proceedToGeneratePdf = async () => {
     // Validazione dati minimi
     if (!clientData || !clientData.name.trim()) {
       toast.error("Inserire i dati del cliente prima di generare il PDF");
@@ -967,7 +1025,7 @@ const ModifyQuote = () => {
               className="h-14 text-lg font-bold"
               style={{ fontSize: `${settings.fontSizeQuote}rem` }}
             >
-              Vedi il PDF
+              Genera PDF
             </Button>
           </div>
           {!isCloning && (
@@ -1025,6 +1083,32 @@ const ModifyQuote = () => {
               <AlertDialogCancel>Annulla</AlertDialogCancel>
               <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white">
                 Elimina
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* PDF Warning Dialog */}
+        <AlertDialog open={showPdfWarningDialog} onOpenChange={setShowPdfWarningDialog}>
+          <AlertDialogContent className="bg-white border-2 border-border max-w-lg p-8">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-2xl font-bold">Modifiche non salvate</AlertDialogTitle>
+              <AlertDialogDescription className="text-lg font-semibold text-black mt-4">
+                Hai effettuato modifiche al preventivo. Vuoi salvarle prima di generare il PDF?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-6">
+              <AlertDialogCancel className="text-lg font-bold px-8 py-6">
+                Annulla
+              </AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => {
+                  setShowPdfWarningDialog(false);
+                  handleSave();
+                }}
+                className="text-lg font-bold px-8 py-6"
+              >
+                Salva e Genera PDF
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

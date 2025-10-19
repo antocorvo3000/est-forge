@@ -102,6 +102,8 @@ const CreateQuote = () => {
   // Dialogs
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showPdfWarningDialog, setShowPdfWarningDialog] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   const addLine = (afterIndex: number) => {
     const newLine: QuoteLine = {
@@ -298,6 +300,7 @@ const CreateQuote = () => {
         await salvaRighePreventivo(preventivo.id, righe);
       }
 
+      setIsSaved(true);
       toast.success("Preventivo salvato con successo");
       navigate("/");
     } catch (error) {
@@ -312,6 +315,16 @@ const CreateQuote = () => {
   };
 
   const handleViewPdf = async () => {
+    // Controlla se è stato salvato
+    if (!isSaved) {
+      setShowPdfWarningDialog(true);
+      return;
+    }
+    
+    await proceedToGeneratePdf();
+  };
+
+  const proceedToGeneratePdf = async () => {
     // Validazione dati minimi
     if (!clientData || !clientData.name.trim()) {
       toast.error("Inserire i dati del cliente prima di generare il PDF");
@@ -862,7 +875,7 @@ const CreateQuote = () => {
               className="h-14 text-lg font-bold"
               style={{ fontSize: `${settings.fontSizeQuote}rem` }}
             >
-              Vedi il PDF
+              Genera PDF
             </Button>
           </div>
           <Button
@@ -918,6 +931,32 @@ const CreateQuote = () => {
               <AlertDialogCancel>Annulla</AlertDialogCancel>
               <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white">
                 Elimina
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* PDF Warning Dialog */}
+        <AlertDialog open={showPdfWarningDialog} onOpenChange={setShowPdfWarningDialog}>
+          <AlertDialogContent className="bg-white border-2 border-border max-w-lg p-8">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-2xl font-bold">Preventivo non salvato</AlertDialogTitle>
+              <AlertDialogDescription className="text-lg font-semibold text-black mt-4">
+                Il preventivo non è ancora stato salvato. Vuoi salvarlo prima di generare il PDF?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-6">
+              <AlertDialogCancel className="text-lg font-bold px-8 py-6">
+                Annulla
+              </AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => {
+                  setShowPdfWarningDialog(false);
+                  handleSave();
+                }}
+                className="text-lg font-bold px-8 py-6"
+              >
+                Salva e Genera PDF
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
