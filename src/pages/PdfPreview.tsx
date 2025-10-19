@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Download, Printer, ExternalLink } from "lucide-react";
+import { ArrowLeft, Download, Printer, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
@@ -46,10 +46,12 @@ interface QuoteData {
 const PdfPreview = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [zoom, setZoom] = useState(100);
   const [loading, setLoading] = useState(true);
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
   const [settings, setSettings] = useState<CompanySettings | null>(null);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string>("");
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     const data = location.state?.quoteData as QuoteData;
@@ -70,7 +72,7 @@ const PdfPreview = () => {
         const pdf = await generateQuotePDF(data, companySettings);
         const blob = pdf.output("blob");
         
-        // Crea Blob URL
+        // Crea Blob URL per iframe
         const pdfBlob = new Blob([blob], { type: "application/pdf" });
         const url = URL.createObjectURL(pdfBlob);
         setPdfBlobUrl(url);
@@ -122,13 +124,12 @@ const PdfPreview = () => {
     toast.success("Invio alla stampante...");
   };
 
-  const handleOpenInNewTab = () => {
-    if (!pdfBlobUrl) return;
-    
-    const newWindow = window.open(pdfBlobUrl, "_blank");
-    if (!newWindow) {
-      toast.error("Sblocca i popup per aprire il PDF");
-    }
+  const handleZoomIn = () => {
+    setZoom((prev) => Math.min(prev + 25, 200));
+  };
+
+  const handleZoomOut = () => {
+    setZoom((prev) => Math.max(prev - 25, 50));
   };
 
   if (loading) {
@@ -164,17 +165,32 @@ const PdfPreview = () => {
         </motion.div>
 
         {/* Main content */}
-        <div className="grid grid-cols-1 gap-6">
-          {/* PDF Preview usando iframe */}
+        <div className="flex gap-6">
+          {/* PDF Viewer */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass rounded-2xl p-6"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex-1 glass rounded-2xl p-4 overflow-auto"
+            style={{
+              maxHeight: "calc(100vh - 180px)",
+            }}
           >
-            <div className="aspect-[1/1.414] w-full max-w-3xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+            <div 
+              className="flex justify-center"
+              style={{
+                transform: `scale(${zoom / 100})`,
+                transformOrigin: "top center",
+                transition: "transform 0.3s ease",
+              }}
+            >
               <iframe
-                src={pdfBlobUrl}
-                className="w-full h-full border-0"
+                ref={iframeRef}
+                src={`${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+                className="border-0 rounded-lg shadow-lg bg-white"
+                style={{
+                  width: "595px", // A4 width in pixels at 72 DPI
+                  height: "842px", // A4 height in pixels at 72 DPI
+                }}
                 title="Anteprima PDF"
               />
             </div>
@@ -182,40 +198,53 @@ const PdfPreview = () => {
 
           {/* Control Panel */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="glass rounded-2xl p-6"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="w-20 flex flex-col gap-3 sticky top-4"
           >
-            <div className="flex flex-wrap gap-3 justify-center">
-              <Button
-                onClick={handleSave}
-                size="lg"
-                className="gap-2"
-              >
-                <Download className="w-5 h-5" />
-                Salva PDF
-              </Button>
+            <Button
+              onClick={handleSave}
+              className="h-16 w-16 flex flex-col items-center justify-center gap-1 text-xs"
+              title="Salva PDF"
+            >
+              <Download className="w-5 h-5" />
+              <span>Salva</span>
+            </Button>
 
-              <Button
-                onClick={handlePrint}
-                size="lg"
-                variant="outline"
-                className="gap-2"
-              >
-                <Printer className="w-5 h-5" />
-                Stampa
-              </Button>
+            <Button
+              onClick={handlePrint}
+              className="h-16 w-16 flex flex-col items-center justify-center gap-1 text-xs"
+              title="Stampa PDF"
+            >
+              <Printer className="w-5 h-5" />
+              <span>Stampa</span>
+            </Button>
 
-              <Button
-                onClick={handleOpenInNewTab}
-                size="lg"
-                variant="outline"
-                className="gap-2"
-              >
-                <ExternalLink className="w-5 h-5" />
-                Apri in nuova scheda
-              </Button>
+            <Button
+              onClick={handleZoomIn}
+              variant="outline"
+              className="h-16 w-16 flex flex-col items-center justify-center gap-1 text-xs"
+              title="Zoom In"
+              disabled={zoom >= 200}
+            >
+              <ZoomIn className="w-5 h-5" />
+              <span>+</span>
+            </Button>
+
+            <Button
+              onClick={handleZoomOut}
+              variant="outline"
+              className="h-16 w-16 flex flex-col items-center justify-center gap-1 text-xs"
+              title="Zoom Out"
+              disabled={zoom <= 50}
+            >
+              <ZoomOut className="w-5 h-5" />
+              <span>-</span>
+            </Button>
+
+            {/* Zoom indicator */}
+            <div className="text-center text-xs text-muted-foreground mt-2">
+              {zoom}%
             </div>
           </motion.div>
         </div>
