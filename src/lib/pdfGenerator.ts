@@ -210,13 +210,17 @@ export const generateQuotePDF = async (
       fontSize: 9,
       cellPadding: 2,
       lineColor: [0, 0, 0],
-      lineWidth: 0.1,
+      lineWidth: 0.3,
+      textColor: [0, 0, 0],
     },
     headStyles: {
       fillColor: [200, 200, 200],
       textColor: [0, 0, 0],
       fontStyle: "bold",
       halign: "center",
+    },
+    bodyStyles: {
+      textColor: [0, 0, 0],
     },
     columnStyles: {
       0: { cellWidth: 10, halign: "center", valign: "bottom" },
