@@ -9,7 +9,7 @@ import type { CompanySettings } from "@/types/companySettings";
 import * as pdfjsLib from "pdfjs-dist";
 
 // Configura worker di PDF.js
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface QuoteData {
   numero: number;
@@ -50,15 +50,14 @@ interface QuoteData {
 const PdfPreview = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [pdfBlobUrl, setPdfBlobUrl] = useState<string>("");
-  const [zoom, setZoom] = useState(100);
+  const [scale, setScale] = useState(1.2);
   const [loading, setLoading] = useState(true);
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
   const [settings, setSettings] = useState<CompanySettings | null>(null);
-  const [useCanvasFallback, setUseCanvasFallback] = useState(false);
-  const [pdfPages, setPdfPages] = useState<HTMLCanvasElement[]>([]);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const [pdfDoc, setPdfDoc] = useState<any>(null);
+  const [arrayBuffer, setArrayBuffer] = useState<ArrayBuffer | null>(null);
+  const [blobUrl, setBlobUrl] = useState<string>("");
+  const pagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const data = location.state?.quoteData as QuoteData;
@@ -73,41 +72,27 @@ const PdfPreview = () => {
     setQuoteData(data);
     setSettings(companySettings);
 
-    const generatePdf = async () => {
-      let blobUrl = "";
+    const initPdf = async () => {
       try {
+        // Genera il PDF
         const pdf = await generateQuotePDF(data, companySettings);
         const blob = pdf.output("blob");
         
-        // Crea un nuovo Blob con Content-Type corretto
-        const pdfBlob = new Blob([blob], { type: "application/pdf" });
-        blobUrl = URL.createObjectURL(pdfBlob);
-        setPdfBlobUrl(blobUrl);
-
-        // Prova a caricare nell'iframe
-        setTimeout(() => {
-          // Se l'iframe non carica, usa fallback con canvas
-          if (iframeRef.current) {
-            iframeRef.current.onload = () => {
-              // Iframe caricato con successo
-              setLoading(false);
-            };
-            iframeRef.current.onerror = () => {
-              // Fallback a canvas
-              renderWithPdfJs(pdfBlob);
-            };
-          }
-        }, 1000);
-
-        // Fallback automatico per Safari/Firefox
-        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-        const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+        // Converti in ArrayBuffer per PDF.js
+        const buffer = await blob.arrayBuffer();
+        setArrayBuffer(buffer);
         
-        if (isSafari || isFirefox) {
-          renderWithPdfJs(pdfBlob);
-        } else {
-          setLoading(false);
-        }
+        // Crea Blob URL per salva/stampa
+        const pdfBlob = new Blob([buffer], { type: "application/pdf" });
+        const url = URL.createObjectURL(pdfBlob);
+        setBlobUrl(url);
+        
+        // Carica documento con PDF.js
+        const loadingTask = pdfjsLib.getDocument({ data: buffer });
+        const pdfDocument = await loadingTask.promise;
+        setPdfDoc(pdfDocument);
+        
+        setLoading(false);
       } catch (error) {
         console.error("Errore generazione PDF:", error);
         toast.error("Errore durante la generazione del PDF");
@@ -115,91 +100,100 @@ const PdfPreview = () => {
       }
     };
 
-    generatePdf();
+    initPdf();
 
     return () => {
-      if (pdfBlobUrl) {
-        URL.revokeObjectURL(pdfBlobUrl);
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
       }
     };
   }, [location.state, navigate]);
 
-  const renderWithPdfJs = async (pdfBlob: Blob) => {
-    try {
-      const arrayBuffer = await pdfBlob.arrayBuffer();
-      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-      const pdf = await loadingTask.promise;
-      
-      const canvases: HTMLCanvasElement[] = [];
-      
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        const page = await pdf.getPage(pageNum);
-        const viewport = page.getViewport({ scale: 1.5 });
+  useEffect(() => {
+    if (pdfDoc && pagesContainerRef.current) {
+      renderAllPages();
+    }
+  }, [pdfDoc, scale]);
+
+  const renderAllPages = async () => {
+    if (!pdfDoc || !pagesContainerRef.current) return;
+
+    // Pulisci container
+    pagesContainerRef.current.innerHTML = "";
+
+    // Renderizza ogni pagina
+    for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+      try {
+        const page = await pdfDoc.getPage(pageNum);
         
+        // Viewport con scala per mantenere proporzioni A4
+        const viewport = page.getViewport({ scale });
+
+        // Crea canvas
         const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d");
+        canvas.className = "pdf-page";
+        const context = canvas.getContext("2d", { alpha: false });
         
         if (!context) continue;
-        
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-        
+
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+
+        // Applica stili
+        canvas.style.background = "#fff";
+        canvas.style.borderRadius = "8px";
+        canvas.style.boxShadow = "0 1px 4px rgba(0,0,0,0.08)";
+        canvas.style.marginBottom = "12px";
+
+        pagesContainerRef.current.appendChild(canvas);
+
+        // Renderizza
         await page.render({
           canvasContext: context,
           viewport: viewport,
-          canvas: canvas,
         }).promise;
-        
-        canvases.push(canvas);
+      } catch (error) {
+        console.error(`Errore rendering pagina ${pageNum}:`, error);
       }
-      
-      setPdfPages(canvases);
-      setUseCanvasFallback(true);
-      setLoading(false);
-    } catch (error) {
-      console.error("Errore rendering PDF.js:", error);
-      toast.error("Errore durante il rendering del PDF");
     }
   };
 
-  const handleSave = async () => {
-    if (!quoteData || !settings) return;
+  const handleSave = () => {
+    if (!blobUrl || !quoteData) return;
     
-    try {
-      const pdf = await generateQuotePDF(quoteData, settings);
-      const filename = `Preventivo_${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}.pdf`;
-      pdf.save(filename);
-      toast.success("PDF salvato con successo");
-    } catch (error) {
-      console.error("Errore salvataggio PDF:", error);
-      toast.error("Errore durante il salvataggio");
-    }
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = `Preventivo_${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success("PDF salvato con successo");
   };
 
   const handlePrint = () => {
-    if (useCanvasFallback) {
-      // Stampa da canvas
-      window.print();
-    } else if (iframeRef.current?.contentWindow) {
-      // Stampa da iframe
-      try {
-        iframeRef.current.contentWindow.print();
-      } catch (error) {
-        console.error("Errore stampa iframe:", error);
-        window.print();
-      }
-    } else {
-      window.print();
+    if (!blobUrl) return;
+    
+    const printWindow = window.open(blobUrl, "_blank");
+    if (!printWindow) {
+      toast.error("Sblocca i popup per stampare");
+      return;
     }
+    
+    printWindow.addEventListener("load", () => {
+      printWindow.focus();
+      printWindow.print();
+    });
+    
     toast.success("Invio alla stampante...");
   };
 
   const handleZoomIn = () => {
-    setZoom((prev) => Math.min(prev + 25, 200));
+    setScale((prev) => Math.min(prev + 0.15, 4.0));
   };
 
   const handleZoomOut = () => {
-    setZoom((prev) => Math.max(prev - 25, 50));
+    setScale((prev) => Math.max(prev - 0.15, 0.25));
   };
 
   if (loading) {
@@ -235,66 +229,27 @@ const PdfPreview = () => {
         </motion.div>
 
         {/* Main content */}
-        <div className="flex gap-6">
+        <div className="grid grid-cols-[1fr_80px] gap-4 items-start">
           {/* PDF Viewer */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex-1 glass rounded-2xl p-4 overflow-auto"
+            className="glass rounded-2xl p-4 overflow-auto"
             style={{
               maxHeight: "calc(100vh - 180px)",
             }}
           >
-            <div 
-              className="flex justify-center"
-              style={{
-                transform: `scale(${zoom / 100})`,
-                transformOrigin: "top center",
-                transition: "transform 0.3s ease",
-              }}
-            >
-              {useCanvasFallback ? (
-                // Fallback: Rendering con PDF.js su canvas
-                <div ref={canvasContainerRef} className="space-y-4">
-                  {pdfPages.map((canvas, index) => (
-                    <div
-                      key={index}
-                      className="shadow-lg rounded-lg overflow-hidden"
-                      style={{
-                        aspectRatio: "210/297",
-                        width: "595px", // A4 width in pixels at 72 DPI
-                      }}
-                    >
-                      <div
-                        dangerouslySetInnerHTML={{
-                          __html: canvas.outerHTML,
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                // Primary: Iframe con sandbox
-                <iframe
-                  ref={iframeRef}
-                  src={`${pdfBlobUrl}#toolbar=0&navpanes=0`}
-                  className="border-0 rounded-lg shadow-lg"
-                  sandbox="allow-scripts allow-same-origin allow-downloads"
-                  style={{
-                    width: "595px", // A4 width
-                    height: "842px", // A4 height
-                  }}
-                  title="PDF Preview"
-                />
-              )}
-            </div>
+            <div
+              ref={pagesContainerRef}
+              className="flex flex-col items-center gap-3"
+            />
           </motion.div>
 
           {/* Control Panel */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="w-20 flex flex-col gap-3"
+            className="flex flex-col gap-3 sticky top-4"
           >
             <Button
               onClick={handleSave}
@@ -319,7 +274,7 @@ const PdfPreview = () => {
               variant="outline"
               className="h-16 w-16 flex flex-col items-center justify-center gap-1 text-xs"
               title="Zoom In"
-              disabled={zoom >= 200}
+              disabled={scale >= 4.0}
             >
               <ZoomIn className="w-5 h-5" />
               <span>+</span>
@@ -330,7 +285,7 @@ const PdfPreview = () => {
               variant="outline"
               className="h-16 w-16 flex flex-col items-center justify-center gap-1 text-xs"
               title="Zoom Out"
-              disabled={zoom <= 50}
+              disabled={scale <= 0.25}
             >
               <ZoomOut className="w-5 h-5" />
               <span>-</span>
@@ -338,7 +293,7 @@ const PdfPreview = () => {
 
             {/* Zoom indicator */}
             <div className="text-center text-xs text-muted-foreground mt-2">
-              {zoom}%
+              {Math.round(scale * 100)}%
             </div>
           </motion.div>
         </div>
