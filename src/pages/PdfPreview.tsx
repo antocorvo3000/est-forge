@@ -1,15 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Download, Printer, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowLeft, Download, Printer, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
-import * as pdfjsLib from "pdfjs-dist";
-
-// Configura worker di PDF.js - usa CDN con versione compatibile
-pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
 interface QuoteData {
   numero: number;
@@ -50,14 +46,10 @@ interface QuoteData {
 const PdfPreview = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [scale, setScale] = useState(1.2);
   const [loading, setLoading] = useState(true);
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
   const [settings, setSettings] = useState<CompanySettings | null>(null);
-  const [pdfDoc, setPdfDoc] = useState<any>(null);
-  const [arrayBuffer, setArrayBuffer] = useState<ArrayBuffer | null>(null);
-  const [blobUrl, setBlobUrl] = useState<string>("");
-  const pagesContainerRef = useRef<HTMLDivElement>(null);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string>("");
 
   useEffect(() => {
     const data = location.state?.quoteData as QuoteData;
@@ -78,19 +70,10 @@ const PdfPreview = () => {
         const pdf = await generateQuotePDF(data, companySettings);
         const blob = pdf.output("blob");
         
-        // Converti in ArrayBuffer per PDF.js
-        const buffer = await blob.arrayBuffer();
-        setArrayBuffer(buffer);
-        
-        // Crea Blob URL per salva/stampa
-        const pdfBlob = new Blob([buffer], { type: "application/pdf" });
+        // Crea Blob URL
+        const pdfBlob = new Blob([blob], { type: "application/pdf" });
         const url = URL.createObjectURL(pdfBlob);
-        setBlobUrl(url);
-        
-        // Carica documento con PDF.js
-        const loadingTask = pdfjsLib.getDocument({ data: buffer });
-        const pdfDocument = await loadingTask.promise;
-        setPdfDoc(pdfDocument);
+        setPdfBlobUrl(url);
         
         setLoading(false);
       } catch (error) {
@@ -103,66 +86,17 @@ const PdfPreview = () => {
     initPdf();
 
     return () => {
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl);
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl);
       }
     };
   }, [location.state, navigate]);
 
-  useEffect(() => {
-    if (pdfDoc && pagesContainerRef.current) {
-      renderAllPages();
-    }
-  }, [pdfDoc, scale]);
-
-  const renderAllPages = async () => {
-    if (!pdfDoc || !pagesContainerRef.current) return;
-
-    // Pulisci container
-    pagesContainerRef.current.innerHTML = "";
-
-    // Renderizza ogni pagina
-    for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-      try {
-        const page = await pdfDoc.getPage(pageNum);
-        
-        // Viewport con scala per mantenere proporzioni A4
-        const viewport = page.getViewport({ scale });
-
-        // Crea canvas
-        const canvas = document.createElement("canvas");
-        canvas.className = "pdf-page";
-        const context = canvas.getContext("2d", { alpha: false });
-        
-        if (!context) continue;
-
-        canvas.width = Math.ceil(viewport.width);
-        canvas.height = Math.ceil(viewport.height);
-
-        // Applica stili
-        canvas.style.background = "#fff";
-        canvas.style.borderRadius = "8px";
-        canvas.style.boxShadow = "0 1px 4px rgba(0,0,0,0.08)";
-        canvas.style.marginBottom = "12px";
-
-        pagesContainerRef.current.appendChild(canvas);
-
-        // Renderizza
-        await page.render({
-          canvasContext: context,
-          viewport: viewport,
-        }).promise;
-      } catch (error) {
-        console.error(`Errore rendering pagina ${pageNum}:`, error);
-      }
-    }
-  };
-
   const handleSave = () => {
-    if (!blobUrl || !quoteData) return;
+    if (!pdfBlobUrl || !quoteData) return;
     
     const link = document.createElement("a");
-    link.href = blobUrl;
+    link.href = pdfBlobUrl;
     link.download = `Preventivo_${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}.pdf`;
     document.body.appendChild(link);
     link.click();
@@ -172,9 +106,9 @@ const PdfPreview = () => {
   };
 
   const handlePrint = () => {
-    if (!blobUrl) return;
+    if (!pdfBlobUrl) return;
     
-    const printWindow = window.open(blobUrl, "_blank");
+    const printWindow = window.open(pdfBlobUrl, "_blank");
     if (!printWindow) {
       toast.error("Sblocca i popup per stampare");
       return;
@@ -188,12 +122,13 @@ const PdfPreview = () => {
     toast.success("Invio alla stampante...");
   };
 
-  const handleZoomIn = () => {
-    setScale((prev) => Math.min(prev + 0.15, 4.0));
-  };
-
-  const handleZoomOut = () => {
-    setScale((prev) => Math.max(prev - 0.15, 0.25));
+  const handleOpenInNewTab = () => {
+    if (!pdfBlobUrl) return;
+    
+    const newWindow = window.open(pdfBlobUrl, "_blank");
+    if (!newWindow) {
+      toast.error("Sblocca i popup per aprire il PDF");
+    }
   };
 
   if (loading) {
@@ -229,71 +164,58 @@ const PdfPreview = () => {
         </motion.div>
 
         {/* Main content */}
-        <div className="grid grid-cols-[1fr_80px] gap-4 items-start">
-          {/* PDF Viewer */}
+        <div className="grid grid-cols-1 gap-6">
+          {/* PDF Preview usando iframe */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="glass rounded-2xl p-4 overflow-auto"
-            style={{
-              maxHeight: "calc(100vh - 180px)",
-            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass rounded-2xl p-6"
           >
-            <div
-              ref={pagesContainerRef}
-              className="flex flex-col items-center gap-3"
-            />
+            <div className="aspect-[1/1.414] w-full max-w-3xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+              <iframe
+                src={pdfBlobUrl}
+                className="w-full h-full border-0"
+                title="Anteprima PDF"
+              />
+            </div>
           </motion.div>
 
           {/* Control Panel */}
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex flex-col gap-3 sticky top-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="glass rounded-2xl p-6"
           >
-            <Button
-              onClick={handleSave}
-              className="h-16 w-16 flex flex-col items-center justify-center gap-1 text-xs"
-              title="Salva PDF"
-            >
-              <Download className="w-5 h-5" />
-              <span>Salva</span>
-            </Button>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <Button
+                onClick={handleSave}
+                size="lg"
+                className="gap-2"
+              >
+                <Download className="w-5 h-5" />
+                Salva PDF
+              </Button>
 
-            <Button
-              onClick={handlePrint}
-              className="h-16 w-16 flex flex-col items-center justify-center gap-1 text-xs"
-              title="Stampa PDF"
-            >
-              <Printer className="w-5 h-5" />
-              <span>Stampa</span>
-            </Button>
+              <Button
+                onClick={handlePrint}
+                size="lg"
+                variant="outline"
+                className="gap-2"
+              >
+                <Printer className="w-5 h-5" />
+                Stampa
+              </Button>
 
-            <Button
-              onClick={handleZoomIn}
-              variant="outline"
-              className="h-16 w-16 flex flex-col items-center justify-center gap-1 text-xs"
-              title="Zoom In"
-              disabled={scale >= 4.0}
-            >
-              <ZoomIn className="w-5 h-5" />
-              <span>+</span>
-            </Button>
-
-            <Button
-              onClick={handleZoomOut}
-              variant="outline"
-              className="h-16 w-16 flex flex-col items-center justify-center gap-1 text-xs"
-              title="Zoom Out"
-              disabled={scale <= 0.25}
-            >
-              <ZoomOut className="w-5 h-5" />
-              <span>-</span>
-            </Button>
-
-            {/* Zoom indicator */}
-            <div className="text-center text-xs text-muted-foreground mt-2">
-              {Math.round(scale * 100)}%
+              <Button
+                onClick={handleOpenInNewTab}
+                size="lg"
+                variant="outline"
+                className="gap-2"
+              >
+                <ExternalLink className="w-5 h-5" />
+                Apri in nuova scheda
+              </Button>
             </div>
           </motion.div>
         </div>
