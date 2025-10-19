@@ -780,23 +780,22 @@ const CreateQuote = () => {
         </div>
 
         {/* Discount Section */}
-        <div className="flex gap-3 mb-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="glass rounded-2xl p-6 space-y-4 flex-1"
-          >
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="discountEnabled"
-                checked={discountEnabled}
-                onCheckedChange={(checked) => setDiscountEnabled(checked as boolean)}
-              />
-              <Label htmlFor="discountEnabled" className="cursor-pointer" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-                Applica Sconto
-              </Label>
-            </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="glass rounded-2xl p-6 space-y-4 mb-6"
+        >
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="discountEnabled"
+              checked={discountEnabled}
+              onCheckedChange={(checked) => setDiscountEnabled(checked as boolean)}
+            />
+            <Label htmlFor="discountEnabled" className="cursor-pointer" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+              Applica Sconto
+            </Label>
+          </div>
 
           {discountEnabled && (
             <div className="flex gap-6 pl-6">
@@ -853,27 +852,24 @@ const CreateQuote = () => {
             </div>
           )}
         </motion.div>
-          <div className="w-20"></div>
-        </div>
 
         {/* Notes Section */}
-        <div className="flex gap-3 mb-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="glass rounded-2xl p-6 space-y-4 flex-1"
-          >
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="notesEnabled"
-                checked={notesEnabled}
-                onCheckedChange={(checked) => setNotesEnabled(checked as boolean)}
-              />
-              <Label htmlFor="notesEnabled" className="cursor-pointer" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-                Aggiungi Note
-              </Label>
-            </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="glass rounded-2xl p-6 space-y-4 mb-6"
+        >
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="notesEnabled"
+              checked={notesEnabled}
+              onCheckedChange={(checked) => setNotesEnabled(checked as boolean)}
+            />
+            <Label htmlFor="notesEnabled" className="cursor-pointer" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+              Aggiungi Note
+            </Label>
+          </div>
 
           {notesEnabled && (
             <div className="pl-6">
@@ -888,19 +884,16 @@ const CreateQuote = () => {
             </div>
           )}
         </motion.div>
-          <div className="w-20"></div>
-        </div>
 
         {/* Payment Method */}
-        <div className="flex gap-3 mb-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="glass rounded-2xl p-6 space-y-4 flex-1"
-          >
-            <div className="space-y-2">
-              <Label htmlFor="paymentMethod" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Modalità di Pagamento</Label>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="glass rounded-2xl p-6 space-y-4 mb-6"
+        >
+          <div className="space-y-2">
+            <Label htmlFor="paymentMethod" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Modalità di Pagamento</Label>
             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
               <SelectTrigger className="bg-white" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
                 <SelectValue />
@@ -931,19 +924,16 @@ const CreateQuote = () => {
             </div>
           )}
         </motion.div>
-          <div className="w-20"></div>
-        </div>
 
         {/* Total */}
-        <div className="flex gap-3 mb-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="glass rounded-2xl p-6 flex-1"
-          >
-            <div className="text-center">
-              <div className="text-lg text-muted-foreground mb-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Totale</div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="glass rounded-2xl p-6 mb-6"
+        >
+          <div className="text-center">
+            <div className="text-lg text-muted-foreground mb-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Totale</div>
             <div className="text-4xl font-extrabold">
               € {formatCurrency(calculateTotal())}
             </div>
@@ -952,10 +942,8 @@ const CreateQuote = () => {
                 Sconto applicato: € {formatCurrency(calculateDiscount())}
               </div>
             )}
-            </div>
-          </motion.div>
-          <div className="w-20"></div>
-        </div>
+          </div>
+        </motion.div>
 
         {/* Action Buttons */}
         <motion.div

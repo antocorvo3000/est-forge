@@ -946,14 +946,13 @@ const ModifyQuote = () => {
         </div>
 
         {/* Discount Section - WITH FONT SCALING */}
-        <div className="flex gap-3 mb-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="glass rounded-2xl p-6 space-y-4 flex-1"
-          >
-            <div className="flex items-center gap-2">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="glass rounded-2xl p-6 space-y-4 mb-6"
+        >
+          <div className="flex items-center gap-2">
             <Checkbox
               id="discountEnabled"
               checked={discountEnabled}
@@ -1019,17 +1018,14 @@ const ModifyQuote = () => {
             </div>
           )}
         </motion.div>
-          <div className="w-20"></div>
-        </div>
 
         {/* Notes Section - WITH FONT SCALING */}
-        <div className="flex gap-3 mb-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="glass rounded-2xl p-6 space-y-4 flex-1"
-          >
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="glass rounded-2xl p-6 space-y-4 mb-6"
+        >
           <div className="flex items-center gap-2">
             <Checkbox
               id="notesEnabled"
@@ -1054,17 +1050,14 @@ const ModifyQuote = () => {
             </div>
           )}
         </motion.div>
-          <div className="w-20"></div>
-        </div>
 
         {/* Payment Method - WITH FONT SCALING */}
-        <div className="flex gap-3 mb-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="glass rounded-2xl p-6 space-y-4 flex-1"
-          >
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="glass rounded-2xl p-6 space-y-4 mb-6"
+        >
           <div className="space-y-2">
             <Label htmlFor="paymentMethod" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Modalità di Pagamento</Label>
             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
@@ -1097,17 +1090,14 @@ const ModifyQuote = () => {
             </div>
           )}
         </motion.div>
-          <div className="w-20"></div>
-        </div>
 
         {/* Total - WITH FONT SCALING */}
-        <div className="flex gap-3 mb-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="glass rounded-2xl p-6 flex-1"
-          >
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="glass rounded-2xl p-6 mb-6"
+        >
           <div className="text-center">
             <div className="text-lg text-muted-foreground mb-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Totale</div>
             <div className="text-4xl font-extrabold">
@@ -1118,10 +1108,8 @@ const ModifyQuote = () => {
                 Sconto applicato: € {formatCurrency(calculateDiscount())}
               </div>
             )}
-            </div>
-          </motion.div>
-          <div className="w-20"></div>
-        </div>
+          </div>
+        </motion.div>
 
         {/* Action Buttons - WITH FONT SCALING */}
         <motion.div
