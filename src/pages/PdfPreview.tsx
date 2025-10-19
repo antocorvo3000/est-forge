@@ -258,8 +258,7 @@ const PdfPreview = () => {
             {/* Zoom indicator */}
             <Button
               variant="outline"
-              className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs cursor-default"
-              disabled
+              className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs cursor-default pointer-events-none"
             >
               <span className="font-semibold">Stato zoom:</span>
               <span>{zoom}%</span>
@@ -279,8 +278,7 @@ const PdfPreview = () => {
 
               <Button
                 variant="outline"
-                className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs cursor-default px-1"
-                disabled
+                className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs cursor-default px-1 pointer-events-none"
               >
                 <span className="text-center leading-tight">Pagina</span>
                 <span className="text-center leading-tight">{currentPage} di {totalPages}</span>
