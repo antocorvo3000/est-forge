@@ -122,21 +122,6 @@ const CreateQuote = () => {
         textarea.style.height = textarea.scrollHeight + 'px';
       }
     });
-    
-    // Position button containers to align with each row
-    setTimeout(() => {
-      const buttonContainers = document.querySelectorAll('[data-button-row]');
-      buttonContainers.forEach((container, index) => {
-        const row = rowRefs.current[index];
-        if (row) {
-          const rowRect = row.getBoundingClientRect();
-          const rowHeight = row.offsetHeight;
-          // Center buttons vertically in the row
-          (container as HTMLElement).style.height = `${rowHeight}px`;
-          (container as HTMLElement).style.marginBottom = '0px';
-        }
-      });
-    }, 100);
   }, [lines]);
 
   // Discount
@@ -758,28 +743,37 @@ const CreateQuote = () => {
             </div>
           </motion.div>
           
-          <div className="absolute top-[88px] -right-20 flex flex-col gap-0">
-            {lines.map((line, index) => (
-              <div key={line.id} data-button-row className="flex gap-1 items-center justify-end">
-                <Button
-                  size="icon"
-                  onClick={() => addLine(index)}
-                  className="h-8 w-8"
+          <div className="absolute top-[88px] -right-20 flex flex-col">
+            {lines.map((line, index) => {
+              const rowRef = rowRefs.current[index];
+              const rowHeight = rowRef?.offsetHeight || 80;
+              return (
+                <div 
+                  key={line.id} 
+                  data-button-row 
+                  className="flex gap-1 items-center justify-end" 
+                  style={{ height: `${rowHeight}px`, marginBottom: '0px' }}
                 >
-                  <Plus className="w-4 h-4" />
-                </Button>
-                {lines.length > 1 && (
-                  <Button
-                    size="icon"
-                    variant="destructive"
-                    onClick={() => removeLine(index)}
+                  <Button 
+                    size="icon" 
+                    onClick={() => addLine(index)} 
                     className="h-8 w-8"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Plus className="w-4 h-4" />
                   </Button>
-                )}
-              </div>
-            ))}
+                  {lines.length > 1 && (
+                    <Button 
+                      size="icon" 
+                      variant="destructive" 
+                      onClick={() => removeLine(index)} 
+                      className="h-8 w-8"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
