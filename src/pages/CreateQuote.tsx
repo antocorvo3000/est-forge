@@ -623,17 +623,17 @@ const CreateQuote = () => {
           </div>
         </motion.div>
 
-        {/* Quote Table */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="glass rounded-2xl p-6 mb-6"
-        >
-          <h2 className="text-xl font-bold mb-4">Preventivo</h2>
-          
-          <div className="flex gap-3">
-            <div className="flex-1 overflow-x-auto">
+        {/* Quote Table - WITH FONT SCALING ON ALL TEXT ELEMENTS */}
+        <div className="flex gap-3 mb-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="glass rounded-2xl p-6 flex-1"
+          >
+            <h2 className="text-xl font-bold mb-4">Preventivo</h2>
+            
+            <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b">
@@ -748,40 +748,40 @@ const CreateQuote = () => {
                 </tbody>
               </table>
             </div>
-            
-            <div className="flex flex-col pt-[52px]">
-              {lines.map((line, index) => (
-                <div key={line.id} className="flex gap-1 items-end pb-2" style={{ minHeight: '57px' }}>
-                  <Button
-                    size="icon"
-                    onClick={() => addLine(index)}
-                    className="h-8 w-8"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                  {lines.length > 1 && (
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      onClick={() => removeLine(index)}
-                      className="h-8 w-8"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
 
-          <div className="mt-4 flex justify-end">
-            <div className="text-right space-y-2">
-              <div className="text-lg font-semibold" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-                Subtotale: € {formatCurrency(calculateSubtotal())}
+            <div className="mt-4 flex justify-end">
+              <div className="text-right space-y-2">
+                <div className="text-lg font-semibold" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                  Subtotale: € {formatCurrency(calculateSubtotal())}
+                </div>
               </div>
             </div>
+          </motion.div>
+          
+          <div className="flex flex-col pt-[88px]">
+            {lines.map((line, index) => (
+              <div key={line.id} className="flex gap-1 items-end pb-2" style={{ minHeight: '57px' }}>
+                <Button
+                  size="icon"
+                  onClick={() => addLine(index)}
+                  className="h-8 w-8"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+                {lines.length > 1 && (
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    onClick={() => removeLine(index)}
+                    className="h-8 w-8"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* Discount Section */}
         <motion.div
