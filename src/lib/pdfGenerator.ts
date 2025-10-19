@@ -181,10 +181,14 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
   doc.text(`Oggetto: ${quoteData.oggetto}`, margin, yPos);
   yPos += 8;
 
-  doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  const ubicazioneText = `Ubicazione lavoro: ${quoteData.ubicazione.via}, ${quoteData.ubicazione.cap} ${quoteData.ubicazione.citta} (${quoteData.ubicazione.provincia})`;
-  doc.text(ubicazioneText, margin, yPos);
+  doc.setFont("helvetica", "bold");
+  doc.text("Ubicazione lavoro:", margin, yPos);
+  const ubicazioneLabel = "Ubicazione lavoro:";
+  const labelWidth = doc.getTextWidth(ubicazioneLabel);
+  doc.setFont("helvetica", "normal");
+  const ubicazioneText = ` ${quoteData.ubicazione.via}, ${quoteData.ubicazione.cap} ${quoteData.ubicazione.citta} (${quoteData.ubicazione.provincia})`;
+  doc.text(ubicazioneText, margin + labelWidth, yPos);
   yPos += 8;
 
   // Funzione per disegnare header
