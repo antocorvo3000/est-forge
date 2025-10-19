@@ -138,11 +138,15 @@ const PdfPreview = () => {
   };
 
   const handlePrevPage = () => {
-    setCurrentPage((prev) => Math.max(prev - 1, 1));
+    if (currentPage > 1) {
+      setCurrentPage((prev) => prev - 1);
+    }
   };
 
   const handleNextPage = () => {
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+    if (currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+    }
   };
 
   if (loading) {
@@ -269,11 +273,12 @@ const PdfPreview = () => {
               <Button
                 onClick={handlePrevPage}
                 variant="outline"
-                className="h-12 w-full flex items-center justify-center gap-1 text-xs"
+                className={`h-14 w-full flex items-center justify-center text-xs ${
+                  currentPage <= 1 ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
                 title="Pagina precedente"
-                disabled={currentPage <= 1}
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-6 h-6" />
               </Button>
 
               <Button
@@ -287,11 +292,12 @@ const PdfPreview = () => {
               <Button
                 onClick={handleNextPage}
                 variant="outline"
-                className="h-12 w-full flex items-center justify-center gap-1 text-xs"
+                className={`h-14 w-full flex items-center justify-center text-xs ${
+                  currentPage >= totalPages ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
                 title="Pagina successiva"
-                disabled={currentPage >= totalPages}
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-6 h-6" />
               </Button>
             </div>
           </motion.div>
