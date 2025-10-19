@@ -63,6 +63,7 @@ const CreateQuote = () => {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
   const buttonContainerRef = useRef<HTMLDivElement>(null);
+  const totalInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const formatItalianNumber = (value: number): string => {
     return new Intl.NumberFormat("it-IT", {
@@ -120,12 +121,22 @@ const CreateQuote = () => {
   useEffect(() => {
     const updateButtonPositions = () => {
       lines.forEach((_, index) => {
-        const row = rowRefs.current[index];
+        const totalInput = totalInputRefs.current[index];
         const buttonContainer = document.querySelector(`[data-button-index="${index}"]`) as HTMLElement;
 
-        if (row && buttonContainer) {
-          const rowHeight = row.offsetHeight;
-          buttonContainer.style.height = `${rowHeight}px`;
+        if (totalInput && buttonContainer) {
+          const inputRect = totalInput.getBoundingClientRect();
+          const tableContainer = totalInput.closest(".glass");
+
+          if (tableContainer) {
+            const containerRect = tableContainer.getBoundingClientRect();
+            const relativeTop = inputRect.top - containerRect.top;
+            const inputHeight = inputRect.height;
+
+            buttonContainer.style.position = "absolute";
+            buttonContainer.style.top = `${relativeTop}px`;
+            buttonContainer.style.height = `${inputHeight}px`;
+          }
         }
       });
     };
@@ -722,6 +733,7 @@ const CreateQuote = () => {
                       </td>
                       <td className="p-2 align-bottom">
                         <Input
+                          ref={(el) => (totalInputRefs.current[index] = el)}
                           type="text"
                           value={`€ ${formatCurrency(getEffectiveLineTotal(line))}`}
                           readOnly
@@ -744,13 +756,12 @@ const CreateQuote = () => {
             </div>
           </motion.div>
 
-          <div className="absolute top-[88px] -right-20 flex flex-col gap-0">
+          <div className="absolute top-0 -right-20 flex flex-col">
             {lines.map((line, index) => (
               <div
                 key={line.id}
                 data-button-index={index}
                 className="flex gap-1 items-center justify-end transition-all"
-                style={{ minHeight: "60px" }}
               >
                 <Button size="icon" onClick={() => addLine(index)} className="h-8 w-8">
                   <Plus className="w-4 h-4" />
