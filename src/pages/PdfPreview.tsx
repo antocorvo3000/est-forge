@@ -256,9 +256,14 @@ const PdfPreview = () => {
             </Button>
 
             {/* Zoom indicator */}
-            <div className="text-center text-xs text-muted-foreground mt-2">
-              {zoom}%
-            </div>
+            <Button
+              variant="outline"
+              className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs cursor-default"
+              disabled
+            >
+              <span className="font-semibold">Stato zoom:</span>
+              <span>{zoom}%</span>
+            </Button>
 
             {/* Page navigation */}
             <div className="mt-4 space-y-2">
@@ -272,9 +277,14 @@ const PdfPreview = () => {
                 <ChevronLeft className="w-4 h-4" />
               </Button>
 
-              <div className="text-center text-xs text-muted-foreground py-1">
-                Pagina {currentPage} di {totalPages}
-              </div>
+              <Button
+                variant="outline"
+                className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs cursor-default px-1"
+                disabled
+              >
+                <span className="text-center leading-tight">Pagina {currentPage}</span>
+                <span className="text-center leading-tight">di {totalPages}</span>
+              </Button>
 
               <Button
                 onClick={handleNextPage}
