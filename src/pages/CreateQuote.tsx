@@ -98,6 +98,22 @@ const CreateQuote = () => {
     if (location.state?.clientData) {
       setClientData(location.state.clientData);
     }
+  }, [location.state?.clientData]);
+
+  // Auto-resize textareas when lines change
+  useEffect(() => {
+    if (lines.length > 0) {
+      // Use setTimeout to ensure DOM is updated
+      setTimeout(() => {
+        lines.forEach((_, index) => {
+          const textarea = document.getElementById(`desc-${index}`) as HTMLTextAreaElement;
+          if (textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+          }
+        });
+      }, 0);
+    }
   }, [location.state]);
 
   // Work location

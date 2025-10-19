@@ -163,6 +163,22 @@ const ModifyQuote = () => {
     }
   }, [loading, isCloning]);
 
+  // Auto-resize textareas after data is loaded
+  useEffect(() => {
+    if (!loading && lines.length > 0) {
+      // Use setTimeout to ensure DOM is updated
+      setTimeout(() => {
+        lines.forEach((_, index) => {
+          const textarea = document.getElementById(`desc-${index}`) as HTMLTextAreaElement;
+          if (textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+          }
+        });
+      }, 0);
+    }
+  }, [loading, lines]);
+
   // Sync client data when returning from client details - PRIORITÀ AI DATI MODIFICATI
   useEffect(() => {
     if (location.state?.clientData) {
