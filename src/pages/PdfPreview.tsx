@@ -8,8 +8,8 @@ import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
 import * as pdfjsLib from "pdfjs-dist";
 
-// Configura worker di PDF.js
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Configura worker di PDF.js con CDN stabile
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
 interface QuoteData {
   numero: number;
