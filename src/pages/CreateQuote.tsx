@@ -27,7 +27,7 @@ import { toast } from "@/lib/toast";
 import type { ClientData } from "./ClientDetails";
 
 const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('it-IT', {
+  return new Intl.NumberFormat("it-IT", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
@@ -62,17 +62,17 @@ const CreateQuote = () => {
   const { addQuote } = useQuotes();
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
+  const totalInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const formatItalianNumber = (value: number): string => {
-    return new Intl.NumberFormat('it-IT', {
+    return new Intl.NumberFormat("it-IT", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value);
   };
 
   const parseItalianNumber = (value: string): number => {
-    // Rimuove i separatori di migliaia e sostituisce la virgola con il punto
-    const cleaned = value.replace(/\./g, '').replace(',', '.');
+    const cleaned = value.replace(/\./g, "").replace(",", ".");
     const parsed = parseFloat(cleaned);
     return isNaN(parsed) ? 0 : parsed;
   };
@@ -84,67 +84,55 @@ const CreateQuote = () => {
 
   const formatNumberInput = (value: number | string): string => {
     if (value === "" || value === null || value === undefined) return "";
-    const num = typeof value === 'string' ? parseFloat(value) : value;
+    const num = typeof value === "string" ? parseFloat(value) : value;
     if (isNaN(num)) return "";
     return formatItalianNumber(num);
   };
 
-  // Client data from navigation state
-  const [clientData, setClientData] = useState<ClientData | null>(
-    location.state?.clientData || null
-  );
+  const [clientData, setClientData] = useState<ClientData | null>(location.state?.clientData || null);
 
-  // Sync client data when returning from client details
   useEffect(() => {
     if (location.state?.clientData) {
       setClientData(location.state.clientData);
     }
   }, [location.state?.clientData]);
 
-  // Work location
   const [workAddress, setWorkAddress] = useState("");
   const [workCity, setWorkCity] = useState("");
   const [workProvince, setWorkProvince] = useState("");
   const [workZip, setWorkZip] = useState("");
 
-  // Quote details
   const [subject, setSubject] = useState("");
   const [lines, setLines] = useState<QuoteLine[]>([
-    { id: "1", description: "", unit: "pz", quantity: 0, unitPrice: 0, total: 0 }
+    { id: "1", description: "", unit: "pz", quantity: 0, unitPrice: 0, total: 0 },
   ]);
 
-  // Auto-resize textareas on mount and when lines change
   useEffect(() => {
     lines.forEach((_, index) => {
       const textarea = document.querySelector(`#desc-${index}`) as HTMLTextAreaElement;
       if (textarea) {
-        textarea.style.height = 'auto';
-        textarea.style.height = textarea.scrollHeight + 'px';
+        textarea.style.height = "auto";
+        textarea.style.height = textarea.scrollHeight + "px";
       }
     });
   }, [lines]);
 
-  // Discount
   const [discountEnabled, setDiscountEnabled] = useState(false);
   const [discountValue, setDiscountValue] = useState<number | "">(0);
   const [showDiscountInTable, setShowDiscountInTable] = useState(false);
 
-  // Reset discount value to empty when enabling discount
   useEffect(() => {
     if (discountEnabled && discountValue === 0) {
       setDiscountValue("");
     }
   }, [discountEnabled]);
 
-  // Notes
   const [notesEnabled, setNotesEnabled] = useState(false);
   const [notes, setNotes] = useState("");
 
-  // Payment
   const [paymentMethod, setPaymentMethod] = useState("da-concordare");
   const [customPayment, setCustomPayment] = useState("");
 
-  // Dialogs
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPdfWarningDialog, setShowPdfWarningDialog] = useState(false);
@@ -157,7 +145,7 @@ const CreateQuote = () => {
       unit: "pz",
       quantity: 0,
       unitPrice: 0,
-      total: 0
+      total: 0,
     };
     const newLines = [...lines];
     newLines.splice(afterIndex + 1, 0, newLine);
@@ -173,11 +161,11 @@ const CreateQuote = () => {
   const updateLine = (index: number, field: keyof QuoteLine, value: any) => {
     const newLines = [...lines];
     newLines[index] = { ...newLines[index], [field]: value };
-    
+
     if (field === "quantity" || field === "unitPrice") {
       newLines[index].total = newLines[index].quantity * newLines[index].unitPrice;
     }
-    
+
     setLines(newLines);
   };
 
@@ -188,23 +176,20 @@ const CreateQuote = () => {
     }
   };
 
-  // Calcola il prezzo unitario effettivo (con sconto applicato se necessario)
   const getEffectiveUnitPrice = (unitPrice: number) => {
-    const discount = typeof discountValue === 'number' ? discountValue : 0;
+    const discount = typeof discountValue === "number" ? discountValue : 0;
     if (discountEnabled && !showDiscountInTable && discount > 0) {
       return unitPrice * (1 - discount / 100);
     }
     return unitPrice;
   };
 
-  // Calcola il totale effettivo di una riga
   const getEffectiveLineTotal = (line: QuoteLine) => {
     return line.quantity * getEffectiveUnitPrice(line.unitPrice);
   };
 
   const calculateSubtotal = () => {
     if (discountEnabled && !showDiscountInTable) {
-      // Se lo sconto è spalmato sui prezzi, il subtotale è già scontato
       return lines.reduce((sum, line) => sum + getEffectiveLineTotal(line), 0);
     }
     return lines.reduce((sum, line) => sum + line.total, 0);
@@ -212,8 +197,7 @@ const CreateQuote = () => {
 
   const calculateDiscount = () => {
     if (!discountEnabled) return 0;
-    const discount = typeof discountValue === 'number' ? discountValue : 0;
-    // Lo sconto viene mostrato solo se showDiscountInTable è true
+    const discount = typeof discountValue === "number" ? discountValue : 0;
     if (showDiscountInTable) {
       return (lines.reduce((sum, line) => sum + line.total, 0) * discount) / 100;
     }
@@ -227,21 +211,19 @@ const CreateQuote = () => {
   };
 
   const handleSave = () => {
-    // Check if client data or work location are missing
     const missingClient = !clientData || !clientData.name.trim();
     const missingWork = !workAddress.trim() || !workCity.trim();
-    
+
     if (missingClient || missingWork) {
       setShowSaveDialog(true);
       return;
     }
-    
+
     saveQuote();
   };
 
   const saveQuote = async () => {
     try {
-      // 1. Salva/aggiorna cliente
       let cliente_id = null;
       if (clientData && clientData.name) {
         const cliente = await salvaCliente({
@@ -257,51 +239,42 @@ const CreateQuote = () => {
         cliente_id = cliente.id;
       }
 
-      // 2. Calcola totali
       const subtotale = calculateSubtotal();
       const sconto_percentuale = discountEnabled ? discountValue : 0;
       const sconto_valore = discountEnabled ? calculateDiscount() : 0;
       const totale = calculateTotal();
 
-      // 3. Genera numero preventivo
       let newNum: number;
       let year: number;
-      
-      // Usa numero e anno personalizzati se presenti
+
       if (location.state?.customNumber && location.state?.customYear) {
         newNum = location.state.customNumber;
         year = location.state.customYear;
-        
-        // Controlla se esiste già
+
         const { data: existingQuote } = await supabase
           .from("preventivi")
           .select("numero")
           .eq("numero", newNum)
           .eq("anno", year)
           .single();
-        
+
         if (existingQuote) {
           toast.error(
-            `Il preventivo ${newNum.toString().padStart(2, '0')}-${year} esiste già. Eliminare quello esistente per continuare o modificarlo.`
+            `Il preventivo ${newNum.toString().padStart(2, "0")}-${year} esiste già. Eliminare quello esistente per continuare o modificarlo.`,
           );
           return;
         }
       } else {
-        // Altrimenti trova il primo numero disponibile
         year = new Date().getFullYear();
         const { data: existingQuotes } = await supabase
           .from("preventivi")
           .select("numero")
           .eq("anno", year)
           .order("numero", { ascending: true });
-        
-        const usedNumbers = existingQuotes?.map(q => q.numero) || [];
-        
-        // Se la numerazione personalizzata è attiva, parte dal numero impostato
-        // Altrimenti parte da 1
+
+        const usedNumbers = existingQuotes?.map((q) => q.numero) || [];
         const baseNumber = settings.customNumberingEnabled ? settings.startingQuoteNumber : 1;
-        
-        // Trova il primo numero disponibile >= baseNumber
+
         newNum = baseNumber;
         for (const num of usedNumbers) {
           if (num >= baseNumber) {
@@ -314,7 +287,6 @@ const CreateQuote = () => {
         }
       }
 
-      // 4. Salva preventivo
       const preventivo = await salvaPreventivo({
         numero: newNum,
         anno: year,
@@ -332,17 +304,16 @@ const CreateQuote = () => {
         modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
       });
 
-      // 5. Salva righe preventivo
       const righe = lines
-        .filter(line => line.description.trim())
-        .map(line => ({
+        .filter((line) => line.description.trim())
+        .map((line) => ({
           descrizione: line.description,
           unita_misura: line.unit,
           quantita: line.quantity,
           prezzo_unitario: line.unitPrice,
           totale: line.total,
         }));
-      
+
       if (righe.length > 0) {
         await salvaRighePreventivo(preventivo.id, righe);
       }
@@ -362,17 +333,15 @@ const CreateQuote = () => {
   };
 
   const handleViewPdf = async () => {
-    // Controlla se è stato salvato
     if (!isSaved) {
       setShowPdfWarningDialog(true);
       return;
     }
-    
+
     await proceedToGeneratePdf();
   };
 
   const proceedToGeneratePdf = async () => {
-    // Validazione dati minimi
     if (!clientData || !clientData.name.trim()) {
       toast.error("Inserire i dati del cliente prima di generare il PDF");
       return;
@@ -381,13 +350,12 @@ const CreateQuote = () => {
       toast.error("Inserire l'ubicazione del lavoro prima di generare il PDF");
       return;
     }
-    if (lines.every(line => !line.description.trim())) {
+    if (lines.every((line) => !line.description.trim())) {
       toast.error("Inserire almeno una voce nel preventivo");
       return;
     }
 
     try {
-      // Prepara i dati per il PDF
       const pdfData = {
         numero: location.state?.customNumber || 1,
         anno: location.state?.customYear || new Date().getFullYear(),
@@ -409,14 +377,13 @@ const CreateQuote = () => {
           cap: workZip,
         },
         righe: lines
-          .filter(line => line.description.trim())
-          .map(line => ({
+          .filter((line) => line.description.trim())
+          .map((line) => ({
             descrizione: line.description,
             unita_misura: line.unit,
             quantita: line.quantity,
-            prezzo_unitario: discountEnabled && !showDiscountInTable 
-              ? getEffectiveUnitPrice(line.unitPrice)
-              : line.unitPrice,
+            prezzo_unitario:
+              discountEnabled && !showDiscountInTable ? getEffectiveUnitPrice(line.unitPrice) : line.unitPrice,
             totale: getEffectiveLineTotal(line),
           })),
         subtotale: calculateSubtotal(),
@@ -428,7 +395,6 @@ const CreateQuote = () => {
         showDiscountInTable: showDiscountInTable,
       };
 
-      // Naviga passando solo i dati, il PDF sarà generato nella pagina di preview
       navigate("/pdf-preview", {
         state: {
           quoteData: pdfData,
@@ -445,40 +411,24 @@ const CreateQuote = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-        {/* Header with back button */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="glass rounded-2xl p-3 sm:p-4 flex items-center gap-3 mb-6"
         >
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/")}
-            className="h-10 w-10"
-          >
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="h-10 w-10">
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-3xl font-extrabold tracking-tight">Nuovo Preventivo</h1>
         </motion.div>
 
-        {/* Company and Client Info */}
         <div className="grid md:grid-cols-2 gap-6 mb-6">
-          {/* Company Info - Left */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="glass rounded-2xl p-6"
-          >
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="glass rounded-2xl p-6">
             <h2 className="text-xl font-bold mb-4">Dati Azienda</h2>
             <div className="space-y-2 text-sm">
               {settings.logoPath && (
                 <div className="flex justify-center mb-3">
-                  <img
-                    src={settings.logoPath}
-                    alt="Logo azienda"
-                    className="max-h-24 w-auto object-contain"
-                  />
+                  <img src={settings.logoPath} alt="Logo azienda" className="max-h-24 w-auto object-contain" />
                 </div>
               )}
               <div className="font-semibold text-lg">{settings.name}</div>
@@ -489,7 +439,6 @@ const CreateQuote = () => {
             </div>
           </motion.div>
 
-          {/* Client Info - Right */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -520,14 +469,11 @@ const CreateQuote = () => {
                 {clientData.email && <div>Email: {clientData.email}</div>}
               </div>
             ) : (
-              <div className="text-muted-foreground text-sm">
-                Nessun dato cliente inserito
-              </div>
+              <div className="text-muted-foreground text-sm">Nessun dato cliente inserito</div>
             )}
           </motion.div>
         </div>
 
-        {/* Work Location */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -535,10 +481,12 @@ const CreateQuote = () => {
           className="glass rounded-2xl p-6 mb-6"
         >
           <h2 className="text-xl font-bold mb-4">Ubicazione del Lavoro</h2>
-          
+
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="workAddress" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Via</Label>
+              <Label htmlFor="workAddress" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                Via
+              </Label>
               <Input
                 id="workAddress"
                 value={workAddress}
@@ -550,7 +498,9 @@ const CreateQuote = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="workCity" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Città</Label>
+              <Label htmlFor="workCity" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                Città
+              </Label>
               <CityCombobox
                 value={workCity}
                 onSelect={(city, province, cap) => {
@@ -563,7 +513,9 @@ const CreateQuote = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="workProvince" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Provincia</Label>
+              <Label htmlFor="workProvince" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                Provincia
+              </Label>
               <Input
                 id="workProvince"
                 value={workProvince}
@@ -575,7 +527,9 @@ const CreateQuote = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="workZip" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>CAP</Label>
+              <Label htmlFor="workZip" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                CAP
+              </Label>
               <Input
                 id="workZip"
                 value={workZip}
@@ -588,7 +542,6 @@ const CreateQuote = () => {
           </div>
         </motion.div>
 
-        {/* Subject */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -596,7 +549,9 @@ const CreateQuote = () => {
           className="glass rounded-2xl p-6 mb-6"
         >
           <div className="space-y-2">
-            <Label htmlFor="subject" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Oggetto</Label>
+            <Label htmlFor="subject" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+              Oggetto
+            </Label>
             <Input
               id="subject"
               value={subject}
@@ -608,7 +563,6 @@ const CreateQuote = () => {
           </div>
         </motion.div>
 
-        {/* Quote Table - WITH FONT SCALING ON ALL TEXT ELEMENTS */}
         <div className="mb-6 relative">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -617,23 +571,44 @@ const CreateQuote = () => {
             className="glass rounded-2xl p-6"
           >
             <h2 className="text-xl font-bold mb-4">Preventivo</h2>
-            
+
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left p-2 w-8" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>#</th>
-                    <th className="text-left p-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Descrizione</th>
-                    <th className="text-left p-2 w-24" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>U.M.</th>
-                    <th className="text-left p-2 w-32" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Qtà</th>
-                    <th className="text-left p-2 w-40" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Prezzo Unit.</th>
-                    <th className="text-left p-2 w-36" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Totale</th>
+                    <th className="text-left p-2 w-8" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                      #
+                    </th>
+                    <th className="text-left p-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                      Descrizione
+                    </th>
+                    <th className="text-left p-2 w-24" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                      U.M.
+                    </th>
+                    <th className="text-left p-2 w-32" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                      Qtà
+                    </th>
+                    <th className="text-left p-2 w-40" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                      Prezzo Unit.
+                    </th>
+                    <th className="text-left p-2 w-36" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                      Totale
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {lines.map((line, index) => (
-                    <tr key={line.id} ref={el => rowRefs.current[index] = el} className="border-b hover:bg-accent/20 transition-colors">
-                      <td className="p-2 text-muted-foreground align-bottom" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>{index + 1}</td>
+                    <tr
+                      key={line.id}
+                      ref={(el) => (rowRefs.current[index] = el)}
+                      className="border-b hover:bg-accent/20 transition-colors"
+                    >
+                      <td
+                        className="p-2 text-muted-foreground align-bottom"
+                        style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                      >
+                        {index + 1}
+                      </td>
                       <td className="p-2 align-top">
                         <Textarea
                           id={`desc-${index}`}
@@ -644,24 +619,24 @@ const CreateQuote = () => {
                           rows={1}
                           style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                           onInput={(e) => {
-                            e.currentTarget.style.height = 'auto';
-                            e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
+                            e.currentTarget.style.height = "auto";
+                            e.currentTarget.style.height = e.currentTarget.scrollHeight + "px";
                           }}
                         />
                       </td>
                       <td className="p-2 align-bottom">
-                        <Select
-                          value={line.unit}
-                          onValueChange={(value) => updateLine(index, "unit", value)}
-                        >
-                          <SelectTrigger className="bg-white text-left w-24" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                        <Select value={line.unit} onValueChange={(value) => updateLine(index, "unit", value)}>
+                          <SelectTrigger
+                            className="bg-white text-left w-24"
+                            style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                          >
                             <span>{line.unit}</span>
                           </SelectTrigger>
                           <SelectContent className="bg-white z-50">
                             {UNITS.map((unit) => (
-                              <SelectItem 
-                                key={unit.value} 
-                                value={unit.value} 
+                              <SelectItem
+                                key={unit.value}
+                                value={unit.value}
                                 className="text-left justify-start cursor-pointer"
                                 style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                               >
@@ -677,7 +652,7 @@ const CreateQuote = () => {
                           id={`qty-${index}`}
                           value={line.quantity === 0 ? "" : formatNumberInput(line.quantity)}
                           onChange={(e) => {
-                            const cleaned = e.target.value.replace(/[^\d,]/g, '');
+                            const cleaned = e.target.value.replace(/[^\d,]/g, "");
                             const num = parseItalianNumber(cleaned);
                             updateLine(index, "quantity", num);
                           }}
@@ -695,7 +670,7 @@ const CreateQuote = () => {
                             id={`price-${index}`}
                             value={line.unitPrice === 0 ? "" : formatNumberInput(line.unitPrice)}
                             onChange={(e) => {
-                              const cleaned = e.target.value.replace(/[^\d,]/g, '');
+                              const cleaned = e.target.value.replace(/[^\d,]/g, "");
                               const num = parseItalianNumber(cleaned);
                               updateLine(index, "unitPrice", num);
                             }}
@@ -705,22 +680,26 @@ const CreateQuote = () => {
                             className="bg-white"
                             style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                           />
-                          {discountEnabled && !showDiscountInTable && typeof discountValue === 'number' && discountValue > 0 && (
-                            <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">Scontato:</Label>
-                              <Input
-                                type="text"
-                                value={`€ ${formatCurrency(getEffectiveUnitPrice(line.unitPrice))}`}
-                                readOnly
-                                className="bg-muted cursor-default"
-                                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-                              />
-                            </div>
-                          )}
+                          {discountEnabled &&
+                            !showDiscountInTable &&
+                            typeof discountValue === "number" &&
+                            discountValue > 0 && (
+                              <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">Scontato:</Label>
+                                <Input
+                                  type="text"
+                                  value={`€ ${formatCurrency(getEffectiveUnitPrice(line.unitPrice))}`}
+                                  readOnly
+                                  className="bg-muted cursor-default"
+                                  style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                                />
+                              </div>
+                            )}
                         </div>
                       </td>
                       <td className="p-2 align-bottom">
                         <Input
+                          ref={(el) => (totalInputRefs.current[index] = el)}
                           type="text"
                           value={`€ ${formatCurrency(getEffectiveLineTotal(line))}`}
                           readOnly
@@ -742,32 +721,28 @@ const CreateQuote = () => {
               </div>
             </div>
           </motion.div>
-          
-          <div className="absolute top-[88px] -right-20 flex flex-col">
+
+          <div className="absolute top-0 -right-20 flex flex-col">
             {lines.map((line, index) => {
-              const rowRef = rowRefs.current[index];
-              const rowHeight = rowRef?.offsetHeight || 80;
+              const totalInput = totalInputRefs.current[index];
+              const totalInputTop = totalInput?.offsetTop || 0;
+              const totalInputHeight = totalInput?.offsetHeight || 40;
+
               return (
-                <div 
-                  key={line.id} 
-                  data-button-row 
-                  className="flex gap-1 items-center justify-end" 
-                  style={{ height: `${rowHeight}px`, marginBottom: '0px' }}
+                <div
+                  key={line.id}
+                  data-button-row
+                  className="absolute flex gap-1 items-center justify-end"
+                  style={{
+                    top: `${totalInputTop}px`,
+                    height: `${totalInputHeight}px`,
+                  }}
                 >
-                  <Button 
-                    size="icon" 
-                    onClick={() => addLine(index)} 
-                    className="h-8 w-8"
-                  >
+                  <Button size="icon" onClick={() => addLine(index)} className="h-8 w-8">
                     <Plus className="w-4 h-4" />
                   </Button>
                   {lines.length > 1 && (
-                    <Button 
-                      size="icon" 
-                      variant="destructive" 
-                      onClick={() => removeLine(index)} 
-                      className="h-8 w-8"
-                    >
+                    <Button size="icon" variant="destructive" onClick={() => removeLine(index)} className="h-8 w-8">
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   )}
@@ -777,7 +752,6 @@ const CreateQuote = () => {
           </div>
         </div>
 
-        {/* Discount Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -790,7 +764,11 @@ const CreateQuote = () => {
               checked={discountEnabled}
               onCheckedChange={(checked) => setDiscountEnabled(checked as boolean)}
             />
-            <Label htmlFor="discountEnabled" className="cursor-pointer" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+            <Label
+              htmlFor="discountEnabled"
+              className="cursor-pointer"
+              style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+            >
               Applica Sconto
             </Label>
           </div>
@@ -799,7 +777,9 @@ const CreateQuote = () => {
             <div className="flex gap-6 pl-6">
               <div className="space-y-4 flex-shrink-0">
                 <div className="space-y-2 max-w-xs">
-                  <Label htmlFor="discountValue" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Valore Sconto (%)</Label>
+                  <Label htmlFor="discountValue" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                    Valore Sconto (%)
+                  </Label>
                   <Input
                     id="discountValue"
                     type="text"
@@ -809,7 +789,7 @@ const CreateQuote = () => {
                       if (value === "") {
                         setDiscountValue("");
                       } else {
-                        const num = parseFloat(value.replace(',', '.'));
+                        const num = parseFloat(value.replace(",", "."));
                         if (!isNaN(num) && num >= 0 && num <= 100) {
                           setDiscountValue(num);
                         }
@@ -828,22 +808,33 @@ const CreateQuote = () => {
                     checked={showDiscountInTable}
                     onCheckedChange={(checked) => setShowDiscountInTable(checked as boolean)}
                   />
-                  <Label htmlFor="showDiscountInTable" className="cursor-pointer" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                  <Label
+                    htmlFor="showDiscountInTable"
+                    className="cursor-pointer"
+                    style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                  >
                     Mostra sconto in tabella
                   </Label>
                 </div>
               </div>
 
               <div className="flex-1">
-                <div className="text-sm leading-relaxed text-muted-foreground" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                <div
+                  className="text-sm leading-relaxed text-muted-foreground"
+                  style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                >
                   <p className="mb-2 font-semibold">Come funziona lo sconto:</p>
                   <p className="mb-3">
-                    <span className="font-medium">Se NON selezioni "Mostra sconto in tabella":</span><br />
-                    Lo sconto verrà spalmato su tutti i prezzi unitari del preventivo. I prezzi verranno automaticamente ridotti della percentuale indicata.
+                    <span className="font-medium">Se NON selezioni "Mostra sconto in tabella":</span>
+                    <br />
+                    Lo sconto verrà spalmato su tutti i prezzi unitari del preventivo. I prezzi verranno automaticamente
+                    ridotti della percentuale indicata.
                   </p>
                   <p>
-                    <span className="font-medium">Se SELEZIONI "Mostra sconto in tabella":</span><br />
-                    Alla generazione del PDF verrà creata una riga dedicata che mostra lo sconto applicato e il totale dello sconto.
+                    <span className="font-medium">Se SELEZIONI "Mostra sconto in tabella":</span>
+                    <br />
+                    Alla generazione del PDF verrà creata una riga dedicata che mostra lo sconto applicato e il totale
+                    dello sconto.
                   </p>
                 </div>
               </div>
@@ -851,7 +842,6 @@ const CreateQuote = () => {
           )}
         </motion.div>
 
-        {/* Notes Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -864,7 +854,11 @@ const CreateQuote = () => {
               checked={notesEnabled}
               onCheckedChange={(checked) => setNotesEnabled(checked as boolean)}
             />
-            <Label htmlFor="notesEnabled" className="cursor-pointer" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+            <Label
+              htmlFor="notesEnabled"
+              className="cursor-pointer"
+              style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+            >
               Aggiungi Note
             </Label>
           </div>
@@ -883,7 +877,6 @@ const CreateQuote = () => {
           )}
         </motion.div>
 
-        {/* Payment Method */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -891,25 +884,41 @@ const CreateQuote = () => {
           className="glass rounded-2xl p-6 space-y-4 mb-6"
         >
           <div className="space-y-2">
-            <Label htmlFor="paymentMethod" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Modalità di Pagamento</Label>
+            <Label htmlFor="paymentMethod" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+              Modalità di Pagamento
+            </Label>
             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
               <SelectTrigger className="bg-white" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-white">
-                <SelectItem value="da-concordare" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Da concordare</SelectItem>
-                <SelectItem value="bonifico" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Bonifico bancario</SelectItem>
-                <SelectItem value="contanti" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Contanti</SelectItem>
-                <SelectItem value="assegno" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Assegno</SelectItem>
-                <SelectItem value="carta" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Carta di credito</SelectItem>
-                <SelectItem value="personalizzato" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Personalizzato</SelectItem>
+                <SelectItem value="da-concordare" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                  Da concordare
+                </SelectItem>
+                <SelectItem value="bonifico" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                  Bonifico bancario
+                </SelectItem>
+                <SelectItem value="contanti" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                  Contanti
+                </SelectItem>
+                <SelectItem value="assegno" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                  Assegno
+                </SelectItem>
+                <SelectItem value="carta" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                  Carta di credito
+                </SelectItem>
+                <SelectItem value="personalizzato" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                  Personalizzato
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {paymentMethod === "personalizzato" && (
             <div className="space-y-2">
-              <Label htmlFor="customPayment" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Modalità Personalizzata</Label>
+              <Label htmlFor="customPayment" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                Modalità Personalizzata
+              </Label>
               <Textarea
                 id="customPayment"
                 value={customPayment}
@@ -923,7 +932,6 @@ const CreateQuote = () => {
           )}
         </motion.div>
 
-        {/* Total */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -931,10 +939,10 @@ const CreateQuote = () => {
           className="glass rounded-2xl p-6 mb-6"
         >
           <div className="text-center">
-            <div className="text-lg text-muted-foreground mb-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Totale</div>
-            <div className="text-4xl font-extrabold">
-              € {formatCurrency(calculateTotal())}
+            <div className="text-lg text-muted-foreground mb-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+              Totale
             </div>
+            <div className="text-4xl font-extrabold">€ {formatCurrency(calculateTotal())}</div>
             {discountEnabled && (
               <div className="text-sm text-muted-foreground mt-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
                 Sconto applicato: € {formatCurrency(calculateDiscount())}
@@ -943,7 +951,6 @@ const CreateQuote = () => {
           </div>
         </motion.div>
 
-        {/* Action Buttons */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -979,20 +986,26 @@ const CreateQuote = () => {
           </Button>
         </motion.div>
 
-        {/* Save Confirmation Dialog */}
         <AlertDialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
           <AlertDialogContent className="bg-white">
             <AlertDialogHeader>
               <AlertDialogTitle className="text-2xl font-extrabold">Dati incompleti</AlertDialogTitle>
               <AlertDialogDescription className="text-lg font-semibold text-foreground">
                 {!clientData?.name && !workAddress && (
-                  <>Non hai inserito <span className="font-extrabold">i dati del cliente</span> né <span className="font-extrabold">l'ubicazione del lavoro</span>.</>
+                  <>
+                    Non hai inserito <span className="font-extrabold">i dati del cliente</span> né{" "}
+                    <span className="font-extrabold">l'ubicazione del lavoro</span>.
+                  </>
                 )}
                 {!clientData?.name && workAddress && (
-                  <>Non hai inserito <span className="font-extrabold">i dati del cliente</span>.</>
+                  <>
+                    Non hai inserito <span className="font-extrabold">i dati del cliente</span>.
+                  </>
                 )}
                 {clientData?.name && !workAddress && (
-                  <>Non hai inserito <span className="font-extrabold">l'ubicazione del lavoro</span>.</>
+                  <>
+                    Non hai inserito <span className="font-extrabold">l'ubicazione del lavoro</span>.
+                  </>
                 )}
                 <div className="mt-3 text-lg">
                   Vuoi salvare comunque come <span className="font-extrabold">bozza</span>?
@@ -1008,7 +1021,6 @@ const CreateQuote = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Delete Confirmation Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <AlertDialogContent className="bg-white">
             <AlertDialogHeader>
@@ -1026,7 +1038,6 @@ const CreateQuote = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* PDF Warning Dialog */}
         <AlertDialog open={showPdfWarningDialog} onOpenChange={setShowPdfWarningDialog}>
           <AlertDialogContent className="bg-white border-2 border-border max-w-lg p-8">
             <AlertDialogHeader>
@@ -1036,10 +1047,8 @@ const CreateQuote = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="mt-6">
-              <AlertDialogCancel className="text-lg font-bold px-8 py-6">
-                Annulla
-              </AlertDialogCancel>
-              <AlertDialogAction 
+              <AlertDialogCancel className="text-lg font-bold px-8 py-6">Annulla</AlertDialogCancel>
+              <AlertDialogAction
                 onClick={() => {
                   setShowPdfWarningDialog(false);
                   handleSave();
