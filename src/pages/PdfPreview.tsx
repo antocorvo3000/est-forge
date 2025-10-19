@@ -69,8 +69,10 @@ const PdfPreview = () => {
     const generatePdf = async () => {
       try {
         const pdf = await generateQuotePDF(data, companySettings);
-        const dataUrl = pdf.output("dataurlstring");
-        setPdfDataUrl(dataUrl);
+        // Usa Blob URL invece di data URL per evitare blocchi di Chrome
+        const blob = pdf.output("blob");
+        const blobUrl = URL.createObjectURL(blob);
+        setPdfDataUrl(blobUrl);
       } catch (error) {
         console.error("Errore generazione PDF:", error);
         toast.error("Errore durante la generazione del PDF");
@@ -81,6 +83,13 @@ const PdfPreview = () => {
     };
 
     generatePdf();
+
+    // Cleanup: revoca il Blob URL quando il componente viene smontato
+    return () => {
+      if (pdfDataUrl) {
+        URL.revokeObjectURL(pdfDataUrl);
+      }
+    };
   }, [location.state, navigate]);
 
   const handleSave = async () => {
