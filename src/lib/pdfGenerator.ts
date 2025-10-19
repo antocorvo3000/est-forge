@@ -61,9 +61,23 @@ export const generateQuotePDF = async (
   let yPos = margin;
 
   // Helper per aggiungere footer con logo, dati azienda e numero pagina
-  const addFooter = (currentPage: number, totalPages: number) => {
+  const addFooter = (currentPage: number, totalPages: number, showCompanyData: boolean = true) => {
     const footerY = pageHeight - 10;
     
+    // Prima pagina: solo numero pagina (dati azienda già presenti in alto)
+    if (!showCompanyData) {
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text(
+        `Pagina ${currentPage} di ${totalPages}`,
+        pageWidth - margin,
+        footerY,
+        { align: "right" }
+      );
+      return;
+    }
+    
+    // Altre pagine: logo + dati azienda + numero pagina
     // Logo a sinistra (piccolo)
     if (settings.logoPath) {
       try {
@@ -233,11 +247,13 @@ export const generateQuotePDF = async (
       4: { cellWidth: 24, halign: "right", valign: "bottom" },
       5: { cellWidth: 24, halign: "right", valign: "bottom" },
     },
+    margin: { bottom: 25 }, // Margine inferiore per non sovrapporre il footer
+    rowPageBreak: 'avoid', // Evita che le righe si dividano tra le pagine
     didDrawPage: (data) => {
-      // Aggiungi footer su ogni pagina
+      // Aggiungi footer su ogni pagina (senza dati azienda nella prima pagina)
       const pageCount = (doc as any).internal.getNumberOfPages();
       const currentPage = (doc as any).internal.getCurrentPageInfo().pageNumber;
-      addFooter(currentPage, pageCount);
+      addFooter(currentPage, pageCount, currentPage !== 1);
     },
   });
 
@@ -299,10 +315,11 @@ export const generateQuotePDF = async (
       4: { cellWidth: 24 },
       5: { cellWidth: 24 },
     },
+    margin: { bottom: 25 }, // Margine inferiore per non sovrapporre il footer
     didDrawPage: (data) => {
       const pageCount = (doc as any).internal.getNumberOfPages();
       const currentPage = (doc as any).internal.getCurrentPageInfo().pageNumber;
-      addFooter(currentPage, pageCount);
+      addFooter(currentPage, pageCount, currentPage !== 1);
     },
   });
 
@@ -348,7 +365,7 @@ export const generateQuotePDF = async (
   const totalPages = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    addFooter(i, totalPages);
+    addFooter(i, totalPages, i !== 1);
   }
 
   return doc;
