@@ -200,11 +200,11 @@ const PdfPreview = () => {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="w-20 flex flex-col gap-3 sticky top-4"
+            className="w-32 flex flex-col gap-3 sticky top-4"
           >
             <Button
               onClick={handleSave}
-              className="h-16 w-16 flex flex-col items-center justify-center gap-1 text-xs"
+              className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs"
               title="Salva PDF"
             >
               <Download className="w-5 h-5" />
@@ -213,7 +213,7 @@ const PdfPreview = () => {
 
             <Button
               onClick={handlePrint}
-              className="h-16 w-16 flex flex-col items-center justify-center gap-1 text-xs"
+              className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs"
               title="Stampa PDF"
             >
               <Printer className="w-5 h-5" />
@@ -223,23 +223,23 @@ const PdfPreview = () => {
             <Button
               onClick={handleZoomIn}
               variant="outline"
-              className="h-16 w-16 flex flex-col items-center justify-center gap-1 text-xs"
+              className="h-20 w-full flex flex-col items-center justify-center gap-1 text-xs"
               title="Zoom In"
               disabled={zoom >= 200}
             >
               <ZoomIn className="w-5 h-5" />
-              <span>+</span>
+              <span className="text-center leading-tight">Zoom in avanti</span>
             </Button>
 
             <Button
               onClick={handleZoomOut}
               variant="outline"
-              className="h-16 w-16 flex flex-col items-center justify-center gap-1 text-xs"
+              className="h-20 w-full flex flex-col items-center justify-center gap-1 text-xs"
               title="Zoom Out"
               disabled={zoom <= 50}
             >
               <ZoomOut className="w-5 h-5" />
-              <span>-</span>
+              <span className="text-center leading-tight">Zoom indietro</span>
             </Button>
 
             {/* Zoom indicator */}
