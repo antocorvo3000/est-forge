@@ -210,24 +210,25 @@ const PdfPreview = () => {
               maxHeight: "calc(100vh - 180px)",
             }}
           >
-            <div 
-              className="flex justify-center overflow-y-auto scrollbar-thin pr-2"
-              style={{
-                transform: `scale(${zoom / 100})`,
-                transformOrigin: "top center",
-                transition: "transform 0.3s ease",
-              }}
-            >
-              <iframe
-                ref={iframeRef}
-                src={`${pdfBlobUrl}#page=${currentPage}&toolbar=0&navpanes=0&scrollbar=0`}
-                className="border-0 rounded-lg shadow-lg bg-white"
+            <div className="flex justify-center overflow-y-auto scrollbar-thin pr-2 flex-1">
+              <div 
                 style={{
-                  width: "595px", // A4 width in pixels at 72 DPI
-                  height: "842px", // A4 height in pixels at 72 DPI
+                  transform: `scale(${zoom / 100})`,
+                  transformOrigin: "top center",
+                  transition: "transform 0.3s ease",
                 }}
-                title="Anteprima PDF"
-              />
+              >
+                <iframe
+                  ref={iframeRef}
+                  src={`${pdfBlobUrl}#page=${currentPage}&toolbar=0&navpanes=0&scrollbar=0`}
+                  className="border-0 rounded-lg shadow-lg bg-white"
+                  style={{
+                    width: "595px", // A4 width in pixels at 72 DPI
+                    height: "842px", // A4 height in pixels at 72 DPI
+                  }}
+                  title="Anteprima PDF"
+                />
+              </div>
             </div>
           </motion.div>
 
