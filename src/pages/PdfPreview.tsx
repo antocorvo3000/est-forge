@@ -160,7 +160,7 @@ const PdfPreview = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/")}
+            onClick={() => navigate(-1)}
             className="h-10 w-10"
           >
             <ArrowLeft className="w-5 h-5" />
