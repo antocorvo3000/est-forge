@@ -786,12 +786,12 @@ const ModifyQuote = () => {
         </motion.div>
 
         {/* Quote Table - WITH FONT SCALING ON ALL TEXT ELEMENTS */}
-        <div className="flex gap-3 mb-6">
+        <div className="mb-6 relative">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="glass rounded-2xl p-6 flex-1"
+            className="glass rounded-2xl p-6"
           >
             <h2 className="text-xl font-bold mb-4">Preventivo</h2>
             
@@ -920,7 +920,7 @@ const ModifyQuote = () => {
             </div>
           </motion.div>
           
-          <div className="flex flex-col pt-[88px]">
+          <div className="absolute top-[88px] -right-16 flex flex-col">
             {lines.map((line, index) => (
               <div key={line.id} data-button-row className="flex gap-1 items-end justify-end">
                 <Button
