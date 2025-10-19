@@ -218,16 +218,9 @@ export const generateQuotePDF = async (
     `€ ${formatCurrency(riga.totale)}`,
   ]);
 
-  // Traccia righe divise tra pagine
-  const splitRowsInfo = new Map<number, { 
-    startPage: number, 
-    startY: number, 
-    endPage?: number,
-    cellHeights: Map<number, number>
-  }>();
-  
-  let currentProcessingRow = -1;
-  let previousPage = 1;
+  // Traccia celle disegnate per identificare righe divise
+  const drawnCells = new Map<number, Map<number, { page: number, x: number, y: number, width: number, height: number }>>();
+  const rowPages = new Map<number, Set<number>>();
 
   autoTable(doc, {
     startY: yPos,
@@ -259,52 +252,63 @@ export const generateQuotePDF = async (
       5: { cellWidth: 24, halign: "right", valign: "bottom" },
     },
     margin: { bottom: 25 },
-    willDrawCell: (data) => {
+    didDrawCell: (data) => {
       const { cell, row, column, pageNumber } = data;
       const rowIndex = row.index;
       const colIndex = column.index;
       
-      // Traccia l'inizio di ogni riga
-      if (colIndex === 0) {
-        if (!splitRowsInfo.has(rowIndex)) {
-          splitRowsInfo.set(rowIndex, {
-            startPage: pageNumber,
-            startY: cell.y,
-            cellHeights: new Map()
-          });
-        }
-        currentProcessingRow = rowIndex;
-        
-        // Rileva cambio di pagina per la stessa riga
-        if (previousPage !== pageNumber && splitRowsInfo.has(rowIndex)) {
-          const rowInfo = splitRowsInfo.get(rowIndex)!;
-          if (rowInfo.startPage < pageNumber) {
-            rowInfo.endPage = pageNumber;
-          }
-        }
-        previousPage = pageNumber;
+      // Traccia tutte le celle disegnate
+      if (!drawnCells.has(rowIndex)) {
+        drawnCells.set(rowIndex, new Map());
       }
       
-      // Memorizza l'altezza di ogni cella
-      const rowInfo = splitRowsInfo.get(currentProcessingRow);
-      if (rowInfo) {
-        rowInfo.cellHeights.set(colIndex, cell.height);
-      }
+      drawnCells.get(rowIndex)!.set(colIndex, {
+        page: pageNumber,
+        x: cell.x,
+        y: cell.y,
+        width: cell.width,
+        height: cell.height
+      });
       
-      // Se siamo su colonne 2-5 (U.M., Qtà, Prezzo Unit., Totale)
-      if (colIndex >= 2 && colIndex <= 5 && rowInfo) {
-        // Se questa riga è divisa su più pagine e siamo nella prima pagina
-        if (rowInfo.endPage && pageNumber === rowInfo.startPage && rowInfo.endPage > rowInfo.startPage) {
-          // Nascondi il contenuto nella prima parte della riga divisa
-          cell.text = [];
-        }
+      // Traccia le pagine su cui appare ogni riga
+      if (!rowPages.has(rowIndex)) {
+        rowPages.set(rowIndex, new Set());
       }
+      rowPages.get(rowIndex)!.add(pageNumber);
     },
     didDrawPage: (data) => {
       const pageCount = (doc as any).internal.getNumberOfPages();
       const currentPage = data.pageNumber;
       addFooter(currentPage, pageCount, currentPage !== 1);
     },
+  });
+
+  // Post-processing: sovrascrivi celle nelle righe divise
+  rowPages.forEach((pages, rowIndex) => {
+    if (pages.size > 1) {
+      // Questa riga è divisa su più pagine
+      const sortedPages = Array.from(pages).sort((a, b) => a - b);
+      const firstPage = sortedPages[0];
+      
+      // Per ogni pagina tranne l'ultima, sovrascrivi le colonne 2-5
+      for (let i = 0; i < sortedPages.length - 1; i++) {
+        const page = sortedPages[i];
+        doc.setPage(page);
+        
+        const cellsInRow = drawnCells.get(rowIndex);
+        if (cellsInRow) {
+          // Sovrascrivi colonne 2-5 (U.M., Qtà, Prezzo Unit., Totale)
+          for (let colIndex = 2; colIndex <= 5; colIndex++) {
+            const cellInfo = cellsInRow.get(colIndex);
+            if (cellInfo && cellInfo.page === page) {
+              // Disegna un rettangolo bianco sopra la cella
+              doc.setFillColor(255, 255, 255);
+              doc.rect(cellInfo.x + 0.3, cellInfo.y + 0.3, cellInfo.width - 0.6, cellInfo.height - 0.6, 'F');
+            }
+          }
+        }
+      }
+    }
   });
 
   // Posizione dopo la tabella
