@@ -282,8 +282,8 @@ const PdfPreview = () => {
                 className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs cursor-default px-1"
                 disabled
               >
-                <span className="text-center leading-tight">Pagina {currentPage}</span>
-                <span className="text-center leading-tight">di {totalPages}</span>
+                <span className="text-center leading-tight">Pagina</span>
+                <span className="text-center leading-tight">{currentPage} di {totalPages}</span>
               </Button>
 
               <Button
