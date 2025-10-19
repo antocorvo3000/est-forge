@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Download, Printer, ZoomIn, ZoomOut } from "lucide-react";
@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
+import * as pdfjsLib from "pdfjs-dist";
+
+// Configura worker di PDF.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface QuoteData {
   numero: number;
@@ -46,11 +50,15 @@ interface QuoteData {
 const PdfPreview = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [pdfDataUrl, setPdfDataUrl] = useState<string>("");
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string>("");
   const [zoom, setZoom] = useState(100);
   const [loading, setLoading] = useState(true);
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
   const [settings, setSettings] = useState<CompanySettings | null>(null);
+  const [useCanvasFallback, setUseCanvasFallback] = useState(false);
+  const [pdfPages, setPdfPages] = useState<HTMLCanvasElement[]>([]);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const data = location.state?.quoteData as QuoteData;
@@ -58,40 +66,101 @@ const PdfPreview = () => {
     
     if (!data || !companySettings) {
       toast.error("Nessun dato disponibile per generare il PDF");
-      navigate("/");
+      navigate(-1);
       return;
     }
 
     setQuoteData(data);
     setSettings(companySettings);
 
-    // Genera il PDF
     const generatePdf = async () => {
       let blobUrl = "";
       try {
         const pdf = await generateQuotePDF(data, companySettings);
-        // Usa Blob URL invece di data URL per evitare blocchi di Chrome
         const blob = pdf.output("blob");
-        blobUrl = URL.createObjectURL(blob);
-        setPdfDataUrl(blobUrl);
+        
+        // Crea un nuovo Blob con Content-Type corretto
+        const pdfBlob = new Blob([blob], { type: "application/pdf" });
+        blobUrl = URL.createObjectURL(pdfBlob);
+        setPdfBlobUrl(blobUrl);
+
+        // Prova a caricare nell'iframe
+        setTimeout(() => {
+          // Se l'iframe non carica, usa fallback con canvas
+          if (iframeRef.current) {
+            iframeRef.current.onload = () => {
+              // Iframe caricato con successo
+              setLoading(false);
+            };
+            iframeRef.current.onerror = () => {
+              // Fallback a canvas
+              renderWithPdfJs(pdfBlob);
+            };
+          }
+        }, 1000);
+
+        // Fallback automatico per Safari/Firefox
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+        
+        if (isSafari || isFirefox) {
+          renderWithPdfJs(pdfBlob);
+        } else {
+          setLoading(false);
+        }
       } catch (error) {
         console.error("Errore generazione PDF:", error);
         toast.error("Errore durante la generazione del PDF");
-        navigate("/");
-      } finally {
-        setLoading(false);
+        navigate(-1);
       }
     };
 
     generatePdf();
 
-    // Cleanup: revoca il Blob URL quando il componente viene smontato
     return () => {
-      if (pdfDataUrl) {
-        URL.revokeObjectURL(pdfDataUrl);
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl);
       }
     };
   }, [location.state, navigate]);
+
+  const renderWithPdfJs = async (pdfBlob: Blob) => {
+    try {
+      const arrayBuffer = await pdfBlob.arrayBuffer();
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+      const pdf = await loadingTask.promise;
+      
+      const canvases: HTMLCanvasElement[] = [];
+      
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1.5 });
+        
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        
+        if (!context) continue;
+        
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        await page.render({
+          canvasContext: context,
+          viewport: viewport,
+          canvas: canvas,
+        }).promise;
+        
+        canvases.push(canvas);
+      }
+      
+      setPdfPages(canvases);
+      setUseCanvasFallback(true);
+      setLoading(false);
+    } catch (error) {
+      console.error("Errore rendering PDF.js:", error);
+      toast.error("Errore durante il rendering del PDF");
+    }
+  };
 
   const handleSave = async () => {
     if (!quoteData || !settings) return;
@@ -107,27 +176,22 @@ const PdfPreview = () => {
     }
   };
 
-  const handlePrint = async () => {
-    if (!quoteData || !settings) return;
-    
-    try {
-      const pdf = await generateQuotePDF(quoteData, settings);
-      const blob = pdf.output("blob");
-      const url = URL.createObjectURL(blob);
-      const printWindow = window.open(url);
-      
-      if (printWindow) {
-        printWindow.addEventListener("load", () => {
-          printWindow.print();
-        });
-        toast.success("Invio alla stampante...");
-      } else {
-        toast.error("Impossibile aprire la finestra di stampa");
+  const handlePrint = () => {
+    if (useCanvasFallback) {
+      // Stampa da canvas
+      window.print();
+    } else if (iframeRef.current?.contentWindow) {
+      // Stampa da iframe
+      try {
+        iframeRef.current.contentWindow.print();
+      } catch (error) {
+        console.error("Errore stampa iframe:", error);
+        window.print();
       }
-    } catch (error) {
-      console.error("Errore stampa PDF:", error);
-      toast.error("Errore durante la stampa");
+    } else {
+      window.print();
     }
+    toast.success("Invio alla stampante...");
   };
 
   const handleZoomIn = () => {
@@ -138,7 +202,7 @@ const PdfPreview = () => {
     setZoom((prev) => Math.max(prev - 25, 50));
   };
 
-  if (loading || !pdfDataUrl) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -181,26 +245,48 @@ const PdfPreview = () => {
               maxHeight: "calc(100vh - 180px)",
             }}
           >
-            <div className="flex justify-center">
-              <object
-                data={pdfDataUrl}
-                type="application/pdf"
-                className="border-0 rounded-lg shadow-lg"
-                style={{
-                  width: `${zoom}%`,
-                  height: `${(297 / 210) * zoom * 2.83}px`,
-                  minHeight: "842px",
-                  transition: "all 0.3s ease",
-                }}
-              >
-                <p className="text-center p-4">
-                  Il tuo browser non supporta la visualizzazione PDF.
-                  <br />
-                  <Button onClick={handleSave} className="mt-4">
-                    Scarica PDF
-                  </Button>
-                </p>
-              </object>
+            <div 
+              className="flex justify-center"
+              style={{
+                transform: `scale(${zoom / 100})`,
+                transformOrigin: "top center",
+                transition: "transform 0.3s ease",
+              }}
+            >
+              {useCanvasFallback ? (
+                // Fallback: Rendering con PDF.js su canvas
+                <div ref={canvasContainerRef} className="space-y-4">
+                  {pdfPages.map((canvas, index) => (
+                    <div
+                      key={index}
+                      className="shadow-lg rounded-lg overflow-hidden"
+                      style={{
+                        aspectRatio: "210/297",
+                        width: "595px", // A4 width in pixels at 72 DPI
+                      }}
+                    >
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: canvas.outerHTML,
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                // Primary: Iframe con sandbox
+                <iframe
+                  ref={iframeRef}
+                  src={`${pdfBlobUrl}#toolbar=0&navpanes=0`}
+                  className="border-0 rounded-lg shadow-lg"
+                  sandbox="allow-scripts allow-same-origin allow-downloads"
+                  style={{
+                    width: "595px", // A4 width
+                    height: "842px", // A4 height
+                  }}
+                  title="PDF Preview"
+                />
+              )}
             </div>
           </motion.div>
 
