@@ -641,8 +641,8 @@ const CreateQuote = () => {
               <tbody>
                 {lines.map((line, index) => (
                   <tr key={line.id} className="border-b hover:bg-accent/20 transition-colors">
-                    <td className="p-2 text-muted-foreground" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>{index + 1}</td>
-                    <td className="p-2">
+                    <td className="p-2 text-muted-foreground align-bottom" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>{index + 1}</td>
+                    <td className="p-2 align-top">
                       <Textarea
                         id={`desc-${index}`}
                         value={line.description}
@@ -657,7 +657,7 @@ const CreateQuote = () => {
                         }}
                       />
                     </td>
-                    <td className="p-2">
+                    <td className="p-2 align-bottom">
                       <Select
                         value={line.unit}
                         onValueChange={(value) => updateLine(index, "unit", value)}
@@ -679,7 +679,7 @@ const CreateQuote = () => {
                         </SelectContent>
                       </Select>
                     </td>
-                    <td className="p-2">
+                    <td className="p-2 align-bottom">
                       <Input
                         type="text"
                         id={`qty-${index}`}
@@ -696,7 +696,7 @@ const CreateQuote = () => {
                         style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                       />
                     </td>
-                    <td className="p-2">
+                    <td className="p-2 align-bottom">
                       <div className="space-y-1">
                         <Input
                           type="text"
@@ -721,10 +721,10 @@ const CreateQuote = () => {
                         )}
                       </div>
                     </td>
-                    <td className="p-2 font-semibold" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                    <td className="p-2 font-semibold align-bottom" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
                       € {formatCurrency(getEffectiveLineTotal(line))}
                     </td>
-                    <td className="p-2">
+                    <td className="p-2 align-bottom">
                       <div className="flex gap-1">
                         <Button
                           size="icon"
