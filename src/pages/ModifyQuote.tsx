@@ -404,14 +404,20 @@ const ModifyQuote = () => {
     try {
       const { generateQuotePDF } = await import("@/lib/pdfGenerator");
       
-      // Ottieni numero e anno del preventivo
+      // Ottieni numero e anno del preventivo dal database
       let numero = 1;
       let anno = new Date().getFullYear();
       
-      if (quoteData) {
-        numero = quoteData.numero;
-        anno = quoteData.anno;
-      } else if (isCloning && location.state?.cloneNumber && location.state?.cloneYear) {
+      if (id) {
+        const data = await getQuoteById(id);
+        if (data) {
+          numero = data.numero;
+          anno = data.anno;
+        }
+      }
+      
+      // Se siamo in modalità clonazione, usa i nuovi numeri
+      if (isCloning && location.state?.cloneNumber && location.state?.cloneYear) {
         numero = location.state.cloneNumber;
         anno = location.state.cloneYear;
       }
