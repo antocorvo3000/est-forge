@@ -123,13 +123,17 @@ const CreateQuote = () => {
       }
     });
     
-    // Sync button container heights with table rows
+    // Position button containers to align with each row
     setTimeout(() => {
       const buttonContainers = document.querySelectorAll('[data-button-row]');
       buttonContainers.forEach((container, index) => {
         const row = rowRefs.current[index];
         if (row) {
-          (container as HTMLElement).style.height = `${row.offsetHeight}px`;
+          const rowRect = row.getBoundingClientRect();
+          const rowHeight = row.offsetHeight;
+          // Center buttons vertically in the row
+          (container as HTMLElement).style.height = `${rowHeight}px`;
+          (container as HTMLElement).style.marginBottom = '0px';
         }
       });
     }, 100);
