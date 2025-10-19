@@ -311,8 +311,78 @@ const CreateQuote = () => {
     navigate("/");
   };
 
-  const handleViewPdf = () => {
-    toast.info("Funzionalità in sviluppo");
+  const handleViewPdf = async () => {
+    // Validazione dati minimi
+    if (!clientData || !clientData.name.trim()) {
+      toast.error("Inserire i dati del cliente prima di generare il PDF");
+      return;
+    }
+    if (!workAddress.trim() || !workCity.trim()) {
+      toast.error("Inserire l'ubicazione del lavoro prima di generare il PDF");
+      return;
+    }
+    if (lines.every(line => !line.description.trim())) {
+      toast.error("Inserire almeno una voce nel preventivo");
+      return;
+    }
+
+    try {
+      const { generateQuotePDF } = await import("@/lib/pdfGenerator");
+      
+      // Prepara i dati per il PDF
+      const quoteData = {
+        numero: location.state?.customNumber || 1,
+        anno: location.state?.customYear || new Date().getFullYear(),
+        oggetto: subject || "Preventivo",
+        cliente: {
+          nome: clientData.name,
+          taxCode: clientData.taxCode,
+          address: clientData.address,
+          city: clientData.city,
+          province: clientData.province,
+          zip: clientData.zip,
+          phone: clientData.phone,
+          email: clientData.email,
+        },
+        ubicazione: {
+          via: workAddress,
+          citta: workCity,
+          provincia: workProvince,
+          cap: workZip,
+        },
+        righe: lines
+          .filter(line => line.description.trim())
+          .map(line => ({
+            descrizione: line.description,
+            unita_misura: line.unit,
+            quantita: line.quantity,
+            prezzo_unitario: discountEnabled && !showDiscountInTable 
+              ? getEffectiveUnitPrice(line.unitPrice)
+              : line.unitPrice,
+            totale: getEffectiveLineTotal(line),
+          })),
+        subtotale: calculateSubtotal(),
+        sconto_percentuale: discountEnabled ? discountValue : 0,
+        sconto_valore: discountEnabled ? calculateDiscount() : 0,
+        totale: calculateTotal(),
+        note: notesEnabled ? notes : undefined,
+        modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+        showDiscountInTable: showDiscountInTable,
+      };
+
+      const pdf = await generateQuotePDF(quoteData, settings);
+      
+      navigate("/pdf-preview", {
+        state: {
+          pdf,
+          numero: quoteData.numero,
+          anno: quoteData.anno,
+        },
+      });
+    } catch (error) {
+      console.error("Errore generazione PDF:", error);
+      toast.error("Errore durante la generazione del PDF");
+    }
   };
 
   return (
