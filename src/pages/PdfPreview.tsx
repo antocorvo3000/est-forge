@@ -146,10 +146,17 @@ const PdfPreview = () => {
     console.log('pdfBlobUrl:', pdfBlobUrl);
     console.log('quoteData:', quoteData);
     try {
-      navigate(-1);
-      console.log('navigate called successfully');
+      // Verifica se c'è una pagina precedente
+      if (window.history.length > 1) {
+        navigate(-1);
+        console.log('navigate(-1) called successfully');
+      } else {
+        navigate('/');
+        console.log('navigate to home called (no history)');
+      }
     } catch (error) {
       console.error('Error navigating back:', error);
+      navigate('/');
     }
   };
 
