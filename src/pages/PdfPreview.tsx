@@ -171,17 +171,19 @@ const PdfPreview = () => {
               maxHeight: "calc(100vh - 180px)",
             }}
           >
-            <iframe
-              src={pdfDataUrl}
-              className="w-full border-0 rounded-lg shadow-lg"
-              style={{
-                height: "800px",
-                transform: `scale(${zoom / 100})`,
-                transformOrigin: "top center",
-                transition: "transform 0.3s ease",
-              }}
-              title="PDF Preview"
-            />
+            <div className="flex justify-center">
+              <iframe
+                src={pdfDataUrl}
+                className="border-0 rounded-lg shadow-lg"
+                style={{
+                  width: `${zoom}%`,
+                  height: `${(297 / 210) * zoom * 2.83}px`, // Proporzioni A4: 297mm / 210mm
+                  minHeight: "842px", // A4 height in pixels at 72 DPI
+                  transition: "all 0.3s ease",
+                }}
+                title="PDF Preview"
+              />
+            </div>
           </motion.div>
 
           {/* Control Panel */}
