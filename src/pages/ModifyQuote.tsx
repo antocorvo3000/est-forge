@@ -62,6 +62,7 @@ const ModifyQuote = () => {
   const { getQuoteById, updateQuote, deleteQuote } = useQuotes();
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [loading, setLoading] = useState(true);
+  const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
 
   const formatItalianNumber = (value: number): string => {
     return new Intl.NumberFormat('it-IT', {
@@ -180,6 +181,15 @@ const ModifyQuote = () => {
           if (textarea) {
             textarea.style.height = 'auto';
             textarea.style.height = textarea.scrollHeight + 'px';
+          }
+        });
+        
+        // Sync button container heights with table rows
+        const buttonContainers = document.querySelectorAll('[data-button-row]');
+        buttonContainers.forEach((container, index) => {
+          const row = rowRefs.current[index];
+          if (row) {
+            (container as HTMLElement).style.height = `${row.offsetHeight}px`;
           }
         });
       }, 0);
@@ -799,7 +809,7 @@ const ModifyQuote = () => {
                 </thead>
                 <tbody>
                   {lines.map((line, index) => (
-                    <tr key={line.id} className="border-b hover:bg-accent/20 transition-colors">
+                    <tr key={line.id} ref={el => rowRefs.current[index] = el} className="border-b hover:bg-accent/20 transition-colors">
                       <td className="p-2 text-muted-foreground align-bottom" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>{index + 1}</td>
                       <td className="p-2 align-top">
                         <Textarea
@@ -912,7 +922,7 @@ const ModifyQuote = () => {
           
           <div className="flex flex-col pt-[88px]">
             {lines.map((line, index) => (
-              <div key={line.id} className="flex gap-1 items-end pb-2" style={{ minHeight: '57px' }}>
+              <div key={line.id} data-button-row className="flex gap-1 items-end justify-end pb-2">
                 <Button
                   size="icon"
                   onClick={() => addLine(index)}

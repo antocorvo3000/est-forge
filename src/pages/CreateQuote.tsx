@@ -61,6 +61,7 @@ const CreateQuote = () => {
   const { settings } = useCompanySettings();
   const { addQuote } = useQuotes();
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
 
   const formatItalianNumber = (value: number): string => {
     return new Intl.NumberFormat('it-IT', {
@@ -100,22 +101,6 @@ const CreateQuote = () => {
     }
   }, [location.state?.clientData]);
 
-  // Auto-resize textareas when lines change
-  useEffect(() => {
-    if (lines.length > 0) {
-      // Use setTimeout to ensure DOM is updated
-      setTimeout(() => {
-        lines.forEach((_, index) => {
-          const textarea = document.getElementById(`desc-${index}`) as HTMLTextAreaElement;
-          if (textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
-          }
-        });
-      }, 0);
-    }
-  }, [location.state]);
-
   // Work location
   const [workAddress, setWorkAddress] = useState("");
   const [workCity, setWorkCity] = useState("");
@@ -137,6 +122,17 @@ const CreateQuote = () => {
         textarea.style.height = textarea.scrollHeight + 'px';
       }
     });
+    
+    // Sync button container heights with table rows
+    setTimeout(() => {
+      const buttonContainers = document.querySelectorAll('[data-button-row]');
+      buttonContainers.forEach((container, index) => {
+        const row = rowRefs.current[index];
+        if (row) {
+          (container as HTMLElement).style.height = `${row.offsetHeight}px`;
+        }
+      });
+    }, 100);
   }, [lines]);
 
   // Discount
@@ -647,7 +643,7 @@ const CreateQuote = () => {
                 </thead>
                 <tbody>
                   {lines.map((line, index) => (
-                    <tr key={line.id} className="border-b hover:bg-accent/20 transition-colors">
+                    <tr key={line.id} ref={el => rowRefs.current[index] = el} className="border-b hover:bg-accent/20 transition-colors">
                       <td className="p-2 text-muted-foreground align-bottom" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>{index + 1}</td>
                       <td className="p-2 align-top">
                         <Textarea
@@ -760,7 +756,7 @@ const CreateQuote = () => {
           
           <div className="flex flex-col pt-[88px]">
             {lines.map((line, index) => (
-              <div key={line.id} className="flex gap-1 items-end pb-2" style={{ minHeight: '57px' }}>
+              <div key={line.id} data-button-row className="flex gap-1 items-end justify-end pb-2">
                 <Button
                   size="icon"
                   onClick={() => addLine(index)}
