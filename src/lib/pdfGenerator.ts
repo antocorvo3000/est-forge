@@ -1,5 +1,4 @@
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import type { CompanySettings } from "@/types/companySettings";
 
 interface QuoteData {
@@ -55,7 +54,21 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 12.7;
-  let yPos = margin;
+  const footerMargin = 25;
+  const availableHeight = pageHeight - margin - footerMargin;
+
+  // Configurazione colonne
+  const colWidths = {
+    nr: 8,
+    desc: 0, // calcolato dopo
+    um: 15,
+    qty: 12,
+    price: 24,
+    total: 24,
+  };
+
+  colWidths.desc =
+    pageWidth - 2 * margin - colWidths.nr - colWidths.um - colWidths.qty - colWidths.price - colWidths.total;
 
   const addFooter = (currentPage: number, totalPages: number, showCompanyData: boolean = true) => {
     const footerY = pageHeight - 10;
@@ -94,6 +107,9 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, footerY, { align: "right" });
   };
 
+  let yPos = margin;
+
+  // Logo e intestazione azienda
   if (settings.logoPath) {
     try {
       const img = new Image();
@@ -123,26 +139,21 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
   yPos += 4;
   doc.text(`Email: ${settings.email}`, margin, yPos);
 
+  // Cliente
   let clientYPos = margin + 25;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
-  doc.text(`C.a. ${quoteData.cliente.nome}`, pageWidth - margin, clientYPos, {
-    align: "right",
-  });
+  doc.text(`C.a. ${quoteData.cliente.nome}`, pageWidth - margin, clientYPos, { align: "right" });
   clientYPos += 5;
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   if (quoteData.cliente.taxCode) {
-    doc.text(`CF/P.IVA: ${quoteData.cliente.taxCode}`, pageWidth - margin, clientYPos, {
-      align: "right",
-    });
+    doc.text(`CF/P.IVA: ${quoteData.cliente.taxCode}`, pageWidth - margin, clientYPos, { align: "right" });
     clientYPos += 4;
   }
   if (quoteData.cliente.address) {
-    doc.text(quoteData.cliente.address, pageWidth - margin, clientYPos, {
-      align: "right",
-    });
+    doc.text(quoteData.cliente.address, pageWidth - margin, clientYPos, { align: "right" });
     clientYPos += 4;
   }
   if (quoteData.cliente.city || quoteData.cliente.zip) {
@@ -153,18 +164,16 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     clientYPos += 4;
   }
   if (quoteData.cliente.phone) {
-    doc.text(`Tel. ${quoteData.cliente.phone}`, pageWidth - margin, clientYPos, {
-      align: "right",
-    });
+    doc.text(`Tel. ${quoteData.cliente.phone}`, pageWidth - margin, clientYPos, { align: "right" });
     clientYPos += 4;
   }
   if (quoteData.cliente.email) {
-    doc.text(`Email: ${quoteData.cliente.email}`, pageWidth - margin, clientYPos, {
-      align: "right",
-    });
+    doc.text(`Email: ${quoteData.cliente.email}`, pageWidth - margin, clientYPos, { align: "right" });
   }
 
   yPos = Math.max(yPos, clientYPos) + 10;
+
+  // Preventivo
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.text(`Preventivo N. ${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}`, margin, yPos);
@@ -179,9 +188,62 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
   doc.text(ubicazioneText, margin, yPos);
   yPos += 8;
 
-  // Prepara i dati della tabella
-  const tableData: any[] = [];
-  const rowMetadata: Map<number, { nr: string; um: string; qty: string; price: string; total: string }> = new Map();
+  // Funzione per disegnare header tabella
+  const drawTableHeader = (y: number) => {
+    doc.setFillColor(200, 200, 200);
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.3);
+
+    let x = margin;
+    const headerHeight = 7;
+
+    // Disegna celle header
+    doc.rect(x, y, colWidths.nr, headerHeight, "FD");
+    x += colWidths.nr;
+    doc.rect(x, y, colWidths.desc, headerHeight, "FD");
+    x += colWidths.desc;
+    doc.rect(x, y, colWidths.um, headerHeight, "FD");
+    x += colWidths.um;
+    doc.rect(x, y, colWidths.qty, headerHeight, "FD");
+    x += colWidths.qty;
+    doc.rect(x, y, colWidths.price, headerHeight, "FD");
+    x += colWidths.price;
+    doc.rect(x, y, colWidths.total, headerHeight, "FD");
+
+    // Testo header
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+
+    x = margin;
+    const textY = y + headerHeight - 2;
+
+    doc.text("Nr", x + colWidths.nr / 2, textY, { align: "center" });
+    x += colWidths.nr;
+    doc.text("Descrizione", x + colWidths.desc / 2, textY, { align: "center" });
+    x += colWidths.desc;
+    doc.text("U.M.", x + colWidths.um / 2, textY, { align: "center" });
+    x += colWidths.um;
+    doc.text("Qtà", x + colWidths.qty / 2, textY, { align: "center" });
+    x += colWidths.qty;
+    doc.text("Prezzo Unit.", x + colWidths.price / 2, textY, { align: "center" });
+    x += colWidths.price;
+    doc.text("Totale", x + colWidths.total / 2, textY, { align: "center" });
+
+    return y + headerHeight;
+  };
+
+  // Disegna header iniziale
+  const tableStartY = yPos;
+  yPos = drawTableHeader(yPos);
+
+  // Disegna righe
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+
+  let currentPage = 1;
+  const totalPagesToEstimate = 10; // Aggiornato dopo
 
   quoteData.righe.forEach((riga, index) => {
     const nr = (index + 1).toString();
@@ -190,263 +252,130 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     const price = `€ ${formatCurrency(riga.prezzo_unitario)}`;
     const total = `€ ${formatCurrency(riga.totale)}`;
 
-    rowMetadata.set(index, { nr, um, qty, price, total });
+    // Split descrizione
+    const descLines = doc.splitTextToSize(riga.descrizione, colWidths.desc - 4);
+    const lineHeight = 4;
+    const rowHeight = Math.max(descLines.length * lineHeight + 4, 8);
 
-    tableData.push([nr, riga.descrizione, um, qty, price, total]);
-  });
-
-  // PRIMO PASSAGGIO: Scopri quali righe sono divise tra pagine
-  const rowPageTracking: Map<number, Set<number>> = new Map();
-  let currentRowIndex = -1;
-  let currentPage = -1;
-
-  // Esegui un primo rendering invisibile per tracciare
-  const tempDoc = new jsPDF({
-    orientation: "portrait",
-    unit: "mm",
-    format: "a4",
-  });
-
-  autoTable(tempDoc, {
-    startY: yPos,
-    head: [["Nr", "Descrizione", "U.M.", "Qtà", "Prezzo Unit.", "Totale"]],
-    body: tableData,
-    theme: "grid",
-    styles: {
-      fontSize: 9,
-      cellPadding: 2,
-      lineColor: [0, 0, 0],
-      lineWidth: 0.3,
-    },
-    columnStyles: {
-      0: { cellWidth: 8, halign: "center", valign: "top" },
-      1: { cellWidth: "auto", halign: "left", valign: "top", overflow: "linebreak" },
-      2: { cellWidth: 15, halign: "center", valign: "top" },
-      3: { cellWidth: 12, halign: "right", valign: "top" },
-      4: { cellWidth: 24, halign: "right", valign: "top" },
-      5: { cellWidth: 24, halign: "right", valign: "top" },
-    },
-    margin: { bottom: 25 },
-    didDrawCell: (data) => {
-      if (data.section === "body" && data.column.index === 0) {
-        const rowIdx = data.row.index;
-        if (!rowPageTracking.has(rowIdx)) {
-          rowPageTracking.set(rowIdx, new Set());
-        }
-        rowPageTracking.get(rowIdx)!.add(data.pageNumber);
-      }
-    },
-  });
-
-  // Ora sappiamo quali righe sono divise
-  const splitRows = new Set<number>();
-  rowPageTracking.forEach((pages, rowIdx) => {
-    if (pages.size > 1) {
-      splitRows.add(rowIdx);
+    // Controlla se serve nuova pagina
+    if (yPos + rowHeight > availableHeight) {
+      // Nuova pagina
+      doc.addPage();
+      currentPage++;
+      yPos = margin;
+      yPos = drawTableHeader(yPos);
     }
+
+    const rowStartY = yPos;
+    let x = margin;
+
+    // Disegna bordi celle
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.3);
+    doc.rect(x, rowStartY, colWidths.nr, rowHeight);
+    x += colWidths.nr;
+    doc.rect(x, rowStartY, colWidths.desc, rowHeight);
+    x += colWidths.desc;
+    doc.rect(x, rowStartY, colWidths.um, rowHeight);
+    x += colWidths.um;
+    doc.rect(x, rowStartY, colWidths.qty, rowHeight);
+    x += colWidths.qty;
+    doc.rect(x, rowStartY, colWidths.price, rowHeight);
+    x += colWidths.price;
+    doc.rect(x, rowStartY, colWidths.total, rowHeight);
+
+    // Contenuto celle
+    x = margin;
+
+    // Nr - in alto
+    doc.text(nr, x + colWidths.nr / 2, rowStartY + 5, { align: "center" });
+    x += colWidths.nr;
+
+    // Descrizione
+    descLines.forEach((line: string, lineIdx: number) => {
+      doc.text(line, x + 2, rowStartY + 5 + lineIdx * lineHeight);
+    });
+    x += colWidths.desc;
+
+    // Valori - in basso
+    const bottomTextY = rowStartY + rowHeight - 2;
+
+    doc.text(um, x + colWidths.um / 2, bottomTextY, { align: "center" });
+    x += colWidths.um;
+
+    doc.text(qty, x + colWidths.qty - 2, bottomTextY, { align: "right" });
+    x += colWidths.qty;
+
+    doc.text(price, x + colWidths.price - 2, bottomTextY, { align: "right" });
+    x += colWidths.price;
+
+    doc.text(total, x + colWidths.total - 2, bottomTextY, { align: "right" });
+
+    yPos += rowHeight;
   });
 
-  // SECONDO PASSAGGIO: Rendering finale con logica corretta
-  const cellDataToRedraw: Array<{
-    page: number;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    text: string;
-    align: "center" | "right";
-  }> = [];
+  // Totali
+  yPos += 5;
+  const summaryStartY = yPos;
+  const summaryHeight = 6;
 
-  autoTable(doc, {
-    startY: yPos,
-    head: [["Nr", "Descrizione", "U.M.", "Qtà", "Prezzo Unit.", "Totale"]],
-    body: tableData,
-    theme: "grid",
-    styles: {
-      fontSize: 9,
-      cellPadding: 2,
-      lineColor: [0, 0, 0],
-      lineWidth: 0.3,
-      textColor: [0, 0, 0],
-    },
-    headStyles: {
-      fillColor: [200, 200, 200],
-      textColor: [0, 0, 0],
-      fontStyle: "bold",
-      halign: "center",
-    },
-    bodyStyles: {
-      textColor: [0, 0, 0],
-    },
-    columnStyles: {
-      0: { cellWidth: 8, halign: "center", valign: "top" },
-      1: { cellWidth: "auto", halign: "left", valign: "top", overflow: "linebreak" },
-      2: { cellWidth: 15, halign: "center", valign: "bottom" },
-      3: { cellWidth: 12, halign: "right", valign: "bottom" },
-      4: { cellWidth: 24, halign: "right", valign: "bottom" },
-      5: { cellWidth: 24, halign: "right", valign: "bottom" },
-    },
-    margin: { bottom: 25 },
+  // Subtotale
+  let x = margin;
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.3);
 
-    willDrawCell: (data) => {
-      if (data.section === "body") {
-        const rowIdx = data.row.index;
-        const colIdx = data.column.index;
-        const isSplitRow = splitRows.has(rowIdx);
+  doc.rect(x, yPos, colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price, summaryHeight);
+  doc.rect(
+    x + colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
+    yPos,
+    colWidths.total,
+    summaryHeight,
+  );
 
-        if (isSplitRow) {
-          const pages = Array.from(rowPageTracking.get(rowIdx) || []).sort((a, b) => a - b);
-          const isFirstPage = data.pageNumber === pages[0];
-          const isLastPage = data.pageNumber === pages[pages.length - 1];
-          const metadata = rowMetadata.get(rowIdx);
-
-          // Nr (colonna 0): mostra solo nella prima pagina
-          if (colIdx === 0 && !isFirstPage) {
-            data.cell.text = [];
-          }
-
-          // Colonne valori (2-5): nascondi in tutte tranne l'ultima
-          if (colIdx >= 2 && colIdx <= 5 && !isLastPage) {
-            data.cell.text = [];
-          }
-        }
-      }
-    },
-
-    didDrawCell: (data) => {
-      if (data.section === "body") {
-        const rowIdx = data.row.index;
-        const colIdx = data.column.index;
-        const isSplitRow = splitRows.has(rowIdx);
-
-        if (isSplitRow && colIdx >= 2 && colIdx <= 5) {
-          const pages = Array.from(rowPageTracking.get(rowIdx) || []).sort((a, b) => a - b);
-          const isLastPage = data.pageNumber === pages[pages.length - 1];
-          const metadata = rowMetadata.get(rowIdx);
-
-          if (isLastPage && metadata) {
-            // Salva i dati per ridisegnare dopo
-            let text = "";
-            let align: "center" | "right" = "center";
-
-            switch (colIdx) {
-              case 2:
-                text = metadata.um;
-                align = "center";
-                break;
-              case 3:
-                text = metadata.qty;
-                align = "right";
-                break;
-              case 4:
-                text = metadata.price;
-                align = "right";
-                break;
-              case 5:
-                text = metadata.total;
-                align = "right";
-                break;
-            }
-
-            cellDataToRedraw.push({
-              page: data.pageNumber,
-              x: data.cell.x,
-              y: data.cell.y,
-              width: data.cell.width,
-              height: data.cell.height,
-              text,
-              align,
-            });
-          }
-        }
-      }
-    },
-
-    didDrawPage: (data) => {
-      const pageCount = (doc as any).internal.getNumberOfPages();
-      const currentPage = data.pageNumber;
-      addFooter(currentPage, pageCount, currentPage !== 1);
-    },
+  doc.setFont("helvetica", "bold");
+  doc.text("Subtotale:", pageWidth - margin - colWidths.total - 2, yPos + summaryHeight - 2, { align: "right" });
+  doc.text(`€ ${formatCurrency(quoteData.subtotale)}`, pageWidth - margin - 2, yPos + summaryHeight - 2, {
+    align: "right",
   });
 
-  // Ridisegna i valori nell'ultima pagina
-  cellDataToRedraw.forEach((cellData) => {
-    doc.setPage(cellData.page);
-    doc.setFontSize(9);
-    doc.setTextColor(0, 0, 0);
-    doc.setFont("helvetica", "normal");
+  yPos += summaryHeight;
 
-    const textY = cellData.y + cellData.height - 2;
-
-    if (cellData.align === "center") {
-      doc.text(cellData.text, cellData.x + cellData.width / 2, textY, { align: "center" });
-    } else {
-      doc.text(cellData.text, cellData.x + cellData.width - 2, textY, { align: "right" });
-    }
-  });
-
-  yPos = (doc as any).lastAutoTable.finalY + 8;
-
-  const summaryHeight = 15;
-  const notesHeight = quoteData.note ? 25 : 0;
-  const paymentHeight = quoteData.modalita_pagamento ? 20 : 0;
-  const signatureHeight = 25;
-  const totalNeededSpace = summaryHeight + notesHeight + paymentHeight + signatureHeight;
-
-  if (yPos + totalNeededSpace > pageHeight - margin - 10) {
-    doc.addPage();
-    yPos = margin;
-  }
-
-  const summaryData: any[] = [];
-  summaryData.push([
-    { content: "Subtotale:", colSpan: 5, styles: { halign: "right", fontStyle: "bold" } },
-    `€ ${formatCurrency(quoteData.subtotale)}`,
-  ]);
-
+  // Sconto (se presente)
   if (quoteData.showDiscountInTable && quoteData.sconto_percentuale && quoteData.sconto_percentuale > 0) {
-    summaryData.push([
-      { content: "Sconto:", colSpan: 5, styles: { halign: "right", fontStyle: "bold", textColor: [255, 0, 0] } },
-      { content: `-${quoteData.sconto_percentuale}%`, styles: { textColor: [255, 0, 0] } },
-    ]);
+    doc.rect(x, yPos, colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price, summaryHeight);
+    doc.rect(
+      x + colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
+      yPos,
+      colWidths.total,
+      summaryHeight,
+    );
+
+    doc.setTextColor(255, 0, 0);
+    doc.text("Sconto:", pageWidth - margin - colWidths.total - 2, yPos + summaryHeight - 2, { align: "right" });
+    doc.text(`-${quoteData.sconto_percentuale}%`, pageWidth - margin - 2, yPos + summaryHeight - 2, { align: "right" });
+    doc.setTextColor(0, 0, 0);
+
+    yPos += summaryHeight;
   }
 
-  summaryData.push([
-    { content: "TOTALE:", colSpan: 5, styles: { halign: "right", fontStyle: "bold" } },
-    `€ ${formatCurrency(quoteData.totale)}`,
-  ]);
+  // Totale
+  doc.rect(x, yPos, colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price, summaryHeight);
+  doc.rect(
+    x + colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
+    yPos,
+    colWidths.total,
+    summaryHeight,
+  );
 
-  autoTable(doc, {
-    startY: yPos,
-    body: summaryData,
-    theme: "grid",
-    styles: {
-      fontSize: 9,
-      cellPadding: 2,
-      lineColor: [0, 0, 0],
-      lineWidth: 0.3,
-      textColor: [0, 0, 0],
-    },
-    columnStyles: {
-      0: { cellWidth: 8 },
-      1: { cellWidth: "auto" },
-      2: { cellWidth: 15 },
-      3: { cellWidth: 12 },
-      4: { cellWidth: 24 },
-      5: { cellWidth: 24 },
-    },
-    margin: { bottom: 25 },
-    didDrawPage: (data) => {
-      const pageCount = (doc as any).internal.getNumberOfPages();
-      const currentPage = (doc as any).internal.getCurrentPageInfo().pageNumber;
-      addFooter(currentPage, pageCount, currentPage !== 1);
-    },
+  doc.text("TOTALE:", pageWidth - margin - colWidths.total - 2, yPos + summaryHeight - 2, { align: "right" });
+  doc.text(`€ ${formatCurrency(quoteData.totale)}`, pageWidth - margin - 2, yPos + summaryHeight - 2, {
+    align: "right",
   });
 
-  yPos = (doc as any).lastAutoTable.finalY + 8;
+  yPos += summaryHeight + 10;
 
+  // Note
   if (quoteData.note) {
-    yPos += 10;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.text("Note:", margin, yPos);
@@ -455,11 +384,11 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     doc.setFontSize(9);
     const noteLines = doc.splitTextToSize(quoteData.note, pageWidth - 2 * margin);
     doc.text(noteLines, margin, yPos);
-    yPos += noteLines.length * 4;
+    yPos += noteLines.length * 4 + 5;
   }
 
+  // Modalità pagamento
   if (quoteData.modalita_pagamento) {
-    yPos += 5;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.text("Modalità di pagamento:", margin, yPos);
@@ -470,6 +399,7 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     yPos += 10;
   }
 
+  // Firma
   yPos += 5;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
@@ -478,7 +408,8 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
   doc.setFont("helvetica", "normal");
   doc.line(pageWidth - margin - 60, yPos, pageWidth - margin, yPos);
 
-  const totalPages = (doc as any).internal.getNumberOfPages();
+  // Aggiungi footer a tutte le pagine
+  const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     addFooter(i, totalPages, i !== 1);
