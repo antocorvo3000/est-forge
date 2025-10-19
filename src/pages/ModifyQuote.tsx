@@ -722,37 +722,47 @@ const ModifyQuote = () => {
           </div>
 
           {discountEnabled && (
-            <div className="space-y-4 pl-6">
-              <div className="space-y-2 max-w-xs">
-                <Label htmlFor="discountValue" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Valore Sconto (%)</Label>
-                <Input
-                  id="discountValue"
-                  type="number"
-                  value={discountValue}
-                  onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  className="bg-white"
-                  style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-                />
+            <div className="flex gap-6 pl-6">
+              <div className="space-y-4 flex-shrink-0">
+                <div className="space-y-2 max-w-xs">
+                  <Label htmlFor="discountValue" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Valore Sconto (%)</Label>
+                  <Input
+                    id="discountValue"
+                    type="number"
+                    value={discountValue}
+                    onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    className="bg-white"
+                    style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="showDiscountInTable"
+                    checked={showDiscountInTable}
+                    onCheckedChange={(checked) => setShowDiscountInTable(checked as boolean)}
+                  />
+                  <Label htmlFor="showDiscountInTable" className="cursor-pointer" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                    Mostra sconto in tabella
+                  </Label>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="showDiscountInTable"
-                  checked={showDiscountInTable}
-                  onCheckedChange={(checked) => setShowDiscountInTable(checked as boolean)}
-                />
-                <Label htmlFor="showDiscountInTable" className="cursor-pointer" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-                  Mostra sconto in tabella
-                </Label>
-              </div>
-
-              <div className="text-sm text-muted-foreground" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-                {showDiscountInTable
-                  ? "Lo sconto verrà mostrato come riga separata"
-                  : "Lo sconto verrà spalmato sui prezzi unitari"}
+              <div className="flex-1 text-right">
+                <div className="text-sm leading-relaxed" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                  <p className="mb-2 font-semibold">Come funziona lo sconto:</p>
+                  <p className="mb-3">
+                    <span className="font-medium">Se NON selezioni "Mostra sconto in tabella":</span><br />
+                    Lo sconto verrà spalmato su tutti i prezzi unitari del preventivo. I prezzi verranno automaticamente ridotti della percentuale indicata.
+                  </p>
+                  <p>
+                    <span className="font-medium">Se SELEZIONI "Mostra sconto in tabella":</span><br />
+                    Alla generazione del PDF verrà creata una riga dedicata che mostra lo sconto applicato e il totale dello sconto.
+                  </p>
+                </div>
               </div>
             </div>
           )}
