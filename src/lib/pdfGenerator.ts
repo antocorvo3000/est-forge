@@ -167,7 +167,7 @@ export const generateQuotePDF = async (
   doc.text(ubicazioneText, margin, yPos);
   yPos += 8;
 
-  // Tabella delle voci con subtotale e totale integrati
+  // Tabella delle voci (solo righe items, senza subtotale/totale)
   const tableData = quoteData.righe.map((riga, index) => [
     (index + 1).toString(),
     riga.descrizione,
@@ -176,30 +176,6 @@ export const generateQuotePDF = async (
     `€ ${formatCurrency(riga.prezzo_unitario)}`,
     `€ ${formatCurrency(riga.totale)}`,
   ]);
-
-  // Aggiungi riga subtotale
-  tableData.push([
-    { content: "Subtotale:", colSpan: 5, styles: { halign: "right", fontStyle: "bold" } },
-    `€ ${formatCurrency(quoteData.subtotale)}`,
-  ] as any);
-
-  // Aggiungi riga sconto se necessario
-  if (
-    quoteData.showDiscountInTable &&
-    quoteData.sconto_percentuale &&
-    quoteData.sconto_percentuale > 0
-  ) {
-    tableData.push([
-      { content: "Sconto:", colSpan: 5, styles: { halign: "right", fontStyle: "bold", textColor: [255, 0, 0] } },
-      { content: `-${quoteData.sconto_percentuale}%`, styles: { textColor: [255, 0, 0] } },
-    ] as any);
-  }
-
-  // Aggiungi riga totale
-  tableData.push([
-    { content: "TOTALE:", colSpan: 5, styles: { halign: "right", fontStyle: "bold" } },
-    `€ ${formatCurrency(quoteData.totale)}`,
-  ] as any);
 
   autoTable(doc, {
     startY: yPos,
@@ -223,12 +199,12 @@ export const generateQuotePDF = async (
       textColor: [0, 0, 0],
     },
     columnStyles: {
-      0: { cellWidth: 8, halign: "center", valign: "middle" },
+      0: { cellWidth: 8, halign: "center", valign: "top" },
       1: { cellWidth: "auto", halign: "left", valign: "middle", overflow: "linebreak" },
-      2: { cellWidth: 15, halign: "center", valign: "middle" },
-      3: { cellWidth: 12, halign: "right", valign: "middle" },
-      4: { cellWidth: 24, halign: "right", valign: "middle" },
-      5: { cellWidth: 24, halign: "right", valign: "middle" },
+      2: { cellWidth: 15, halign: "center", valign: "bottom" },
+      3: { cellWidth: 12, halign: "right", valign: "bottom" },
+      4: { cellWidth: 24, halign: "right", valign: "bottom" },
+      5: { cellWidth: 24, halign: "right", valign: "bottom" },
     },
     didDrawPage: (data) => {
       // Aggiungi numero pagina su ogni pagina
@@ -239,6 +215,70 @@ export const generateQuotePDF = async (
   });
 
   // Posizione dopo la tabella
+  yPos = (doc as any).lastAutoTable.finalY + 8;
+
+  // Calcola spazio necessario per subtotale/sconto/totale + note + pagamento + firma
+  const summaryHeight = 15; // Righe per subtotale, sconto (se presente), totale
+  const notesHeight = quoteData.note ? 25 : 0;
+  const paymentHeight = quoteData.modalita_pagamento ? 20 : 0;
+  const signatureHeight = 25;
+  const totalNeededSpace = summaryHeight + notesHeight + paymentHeight + signatureHeight;
+
+  // Se non c'è abbastanza spazio, vai a nuova pagina
+  if (yPos + totalNeededSpace > pageHeight - margin - 10) {
+    doc.addPage();
+    yPos = margin;
+  }
+
+  // Aggiungi subtotale, sconto e totale come tabella separata
+  const summaryData: any[] = [];
+  summaryData.push([
+    { content: "Subtotale:", colSpan: 5, styles: { halign: "right", fontStyle: "bold" } },
+    `€ ${formatCurrency(quoteData.subtotale)}`,
+  ]);
+
+  if (
+    quoteData.showDiscountInTable &&
+    quoteData.sconto_percentuale &&
+    quoteData.sconto_percentuale > 0
+  ) {
+    summaryData.push([
+      { content: "Sconto:", colSpan: 5, styles: { halign: "right", fontStyle: "bold", textColor: [255, 0, 0] } },
+      { content: `-${quoteData.sconto_percentuale}%`, styles: { textColor: [255, 0, 0] } },
+    ]);
+  }
+
+  summaryData.push([
+    { content: "TOTALE:", colSpan: 5, styles: { halign: "right", fontStyle: "bold" } },
+    `€ ${formatCurrency(quoteData.totale)}`,
+  ]);
+
+  autoTable(doc, {
+    startY: yPos,
+    body: summaryData,
+    theme: "grid",
+    styles: {
+      fontSize: 9,
+      cellPadding: 2,
+      lineColor: [0, 0, 0],
+      lineWidth: 0.3,
+      textColor: [0, 0, 0],
+    },
+    columnStyles: {
+      0: { cellWidth: 8 },
+      1: { cellWidth: "auto" },
+      2: { cellWidth: 15 },
+      3: { cellWidth: 12 },
+      4: { cellWidth: 24 },
+      5: { cellWidth: 24 },
+    },
+    didDrawPage: (data) => {
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      const currentPage = (doc as any).internal.getCurrentPageInfo().pageNumber;
+      addPageNumber(currentPage, pageCount);
+    },
+  });
+
   yPos = (doc as any).lastAutoTable.finalY + 8;
 
   // Note (se presenti)
