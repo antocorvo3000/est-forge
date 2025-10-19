@@ -137,6 +137,12 @@ const PdfPreview = () => {
     setZoom((prev) => Math.max(prev - 25, 50));
   };
 
+  const handleGoBack = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(-1);
+  };
+
   const handlePrevPage = () => {
     if (currentPage > 1) {
       setCurrentPage((prev) => prev - 1);
@@ -171,7 +177,7 @@ const PdfPreview = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={handleGoBack}
             className="h-10 w-10"
           >
             <ArrowLeft className="w-5 h-5" />
