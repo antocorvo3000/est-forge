@@ -218,6 +218,17 @@ export const generateQuotePDF = async (
     `€ ${formatCurrency(riga.totale)}`,
   ]);
 
+  // Traccia righe divise tra pagine
+  const splitRowsInfo = new Map<number, { 
+    startPage: number, 
+    startY: number, 
+    endPage?: number,
+    cellHeights: Map<number, number>
+  }>();
+  
+  let currentProcessingRow = -1;
+  let previousPage = 1;
+
   autoTable(doc, {
     startY: yPos,
     head: [["Nr", "Descrizione", "U.M.", "Qtà", "Prezzo Unit.", "Totale"]],
@@ -247,11 +258,51 @@ export const generateQuotePDF = async (
       4: { cellWidth: 24, halign: "right", valign: "bottom" },
       5: { cellWidth: 24, halign: "right", valign: "bottom" },
     },
-    margin: { bottom: 25 }, // Margine inferiore per non sovrapporre il footer
+    margin: { bottom: 25 },
+    willDrawCell: (data) => {
+      const { cell, row, column, pageNumber } = data;
+      const rowIndex = row.index;
+      const colIndex = column.index;
+      
+      // Traccia l'inizio di ogni riga
+      if (colIndex === 0) {
+        if (!splitRowsInfo.has(rowIndex)) {
+          splitRowsInfo.set(rowIndex, {
+            startPage: pageNumber,
+            startY: cell.y,
+            cellHeights: new Map()
+          });
+        }
+        currentProcessingRow = rowIndex;
+        
+        // Rileva cambio di pagina per la stessa riga
+        if (previousPage !== pageNumber && splitRowsInfo.has(rowIndex)) {
+          const rowInfo = splitRowsInfo.get(rowIndex)!;
+          if (rowInfo.startPage < pageNumber) {
+            rowInfo.endPage = pageNumber;
+          }
+        }
+        previousPage = pageNumber;
+      }
+      
+      // Memorizza l'altezza di ogni cella
+      const rowInfo = splitRowsInfo.get(currentProcessingRow);
+      if (rowInfo) {
+        rowInfo.cellHeights.set(colIndex, cell.height);
+      }
+      
+      // Se siamo su colonne 2-5 (U.M., Qtà, Prezzo Unit., Totale)
+      if (colIndex >= 2 && colIndex <= 5 && rowInfo) {
+        // Se questa riga è divisa su più pagine e siamo nella prima pagina
+        if (rowInfo.endPage && pageNumber === rowInfo.startPage && rowInfo.endPage > rowInfo.startPage) {
+          // Nascondi il contenuto nella prima parte della riga divisa
+          cell.text = [];
+        }
+      }
+    },
     didDrawPage: (data) => {
-      // Aggiungi footer su ogni pagina (senza dati azienda nella prima pagina)
       const pageCount = (doc as any).internal.getNumberOfPages();
-      const currentPage = (doc as any).internal.getCurrentPageInfo().pageNumber;
+      const currentPage = data.pageNumber;
       addFooter(currentPage, pageCount, currentPage !== 1);
     },
   });
