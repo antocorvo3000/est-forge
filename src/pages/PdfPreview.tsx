@@ -7,9 +7,10 @@ import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
 import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 
-// Configura worker di PDF.js con CDN stabile
-pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+// Configura worker di PDF.js dal package locale
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface QuoteData {
   numero: number;
