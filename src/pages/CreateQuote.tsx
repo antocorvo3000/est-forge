@@ -754,7 +754,7 @@ const CreateQuote = () => {
             </div>
           </motion.div>
           
-          <div className="absolute top-[88px] -right-16 flex flex-col">
+          <div className="absolute top-[88px] -right-28 flex flex-col">
             {lines.map((line, index) => (
               <div key={line.id} data-button-row className="flex gap-1 items-end justify-end">
                 <Button
