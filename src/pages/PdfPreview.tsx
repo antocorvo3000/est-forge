@@ -100,6 +100,7 @@ const PdfPreview = () => {
   }, [location.state, navigate]);
 
   const handleSave = () => {
+    console.log('handleSave called');
     if (!pdfBlobUrl || !quoteData) return;
     
     const link = document.createElement("a");
@@ -110,6 +111,7 @@ const PdfPreview = () => {
     document.body.removeChild(link);
     
     toast.success("PDF salvato con successo");
+    console.log('handleSave completed');
   };
 
   const handlePrint = () => {
@@ -140,16 +142,26 @@ const PdfPreview = () => {
   const handleGoBack = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    navigate(-1);
+    console.log('handleGoBack called');
+    console.log('pdfBlobUrl:', pdfBlobUrl);
+    console.log('quoteData:', quoteData);
+    try {
+      navigate(-1);
+      console.log('navigate called successfully');
+    } catch (error) {
+      console.error('Error navigating back:', error);
+    }
   };
 
   const handlePrevPage = () => {
+    console.log('handlePrevPage called, currentPage:', currentPage);
     if (currentPage > 1) {
       setCurrentPage((prev) => prev - 1);
     }
   };
 
   const handleNextPage = () => {
+    console.log('handleNextPage called, currentPage:', currentPage, 'totalPages:', totalPages);
     if (currentPage < totalPages) {
       setCurrentPage((prev) => prev + 1);
     }
