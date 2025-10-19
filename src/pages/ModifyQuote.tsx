@@ -790,7 +790,7 @@ const ModifyQuote = () => {
                 <tr className="border-b">
                   <th className="text-left p-2 w-8" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>#</th>
                   <th className="text-left p-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Descrizione</th>
-                  <th className="text-left p-2 w-48" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>U.M.</th>
+                  <th className="text-left p-2 w-24" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>U.M.</th>
                   <th className="text-left p-2 w-24" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Qtà</th>
                   <th className="text-left p-2 w-32" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Prezzo Unit.</th>
                   <th className="text-left p-2 w-28" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Totale</th>
@@ -821,8 +821,8 @@ const ModifyQuote = () => {
                         value={line.unit}
                         onValueChange={(value) => updateLine(index, "unit", value)}
                       >
-                        <SelectTrigger className="bg-white text-left" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-                          <SelectValue className="text-left" />
+                        <SelectTrigger className="bg-white text-left w-24" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                          <span>{line.unit}</span>
                         </SelectTrigger>
                         <SelectContent className="bg-white z-50">
                           {UNITS.map((unit) => (
