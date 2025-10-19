@@ -144,6 +144,13 @@ const CreateQuote = () => {
   const [discountValue, setDiscountValue] = useState<number | "">(0);
   const [showDiscountInTable, setShowDiscountInTable] = useState(false);
 
+  // Reset discount value to empty when enabling discount
+  useEffect(() => {
+    if (discountEnabled && discountValue === 0) {
+      setDiscountValue("");
+    }
+  }, [discountEnabled]);
+
   // Notes
   const [notesEnabled, setNotesEnabled] = useState(false);
   const [notes, setNotes] = useState("");
@@ -798,12 +805,8 @@ const CreateQuote = () => {
                         }
                       }
                     }}
-                    onBlur={() => {
-                      if (discountValue === "") {
-                        setDiscountValue(0);
-                      }
-                    }}
-                    placeholder="0"
+                    onFocus={(e) => e.target.select()}
+                    placeholder="Inserisci percentuale"
                     className="bg-white"
                     style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                   />
