@@ -241,14 +241,13 @@ export const generateQuotePDF = async (
     },
     columnStyles: {
       0: { cellWidth: 8, halign: "center", valign: "top" },
-      1: { cellWidth: "auto", halign: "left", valign: "middle", overflow: "linebreak" },
+      1: { cellWidth: "auto", halign: "left", valign: "top", overflow: "linebreak" },
       2: { cellWidth: 15, halign: "center", valign: "bottom" },
       3: { cellWidth: 12, halign: "right", valign: "bottom" },
       4: { cellWidth: 24, halign: "right", valign: "bottom" },
       5: { cellWidth: 24, halign: "right", valign: "bottom" },
     },
     margin: { bottom: 25 }, // Margine inferiore per non sovrapporre il footer
-    rowPageBreak: 'avoid', // Evita che le righe si dividano tra le pagine
     didDrawPage: (data) => {
       // Aggiungi footer su ogni pagina (senza dati azienda nella prima pagina)
       const pageCount = (doc as any).internal.getNumberOfPages();
