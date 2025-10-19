@@ -756,11 +756,11 @@ const CreateQuote = () => {
           
           <div className="absolute top-[88px] -right-20 flex flex-col gap-0">
             {lines.map((line, index) => (
-              <div key={line.id} data-button-row className="flex gap-1 items-start justify-end pt-[20px]">
+              <div key={line.id} data-button-row className="flex gap-1 items-end justify-end">
                 <Button
                   size="icon"
                   onClick={() => addLine(index)}
-                  className="h-8 w-8"
+                  className="h-8 w-8 mb-2"
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
@@ -769,7 +769,7 @@ const CreateQuote = () => {
                     size="icon"
                     variant="destructive"
                     onClick={() => removeLine(index)}
-                    className="h-8 w-8"
+                    className="h-8 w-8 mb-2"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
