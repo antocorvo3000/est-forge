@@ -179,7 +179,7 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
   doc.text(ubicazioneText, margin, yPos);
   yPos += 8;
 
-  // Prepara i dati della tabella - SENZA valori nelle colonne 2-5
+  // Prepara i dati della tabella
   const tableData: any[] = [];
   const rowMetadata: Map<number, { nr: string; um: string; qty: string; price: string; total: string }> = new Map();
 
@@ -192,39 +192,70 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
 
     rowMetadata.set(index, { nr, um, qty, price, total });
 
-    // IMPORTANTE: Le colonne 2-5 sono vuote, le riempiremo dopo
-    tableData.push([
-      nr,
-      riga.descrizione,
-      "", // U.M. vuota
-      "", // Qtà vuota
-      "", // Prezzo vuoto
-      "", // Totale vuoto
-    ]);
+    tableData.push([nr, riga.descrizione, um, qty, price, total]);
   });
 
-  // Tracciamento delle celle per ogni riga e pagina
-  const rowCellsMap: Map<
-    number,
-    Array<{
-      columnIndex: number;
-      page: number;
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-    }>
-  > = new Map();
+  // PRIMO PASSAGGIO: Scopri quali righe sono divise tra pagine
+  const rowPageTracking: Map<number, Set<number>> = new Map();
+  let currentRowIndex = -1;
+  let currentPage = -1;
 
-  // Traccia l'ultima cella disegnata per ogni riga
-  const rowLastCellMap: Map<
-    number,
-    {
-      page: number;
-      y: number;
-      height: number;
+  // Esegui un primo rendering invisibile per tracciare
+  const tempDoc = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
+  });
+
+  autoTable(tempDoc, {
+    startY: yPos,
+    head: [["Nr", "Descrizione", "U.M.", "Qtà", "Prezzo Unit.", "Totale"]],
+    body: tableData,
+    theme: "grid",
+    styles: {
+      fontSize: 9,
+      cellPadding: 2,
+      lineColor: [0, 0, 0],
+      lineWidth: 0.3,
+    },
+    columnStyles: {
+      0: { cellWidth: 8, halign: "center", valign: "top" },
+      1: { cellWidth: "auto", halign: "left", valign: "top", overflow: "linebreak" },
+      2: { cellWidth: 15, halign: "center", valign: "top" },
+      3: { cellWidth: 12, halign: "right", valign: "top" },
+      4: { cellWidth: 24, halign: "right", valign: "top" },
+      5: { cellWidth: 24, halign: "right", valign: "top" },
+    },
+    margin: { bottom: 25 },
+    didDrawCell: (data) => {
+      if (data.section === "body" && data.column.index === 0) {
+        const rowIdx = data.row.index;
+        if (!rowPageTracking.has(rowIdx)) {
+          rowPageTracking.set(rowIdx, new Set());
+        }
+        rowPageTracking.get(rowIdx)!.add(data.pageNumber);
+      }
+    },
+  });
+
+  // Ora sappiamo quali righe sono divise
+  const splitRows = new Set<number>();
+  rowPageTracking.forEach((pages, rowIdx) => {
+    if (pages.size > 1) {
+      splitRows.add(rowIdx);
     }
-  > = new Map();
+  });
+
+  // SECONDO PASSAGGIO: Rendering finale con logica corretta
+  const cellDataToRedraw: Array<{
+    page: number;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    text: string;
+    align: "center" | "right";
+  }> = [];
 
   autoTable(doc, {
     startY: yPos,
@@ -257,32 +288,76 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     },
     margin: { bottom: 25 },
 
+    willDrawCell: (data) => {
+      if (data.section === "body") {
+        const rowIdx = data.row.index;
+        const colIdx = data.column.index;
+        const isSplitRow = splitRows.has(rowIdx);
+
+        if (isSplitRow) {
+          const pages = Array.from(rowPageTracking.get(rowIdx) || []).sort((a, b) => a - b);
+          const isFirstPage = data.pageNumber === pages[0];
+          const isLastPage = data.pageNumber === pages[pages.length - 1];
+          const metadata = rowMetadata.get(rowIdx);
+
+          // Nr (colonna 0): mostra solo nella prima pagina
+          if (colIdx === 0 && !isFirstPage) {
+            data.cell.text = [];
+          }
+
+          // Colonne valori (2-5): nascondi in tutte tranne l'ultima
+          if (colIdx >= 2 && colIdx <= 5 && !isLastPage) {
+            data.cell.text = [];
+          }
+        }
+      }
+    },
+
     didDrawCell: (data) => {
       if (data.section === "body") {
-        const rowIndex = data.row.index;
+        const rowIdx = data.row.index;
+        const colIdx = data.column.index;
+        const isSplitRow = splitRows.has(rowIdx);
 
-        if (!rowCellsMap.has(rowIndex)) {
-          rowCellsMap.set(rowIndex, []);
-        }
+        if (isSplitRow && colIdx >= 2 && colIdx <= 5) {
+          const pages = Array.from(rowPageTracking.get(rowIdx) || []).sort((a, b) => a - b);
+          const isLastPage = data.pageNumber === pages[pages.length - 1];
+          const metadata = rowMetadata.get(rowIdx);
 
-        const cellInfo = {
-          columnIndex: data.column.index,
-          page: data.pageNumber,
-          x: data.cell.x,
-          y: data.cell.y,
-          width: data.cell.width,
-          height: data.cell.height,
-        };
+          if (isLastPage && metadata) {
+            // Salva i dati per ridisegnare dopo
+            let text = "";
+            let align: "center" | "right" = "center";
 
-        rowCellsMap.get(rowIndex)!.push(cellInfo);
+            switch (colIdx) {
+              case 2:
+                text = metadata.um;
+                align = "center";
+                break;
+              case 3:
+                text = metadata.qty;
+                align = "right";
+                break;
+              case 4:
+                text = metadata.price;
+                align = "right";
+                break;
+              case 5:
+                text = metadata.total;
+                align = "right";
+                break;
+            }
 
-        // Aggiorna l'ultima cella della riga (usiamo colonna descrizione come riferimento)
-        if (data.column.index === 1) {
-          rowLastCellMap.set(rowIndex, {
-            page: data.pageNumber,
-            y: data.cell.y,
-            height: data.cell.height,
-          });
+            cellDataToRedraw.push({
+              page: data.pageNumber,
+              x: data.cell.x,
+              y: data.cell.y,
+              width: data.cell.width,
+              height: data.cell.height,
+              text,
+              align,
+            });
+          }
         }
       }
     },
@@ -294,85 +369,20 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     },
   });
 
-  // Post-processing: riempi le celle vuote con i valori corretti
-  rowCellsMap.forEach((cells, rowIndex) => {
-    const metadata = rowMetadata.get(rowIndex);
-    if (!metadata) return;
+  // Ridisegna i valori nell'ultima pagina
+  cellDataToRedraw.forEach((cellData) => {
+    doc.setPage(cellData.page);
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "normal");
 
-    // Raggruppa celle per pagina
-    const cellsByPage: Map<number, typeof cells> = new Map();
-    cells.forEach((cell) => {
-      if (!cellsByPage.has(cell.page)) {
-        cellsByPage.set(cell.page, []);
-      }
-      cellsByPage.get(cell.page)!.push(cell);
-    });
+    const textY = cellData.y + cellData.height - 2;
 
-    const pages = [...cellsByPage.keys()].sort((a, b) => a - b);
-    const isMultiPage = pages.length > 1;
-    const firstPage = pages[0];
-    const lastPage = pages[pages.length - 1];
-
-    // Per ogni pagina dove appare la riga
-    pages.forEach((page, pageIdx) => {
-      const isFirst = pageIdx === 0;
-      const isLast = pageIdx === pages.length - 1;
-      const pageCells = cellsByPage.get(page)!;
-
-      doc.setPage(page);
-      doc.setFontSize(9);
-      doc.setTextColor(0, 0, 0);
-      doc.setFont("helvetica", "normal");
-
-      pageCells.forEach((cell) => {
-        // Colonna Nr (0)
-        if (cell.columnIndex === 0 && isMultiPage && !isFirst) {
-          // Cancella il numero nelle pagine successive
-          doc.setFillColor(255, 255, 255);
-          doc.rect(cell.x, cell.y, cell.width, cell.height, "F");
-          doc.setDrawColor(0, 0, 0);
-          doc.setLineWidth(0.3);
-          doc.rect(cell.x, cell.y, cell.width, cell.height, "S");
-        }
-
-        // Colonne valori (2-5): mostra solo nell'ultima pagina
-        if (cell.columnIndex >= 2 && cell.columnIndex <= 5) {
-          if (!isMultiPage || isLast) {
-            // Disegna i valori
-            let text = "";
-            let align: "center" | "right" = "center";
-
-            switch (cell.columnIndex) {
-              case 2: // U.M.
-                text = metadata.um;
-                align = "center";
-                break;
-              case 3: // Qtà
-                text = metadata.qty;
-                align = "right";
-                break;
-              case 4: // Prezzo Unit.
-                text = metadata.price;
-                align = "right";
-                break;
-              case 5: // Totale
-                text = metadata.total;
-                align = "right";
-                break;
-            }
-
-            // Allinea il testo in basso della cella
-            const textY = cell.y + cell.height - 2;
-
-            if (align === "center") {
-              doc.text(text, cell.x + cell.width / 2, textY, { align: "center" });
-            } else {
-              doc.text(text, cell.x + cell.width - 2, textY, { align: "right" });
-            }
-          }
-        }
-      });
-    });
+    if (cellData.align === "center") {
+      doc.text(cellData.text, cellData.x + cellData.width / 2, textY, { align: "center" });
+    } else {
+      doc.text(cellData.text, cellData.x + cellData.width - 2, textY, { align: "right" });
+    }
   });
 
   yPos = (doc as any).lastAutoTable.finalY + 8;
