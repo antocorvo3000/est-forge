@@ -4,55 +4,119 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Download, Printer, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/toast";
-import type jsPDF from "jspdf";
+import { generateQuotePDF } from "@/lib/pdfGenerator";
+import type { CompanySettings } from "@/types/companySettings";
+
+interface QuoteData {
+  numero: number;
+  anno: number;
+  oggetto: string;
+  cliente: {
+    nome: string;
+    taxCode?: string;
+    address?: string;
+    city?: string;
+    province?: string;
+    zip?: string;
+    phone?: string;
+    email?: string;
+  };
+  ubicazione: {
+    via: string;
+    citta: string;
+    provincia: string;
+    cap: string;
+  };
+  righe: Array<{
+    descrizione: string;
+    unita_misura: string;
+    quantita: number;
+    prezzo_unitario: number;
+    totale: number;
+  }>;
+  subtotale: number;
+  sconto_percentuale?: number;
+  sconto_valore?: number;
+  totale: number;
+  note?: string;
+  modalita_pagamento?: string;
+  showDiscountInTable: boolean;
+}
 
 const PdfPreview = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [pdfDoc, setPdfDoc] = useState<jsPDF | null>(null);
   const [pdfDataUrl, setPdfDataUrl] = useState<string>("");
   const [zoom, setZoom] = useState(100);
+  const [loading, setLoading] = useState(true);
+  const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
+  const [settings, setSettings] = useState<CompanySettings | null>(null);
 
   useEffect(() => {
-    const pdf = location.state?.pdf as jsPDF;
-    if (!pdf) {
-      toast.error("Nessun PDF da visualizzare");
+    const data = location.state?.quoteData as QuoteData;
+    const companySettings = location.state?.settings as CompanySettings;
+    
+    if (!data || !companySettings) {
+      toast.error("Nessun dato disponibile per generare il PDF");
       navigate(-1);
       return;
     }
 
-    setPdfDoc(pdf);
-    // Genera URL del PDF per visualizzazione
-    const dataUrl = pdf.output("dataurlstring");
-    setPdfDataUrl(dataUrl);
+    setQuoteData(data);
+    setSettings(companySettings);
+
+    // Genera il PDF
+    const generatePdf = async () => {
+      try {
+        const pdf = await generateQuotePDF(data, companySettings);
+        const dataUrl = pdf.output("dataurlstring");
+        setPdfDataUrl(dataUrl);
+      } catch (error) {
+        console.error("Errore generazione PDF:", error);
+        toast.error("Errore durante la generazione del PDF");
+        navigate(-1);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    generatePdf();
   }, [location.state, navigate]);
 
-  const handleSave = () => {
-    if (!pdfDoc) return;
+  const handleSave = async () => {
+    if (!quoteData || !settings) return;
     
-    const numero = location.state?.numero || "preventivo";
-    const anno = location.state?.anno || new Date().getFullYear();
-    const filename = `Preventivo_${numero.toString().padStart(2, "0")}-${anno}.pdf`;
-    
-    pdfDoc.save(filename);
-    toast.success("PDF salvato con successo");
+    try {
+      const pdf = await generateQuotePDF(quoteData, settings);
+      const filename = `Preventivo_${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}.pdf`;
+      pdf.save(filename);
+      toast.success("PDF salvato con successo");
+    } catch (error) {
+      console.error("Errore salvataggio PDF:", error);
+      toast.error("Errore durante il salvataggio");
+    }
   };
 
-  const handlePrint = () => {
-    if (!pdfDoc) return;
+  const handlePrint = async () => {
+    if (!quoteData || !settings) return;
     
-    // Apri finestra di stampa
-    const blob = pdfDoc.output("blob");
-    const url = URL.createObjectURL(blob);
-    const printWindow = window.open(url);
-    
-    if (printWindow) {
-      printWindow.addEventListener("load", () => {
-        printWindow.print();
-      });
-      toast.success("Invio alla stampante...");
-    } else {
-      toast.error("Impossibile aprire la finestra di stampa");
+    try {
+      const pdf = await generateQuotePDF(quoteData, settings);
+      const blob = pdf.output("blob");
+      const url = URL.createObjectURL(blob);
+      const printWindow = window.open(url);
+      
+      if (printWindow) {
+        printWindow.addEventListener("load", () => {
+          printWindow.print();
+        });
+        toast.success("Invio alla stampante...");
+      } else {
+        toast.error("Impossibile aprire la finestra di stampa");
+      }
+    } catch (error) {
+      console.error("Errore stampa PDF:", error);
+      toast.error("Errore durante la stampa");
     }
   };
 
@@ -64,11 +128,11 @@ const PdfPreview = () => {
     setZoom((prev) => Math.max(prev - 25, 50));
   };
 
-  if (!pdfDataUrl) {
+  if (loading || !pdfDataUrl) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="text-lg">Caricamento PDF...</div>
+          <div className="text-lg">Generazione PDF in corso...</div>
         </div>
       </div>
     );

@@ -402,8 +402,6 @@ const ModifyQuote = () => {
     }
 
     try {
-      const { generateQuotePDF } = await import("@/lib/pdfGenerator");
-      
       // Ottieni numero e anno del preventivo dal database
       let numero = 1;
       let anno = new Date().getFullYear();
@@ -463,18 +461,16 @@ const ModifyQuote = () => {
         showDiscountInTable: showDiscountInTable,
       };
 
-      const pdf = await generateQuotePDF(pdfData, settings);
-      
+      // Naviga passando solo i dati, il PDF sarà generato nella pagina di preview
       navigate("/pdf-preview", {
         state: {
-          pdf,
-          numero: pdfData.numero,
-          anno: pdfData.anno,
+          quoteData: pdfData,
+          settings: settings,
         },
       });
     } catch (error) {
-      console.error("Errore generazione PDF:", error);
-      toast.error("Errore durante la generazione del PDF");
+      console.error("Errore preparazione PDF:", error);
+      toast.error("Errore durante la preparazione del PDF");
     }
   };
 

@@ -327,10 +327,8 @@ const CreateQuote = () => {
     }
 
     try {
-      const { generateQuotePDF } = await import("@/lib/pdfGenerator");
-      
       // Prepara i dati per il PDF
-      const quoteData = {
+      const pdfData = {
         numero: location.state?.customNumber || 1,
         anno: location.state?.customYear || new Date().getFullYear(),
         oggetto: subject || "Preventivo",
@@ -370,18 +368,16 @@ const CreateQuote = () => {
         showDiscountInTable: showDiscountInTable,
       };
 
-      const pdf = await generateQuotePDF(quoteData, settings);
-      
+      // Naviga passando solo i dati, il PDF sarà generato nella pagina di preview
       navigate("/pdf-preview", {
         state: {
-          pdf,
-          numero: quoteData.numero,
-          anno: quoteData.anno,
+          quoteData: pdfData,
+          settings: settings,
         },
       });
     } catch (error) {
-      console.error("Errore generazione PDF:", error);
-      toast.error("Errore durante la generazione del PDF");
+      console.error("Errore preparazione PDF:", error);
+      toast.error("Errore durante la preparazione del PDF");
     }
   };
 
