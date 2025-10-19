@@ -632,8 +632,8 @@ const CreateQuote = () => {
         >
           <h2 className="text-xl font-bold mb-4">Preventivo</h2>
           
-          <div className="flex gap-2">
-            <div className="overflow-x-auto flex-1">
+          <div className="relative">
+            <div className="overflow-x-auto pr-20">
               <table className="w-full">
                 <thead>
                   <tr className="border-b">
@@ -647,7 +647,7 @@ const CreateQuote = () => {
                 </thead>
                 <tbody>
                   {lines.map((line, index) => (
-                    <tr key={line.id} className="border-b hover:bg-accent/20 transition-colors">
+                    <tr key={line.id} className="border-b hover:bg-accent/20 transition-colors relative" id={`row-${index}`}>
                       <td className="p-2 text-muted-foreground align-bottom" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>{index + 1}</td>
                       <td className="p-2 align-top">
                         <Textarea
@@ -743,34 +743,31 @@ const CreateQuote = () => {
                           style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                         />
                       </td>
+                      <td className="absolute right-0 p-2 align-bottom">
+                        <div className="flex gap-1">
+                          <Button
+                            size="icon"
+                            onClick={() => addLine(index)}
+                            className="h-8 w-8"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                          {lines.length > 1 && (
+                            <Button
+                              size="icon"
+                              variant="destructive"
+                              onClick={() => removeLine(index)}
+                              className="h-8 w-8"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-            
-            <div className="flex flex-col gap-0 pt-[52px]">
-              {lines.map((line, index) => (
-                <div key={line.id} className="flex gap-1 items-end border-b" style={{ minHeight: '57px' }}>
-                  <Button
-                    size="icon"
-                    onClick={() => addLine(index)}
-                    className="h-8 w-8 mb-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                  {lines.length > 1 && (
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      onClick={() => removeLine(index)}
-                      className="h-8 w-8 mb-2"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
             </div>
           </div>
 
