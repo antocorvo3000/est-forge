@@ -509,6 +509,12 @@ const ModifyQuote = () => {
       return;
     }
     
+    // Se è un recupero di una clonazione, verifica se esiste già un preventivo con lo stesso numero/anno
+    if (fromCache && cacheData?.tipo_operazione === 'clonazione' && cacheData?.numero && cacheData?.anno) {
+      // TODO: Verifica se esiste già un preventivo con questo numero/anno
+      // Per ora procediamo direttamente
+    }
+    
     saveQuote();
   };
 
@@ -536,12 +542,16 @@ const ModifyQuote = () => {
       const sconto_valore = discountEnabled ? calculateDiscount() : 0;
       const totale = calculateTotal();
 
-      if (isCloning && location.state?.cloneNumber && location.state?.cloneYear) {
+      // Determina numero e anno per la clonazione
+      const cloneNumber = location.state?.cloneNumber || (fromCache && cacheData?.tipo_operazione === 'clonazione' ? cacheData.numero : null);
+      const cloneYear = location.state?.cloneYear || (fromCache && cacheData?.tipo_operazione === 'clonazione' ? cacheData.anno : null);
+
+      if (isCloning && cloneNumber && cloneYear) {
         const { salvaPreventivo } = await import("@/lib/database");
         
         const nuovoPreventivo = await salvaPreventivo({
-          numero: location.state.cloneNumber,
-          anno: location.state.cloneYear,
+          numero: cloneNumber,
+          anno: cloneYear,
           cliente_id,
           oggetto: subject,
           ubicazione_via: workAddress,
@@ -701,9 +711,13 @@ const ModifyQuote = () => {
         }
       }
       
-      if (isCloning && location.state?.cloneNumber && location.state?.cloneYear) {
-        numero = location.state.cloneNumber;
-        anno = location.state.cloneYear;
+      // Per le clonazioni, usa il numero e anno dalla cache o da location.state
+      const cloneNumber = location.state?.cloneNumber || (fromCache && cacheData?.tipo_operazione === 'clonazione' ? cacheData.numero : null);
+      const cloneYear = location.state?.cloneYear || (fromCache && cacheData?.tipo_operazione === 'clonazione' ? cacheData.anno : null);
+      
+      if (isCloning && cloneNumber && cloneYear) {
+        numero = cloneNumber;
+        anno = cloneYear;
       }
       
       const pdfData = {

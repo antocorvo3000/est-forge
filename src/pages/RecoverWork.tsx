@@ -77,11 +77,18 @@ const RecoverWork = () => {
 
   const handleRecover = (work: CachedWork) => {
     // Naviga alla pagina di modifica con i dati dalla cache
+    const isCloning = work.tipo_operazione === 'clonazione';
+    
     navigate(`/modify-quote/${work.preventivo_originale_id || 'new'}`, {
       state: {
         fromCache: true,
         cacheId: work.id,
-        cacheData: work
+        cacheData: work,
+        isCloning: isCloning,
+        ...(isCloning && {
+          cloneNumber: work.numero,
+          cloneYear: work.anno
+        })
       }
     });
   };
