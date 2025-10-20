@@ -679,10 +679,10 @@ const CreateQuote = () => {
                     <th className="text-left p-2 w-32" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
                       Qtà
                     </th>
-                    <th className="text-left p-2 w-28" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                    <th className="text-left p-2" style={{ fontSize: `${settings.fontSizeQuote}rem`, width: "141px" }}>
                       Prezzo Unit.
                     </th>
-                    <th className="text-left p-2 w-48" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                    <th className="text-left p-2" style={{ fontSize: `${settings.fontSizeQuote}rem`, width: "163px" }}>
                       Totale
                     </th>
                   </tr>
