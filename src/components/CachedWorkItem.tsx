@@ -59,11 +59,11 @@ export const CachedWorkItem = forwardRef<HTMLDivElement, CachedWorkItemProps>(
   };
 
   const displayTitle = work.numero && work.anno 
-    ? `${formatQuoteNumber(work.numero)}-${work.anno} ${work.dati_cliente?.nome_ragione_sociale || 'Cliente sconosciuto'}`
-    : `Senza numero e anno - ${work.dati_cliente?.nome_ragione_sociale || 'Cliente sconosciuto'}`;
+    ? `${formatQuoteNumber(work.numero)}-${work.anno} ${work.dati_cliente?.name || 'Cliente sconosciuto'}`
+    : `Senza numero e anno - ${work.dati_cliente?.name || 'Cliente sconosciuto'}`;
 
-  const displaySubtitle = work.dati_cliente?.citta 
-    ? `${work.dati_cliente.citta}${work.dati_cliente.provincia ? ` (${work.dati_cliente.provincia})` : ''}`
+  const displaySubtitle = work.dati_cliente?.city 
+    ? `${work.dati_cliente.city}${work.dati_cliente.province ? ` (${work.dati_cliente.province})` : ''}`
     : 'Città non disponibile';
 
   return (
