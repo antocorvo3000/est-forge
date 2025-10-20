@@ -263,16 +263,21 @@ const RecoverWork = () => {
       </div>
 
       <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ open })}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white border-2 border-border max-w-lg p-8">
           <AlertDialogHeader>
-            <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-2xl font-bold text-red-600">Conferma eliminazione</AlertDialogTitle>
+            <AlertDialogDescription className="text-lg font-semibold text-black mt-4">
               Sei sicuro di voler eliminare questo lavoro interrotto? Questa azione non può essere annullata.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm}>
+          <AlertDialogFooter className="mt-6 gap-3">
+            <AlertDialogCancel className="text-lg font-bold px-8 py-6">
+              Annulla
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              className="bg-red-600 hover:bg-red-700 text-white text-lg font-bold px-8 py-6"
+            >
               Elimina
             </AlertDialogAction>
           </AlertDialogFooter>
