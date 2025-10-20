@@ -212,6 +212,48 @@ const CreateQuote = () => {
   const [showPdfWarningDialog, setShowPdfWarningDialog] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
+  // Numero e anno del preventivo (calcolati all'inizio o custom)
+  const [quoteNumber, setQuoteNumber] = useState<number | null>(null);
+  const [quoteYear, setQuoteYear] = useState<number | null>(null);
+
+  // Calcola numero e anno all'inizio
+  useEffect(() => {
+    const calculateQuoteNumber = async () => {
+      if (location.state?.customNumber && location.state?.customYear) {
+        // Numero personalizzato
+        setQuoteNumber(location.state.customNumber);
+        setQuoteYear(location.state.customYear);
+      } else {
+        // Numero progressivo
+        const year = new Date().getFullYear();
+        setQuoteYear(year);
+
+        const { data: existingQuotes } = await supabase
+          .from("preventivi")
+          .select("numero")
+          .eq("anno", year)
+          .order("numero", { ascending: true });
+
+        const usedNumbers = existingQuotes?.map((q) => q.numero) || [];
+        const baseNumber = settings.customNumberingEnabled ? settings.startingQuoteNumber : 1;
+
+        let newNum = baseNumber;
+        for (const num of usedNumbers) {
+          if (num >= baseNumber) {
+            if (num === newNum) {
+              newNum++;
+            } else if (num > newNum) {
+              break;
+            }
+          }
+        }
+        setQuoteNumber(newNum);
+      }
+    };
+
+    calculateQuoteNumber();
+  }, [location.state?.customNumber, location.state?.customYear, settings.customNumberingEnabled, settings.startingQuoteNumber]);
+
   const addLine = (afterIndex: number) => {
     const newLine: QuoteLine = {
       id: Date.now().toString(),
@@ -302,11 +344,11 @@ const CreateQuote = () => {
     return subtotal - discount;
   };
 
-  // Auto-save per recupero lavoro interrotto
+  // Auto-save per recupero lavoro interrotto (solo se numero e anno sono disponibili)
   const { cacheId } = useAutoSave({
     data: {
-      numero: location.state?.customNumber,
-      anno: location.state?.customYear,
+      numero: quoteNumber || undefined,
+      anno: quoteYear || undefined,
       cliente_id: undefined,
       oggetto: subject,
       ubicazione_via: workAddress,
@@ -330,7 +372,7 @@ const CreateQuote = () => {
       })),
       dati_cliente: clientData || undefined,
     },
-    enabled: !isSaved,
+    enabled: !isSaved && quoteNumber !== null && quoteYear !== null,
     delay: 2000,
   });
 
@@ -368,13 +410,12 @@ const CreateQuote = () => {
       const sconto_valore = discountEnabled ? calculateDiscount() : 0;
       const totale = calculateTotal();
 
-      let newNum: number;
-      let year: number;
+      // Usa i numeri già calcolati
+      const newNum = quoteNumber!;
+      const year = quoteYear!;
 
+      // Verifica che il numero non sia già stato usato (nel caso di personalizzato)
       if (location.state?.customNumber && location.state?.customYear) {
-        newNum = location.state.customNumber;
-        year = location.state.customYear;
-
         const { data: existingQuote } = await supabase
           .from("preventivi")
           .select("numero")
@@ -387,27 +428,6 @@ const CreateQuote = () => {
             `Il preventivo ${newNum.toString().padStart(2, "0")}-${year} esiste già. Eliminare quello esistente per continuare o modificarlo.`,
           );
           return;
-        }
-      } else {
-        year = new Date().getFullYear();
-        const { data: existingQuotes } = await supabase
-          .from("preventivi")
-          .select("numero")
-          .eq("anno", year)
-          .order("numero", { ascending: true });
-
-        const usedNumbers = existingQuotes?.map((q) => q.numero) || [];
-        const baseNumber = settings.customNumberingEnabled ? settings.startingQuoteNumber : 1;
-
-        newNum = baseNumber;
-        for (const num of usedNumbers) {
-          if (num >= baseNumber) {
-            if (num === newNum) {
-              newNum++;
-            } else if (num > newNum) {
-              break;
-            }
-          }
         }
       }
 

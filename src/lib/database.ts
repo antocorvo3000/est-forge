@@ -260,8 +260,8 @@ export async function salvaCachePreventivo(dati: {
     dati_cliente: dati.dati_cliente ? JSON.stringify(dati.dati_cliente) : null,
   };
 
+  // Se c'è un ID specifico, aggiorna quel record
   if (dati.id) {
-    // Aggiorna
     const { error } = await supabase
       .from("preventivi_cache")
       .update(cacheData)
@@ -272,20 +272,49 @@ export async function salvaCachePreventivo(dati: {
       throw error;
     }
     return dati.id;
-  } else {
-    // Inserisci
-    const { data, error } = await supabase
-      .from("preventivi_cache")
-      .insert(cacheData)
-      .select("id")
-      .single();
-
-    if (error) {
-      console.error("Errore inserimento cache:", error);
-      throw error;
-    }
-    return data.id;
   }
+  
+  // Se numero e anno sono presenti, cerca se esiste già un record con gli stessi valori
+  if (dati.numero && dati.anno) {
+    const { data: existing, error: searchError } = await supabase
+      .from("preventivi_cache")
+      .select("id")
+      .eq("numero", dati.numero)
+      .eq("anno", dati.anno)
+      .eq("tipo_operazione", dati.tipo_operazione)
+      .maybeSingle();
+
+    if (searchError) {
+      console.error("Errore ricerca cache esistente:", searchError);
+    }
+
+    // Se esiste, aggiorna quel record
+    if (existing) {
+      const { error } = await supabase
+        .from("preventivi_cache")
+        .update(cacheData)
+        .eq("id", existing.id);
+
+      if (error) {
+        console.error("Errore aggiornamento cache esistente:", error);
+        throw error;
+      }
+      return existing.id;
+    }
+  }
+
+  // Altrimenti inserisci un nuovo record
+  const { data, error } = await supabase
+    .from("preventivi_cache")
+    .insert(cacheData)
+    .select("id")
+    .single();
+
+  if (error) {
+    console.error("Errore inserimento cache:", error);
+    throw error;
+  }
+  return data.id;
 }
 
 // Carica tutti i preventivi dalla cache

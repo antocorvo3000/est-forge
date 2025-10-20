@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, CheckSquare, X, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { CompanyHeader } from "@/components/CompanyHeader";
 import { CachedWorkItem } from "@/components/CachedWorkItem";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { caricaCachePreventivi, eliminaCachePreventivo } from "@/lib/database";
@@ -140,13 +139,11 @@ const RecoverWork = () => {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 w-full flex-1 flex flex-col gap-3 sm:gap-4 overflow-hidden">
-        <CompanyHeader />
-
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="glass rounded-2xl p-3 sm:p-4 flex items-center gap-3 mb-2"
+          className="glass rounded-2xl p-3 sm:p-4 flex items-center gap-3"
         >
           <Button
             variant="ghost"
