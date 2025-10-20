@@ -1,8 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, CheckSquare, X, Trash2, RotateCcw, Info } from "lucide-react";
+import { ArrowLeft, CheckSquare, X, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { CompanyHeader } from "@/components/CompanyHeader";
+import { CachedWorkItem } from "@/components/CachedWorkItem";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { caricaCachePreventivi, eliminaCachePreventivo } from "@/lib/database";
 import { toast } from "@/lib/toast";
@@ -51,6 +53,7 @@ const RecoverWork = () => {
     open: boolean;
     work?: CachedWork;
   }>({ open: false });
+  const [infoWorkId, setInfoWorkId] = useState<string | null>(null);
 
   useEffect(() => {
     loadCachedWorks();
@@ -137,136 +140,80 @@ const RecoverWork = () => {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 w-full flex-1 flex flex-col gap-3 sm:gap-4 overflow-hidden">
-        <motion.header
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass rounded-2xl p-6"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Recupera Lavoro Interrotto</h1>
-              <p className="text-muted-foreground">
-                Qui trovi tutti i lavori salvati automaticamente
-              </p>
-            </div>
-            <Button
-              onClick={() => navigate("/")}
-              variant="outline"
-              className="gap-2"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              Indietro
-            </Button>
-          </div>
-        </motion.header>
+        <CompanyHeader />
 
-        <motion.main
+        <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="glass rounded-2xl p-4 flex-1 overflow-hidden flex flex-col"
+          className="glass rounded-2xl p-3 sm:p-4 flex items-center gap-3 mb-2"
         >
-          <div className="space-y-3 overflow-y-auto scrollbar-thin pr-2 flex-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/")}
+            className="h-10 w-10"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h1 className="text-3xl font-extrabold tracking-tight">Recupera Lavoro Interrotto</h1>
+        </motion.div>
+
+        <motion.main
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ 
+            opacity: 1, 
+            y: 0,
+            transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }
+          }}
+          className="glass rounded-2xl p-3 sm:p-4 flex-1 overflow-hidden flex flex-col"
+          style={{
+            willChange: 'auto'
+          }}
+        >
+          <motion.div 
+            className="space-y-2 sm:space-y-3 overflow-y-auto scrollbar-thin pr-2 flex-1"
+            layout
+            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+          >
             {cachedWorks.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                Nessun lavoro interrotto trovato
-              </div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="text-center py-12 text-muted-foreground"
+              >
+                Nessun lavoro interrotto trovato. I lavori vengono salvati automaticamente durante la creazione, modifica o clonazione di un preventivo.
+              </motion.div>
             ) : (
               <AnimatePresence mode="popLayout">
                 {cachedWorks.map((work, index) => (
-                  <motion.div
+                  <CachedWorkItem
                     key={work.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ delay: index * 0.05 }}
-                    className={`glass rounded-xl p-4 hover:shadow-lg transition-all ${
-                      isSelectionMode && selectedWorks.has(work.id) ? 'ring-2 ring-primary' : ''
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          {isSelectionMode && (
-                            <input
-                              type="checkbox"
-                              checked={selectedWorks.has(work.id)}
-                              onChange={() => handleSelectWork(work.id)}
-                              className="w-5 h-5 rounded border-2 cursor-pointer"
-                            />
-                          )}
-                          <div className="flex items-center gap-2">
-                            {work.numero && work.anno && (
-                              <span className="text-lg font-bold text-primary">
-                                {String(work.numero).padStart(2, '0')}-{work.anno}
-                              </span>
-                            )}
-                            <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
-                              {getTipoOperazioneLabel(work.tipo_operazione)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="space-y-1">
-                          {work.oggetto && (
-                            <p className="font-medium text-foreground" style={{ fontSize: `${settings.fontSizeList}rem` }}>
-                              {work.oggetto}
-                            </p>
-                          )}
-                          {work.dati_cliente?.nome_ragione_sociale && (
-                            <p className="text-sm text-muted-foreground">
-                              Cliente: {work.dati_cliente.nome_ragione_sociale}
-                            </p>
-                          )}
-                          {work.totale !== undefined && (
-                            <p className="text-sm font-medium text-primary">
-                              Totale: €{work.totale.toFixed(2)}
-                            </p>
-                          )}
-                          <p className="text-xs text-muted-foreground">
-                            Ultimo salvataggio: {format(new Date(work.aggiornato_il), 'dd/MM/yyyy HH:mm')}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {!isSelectionMode && (
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="icon"
-                            variant="outline"
-                            onClick={() => handleShowInfo(work)}
-                            className="h-10 w-10"
-                          >
-                            <Info className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            onClick={() => handleRecover(work)}
-                            className="h-10 w-10"
-                          >
-                            <RotateCcw className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="destructive"
-                            onClick={() => handleDeleteClick(work.id)}
-                            className="h-10 w-10"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
+                    work={work}
+                    index={index}
+                    onRecover={handleRecover}
+                    onDelete={handleDeleteClick}
+                    onInfo={handleShowInfo}
+                    fontSize={settings.fontSizeList}
+                    isSelectionMode={isSelectionMode}
+                    isSelected={selectedWorks.has(work.id)}
+                    onSelect={() => handleSelectWork(work.id)}
+                    showInfo={infoWorkId === work.id}
+                    onInfoToggle={() => setInfoWorkId(infoWorkId === work.id ? null : work.id)}
+                    onMouseLeave={() => setInfoWorkId(null)}
+                  />
                 ))}
               </AnimatePresence>
             )}
-          </div>
+          </motion.div>
         </motion.main>
 
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.5 }}
           className="flex justify-start gap-3"
         >
           <AnimatePresence mode="wait">
