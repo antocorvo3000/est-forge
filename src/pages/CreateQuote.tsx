@@ -141,7 +141,9 @@ const CreateQuote = () => {
       });
     };
 
-    const timer = setTimeout(updateButtonPositions, 100);
+    // Aggiorna immediatamente e poi dopo un breve timeout
+    updateButtonPositions();
+    const timer = setTimeout(updateButtonPositions, 50);
 
     window.addEventListener("resize", updateButtonPositions);
 
