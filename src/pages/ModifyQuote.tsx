@@ -1232,40 +1232,4 @@ const ModifyQuote = () => {
   );
 };
 
-export default ModifyQuote;<Label htmlFor="workAddress" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Via</Label>
-              <Input
-                id="workAddress"
-                value={workAddress}
-                onChange={(e) => setWorkAddress(e.target.value)}
-                placeholder="Via e numero civico"
-                className="bg-white"
-                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="workCity" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Città</Label>
-              <CityCombobox
-                value={workCity}
-                onSelect={(city, province, cap) => {
-                  setWorkCity(city);
-                  setWorkProvince(province);
-                  setWorkZip(cap);
-                }}
-                placeholder="Seleziona città..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="workProvince" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Provincia</Label>
-              <Input
-                id="workProvince"
-                value={workProvince}
-                readOnly
-                placeholder="PR"
-                className="bg-muted cursor-not-allowed"
-                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-              />
-            </div>
-
-            <div className="space-y-2">
+export default ModifyQuote;
