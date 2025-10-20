@@ -212,3 +212,143 @@ export async function salvaRighePreventivo(preventivo_id: string, righe: any[]) 
     throw error;
   }
 }
+
+// ===== GESTIONE CACHE PREVENTIVI =====
+
+// Salva o aggiorna nella cache
+export async function salvaCachePreventivo(dati: {
+  id?: string;
+  numero?: number;
+  anno?: number;
+  cliente_id?: string;
+  oggetto?: string;
+  ubicazione_via?: string;
+  ubicazione_citta?: string;
+  ubicazione_provincia?: string;
+  ubicazione_cap?: string;
+  subtotale?: number;
+  sconto_percentuale?: number;
+  sconto_valore?: number;
+  totale?: number;
+  note?: string;
+  modalita_pagamento?: string;
+  stato?: string;
+  tipo_operazione: 'creazione' | 'modifica' | 'clonazione';
+  preventivo_originale_id?: string;
+  righe?: any[];
+  dati_cliente?: any;
+}) {
+  const cacheData: any = {
+    numero: dati.numero,
+    anno: dati.anno,
+    cliente_id: dati.cliente_id,
+    oggetto: dati.oggetto,
+    ubicazione_via: dati.ubicazione_via,
+    ubicazione_citta: dati.ubicazione_citta,
+    ubicazione_provincia: dati.ubicazione_provincia,
+    ubicazione_cap: dati.ubicazione_cap,
+    subtotale: dati.subtotale,
+    sconto_percentuale: dati.sconto_percentuale,
+    sconto_valore: dati.sconto_valore,
+    totale: dati.totale,
+    note: dati.note,
+    modalita_pagamento: dati.modalita_pagamento,
+    stato: dati.stato,
+    tipo_operazione: dati.tipo_operazione,
+    preventivo_originale_id: dati.preventivo_originale_id,
+    righe: dati.righe ? JSON.stringify(dati.righe) : null,
+    dati_cliente: dati.dati_cliente ? JSON.stringify(dati.dati_cliente) : null,
+  };
+
+  if (dati.id) {
+    // Aggiorna
+    const { error } = await supabase
+      .from("preventivi_cache")
+      .update(cacheData)
+      .eq("id", dati.id);
+
+    if (error) {
+      console.error("Errore aggiornamento cache:", error);
+      throw error;
+    }
+    return dati.id;
+  } else {
+    // Inserisci
+    const { data, error } = await supabase
+      .from("preventivi_cache")
+      .insert(cacheData)
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("Errore inserimento cache:", error);
+      throw error;
+    }
+    return data.id;
+  }
+}
+
+// Carica tutti i preventivi dalla cache
+export async function caricaCachePreventivi() {
+  const { data, error } = await supabase
+    .from("preventivi_cache")
+    .select("*")
+    .order("aggiornato_il", { ascending: false });
+
+  if (error) {
+    console.error("Errore caricamento cache:", error);
+    return [];
+  }
+
+  return (data || []).map(item => ({
+    ...item,
+    righe: item.righe ? JSON.parse(item.righe as string) : [],
+    dati_cliente: item.dati_cliente ? JSON.parse(item.dati_cliente as string) : null,
+  }));
+}
+
+// Carica un preventivo dalla cache
+export async function caricaCachePreventivo(id: string) {
+  const { data, error } = await supabase
+    .from("preventivi_cache")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    console.error("Errore caricamento cache preventivo:", error);
+    return null;
+  }
+
+  return {
+    ...data,
+    righe: data.righe ? JSON.parse(data.righe as string) : [],
+    dati_cliente: data.dati_cliente ? JSON.parse(data.dati_cliente as string) : null,
+  };
+}
+
+// Elimina dalla cache
+export async function eliminaCachePreventivo(id: string) {
+  const { error } = await supabase
+    .from("preventivi_cache")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("Errore eliminazione cache:", error);
+    throw error;
+  }
+}
+
+// Elimina dalla cache per ID preventivo originale (quando si salva)
+export async function eliminaCachePerPreventivoOriginale(preventivoId: string) {
+  const { error } = await supabase
+    .from("preventivi_cache")
+    .delete()
+    .eq("preventivo_originale_id", preventivoId);
+
+  if (error) {
+    console.error("Errore eliminazione cache per preventivo originale:", error);
+    throw error;
+  }
+}

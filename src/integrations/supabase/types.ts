@@ -190,6 +190,81 @@ export type Database = {
           },
         ]
       }
+      preventivi_cache: {
+        Row: {
+          aggiornato_il: string | null
+          anno: number | null
+          cliente_id: string | null
+          creato_il: string | null
+          dati_cliente: Json | null
+          id: string
+          modalita_pagamento: string | null
+          note: string | null
+          numero: number | null
+          oggetto: string | null
+          preventivo_originale_id: string | null
+          righe: Json | null
+          sconto_percentuale: number | null
+          sconto_valore: number | null
+          stato: string | null
+          subtotale: number | null
+          tipo_operazione: string
+          totale: number | null
+          ubicazione_cap: string | null
+          ubicazione_citta: string | null
+          ubicazione_provincia: string | null
+          ubicazione_via: string | null
+        }
+        Insert: {
+          aggiornato_il?: string | null
+          anno?: number | null
+          cliente_id?: string | null
+          creato_il?: string | null
+          dati_cliente?: Json | null
+          id?: string
+          modalita_pagamento?: string | null
+          note?: string | null
+          numero?: number | null
+          oggetto?: string | null
+          preventivo_originale_id?: string | null
+          righe?: Json | null
+          sconto_percentuale?: number | null
+          sconto_valore?: number | null
+          stato?: string | null
+          subtotale?: number | null
+          tipo_operazione: string
+          totale?: number | null
+          ubicazione_cap?: string | null
+          ubicazione_citta?: string | null
+          ubicazione_provincia?: string | null
+          ubicazione_via?: string | null
+        }
+        Update: {
+          aggiornato_il?: string | null
+          anno?: number | null
+          cliente_id?: string | null
+          creato_il?: string | null
+          dati_cliente?: Json | null
+          id?: string
+          modalita_pagamento?: string | null
+          note?: string | null
+          numero?: number | null
+          oggetto?: string | null
+          preventivo_originale_id?: string | null
+          righe?: Json | null
+          sconto_percentuale?: number | null
+          sconto_valore?: number | null
+          stato?: string | null
+          subtotale?: number | null
+          tipo_operazione?: string
+          totale?: number | null
+          ubicazione_cap?: string | null
+          ubicazione_citta?: string | null
+          ubicazione_provincia?: string | null
+          ubicazione_via?: string | null
+        }
+        Relationships: []
+      }
       righe_preventivo: {
         Row: {
           creato_il: string | null

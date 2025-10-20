@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Settings, FileEdit, CheckSquare, X, Trash2 } from "lucide-react";
+import { Plus, Settings, FileEdit, CheckSquare, X, Trash2, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CompanyHeader } from "@/components/CompanyHeader";
 import { SearchBar } from "@/components/SearchBar";
@@ -326,13 +326,22 @@ const Index = () => {
             </AnimatePresence>
           </div>
           
-          <Button
-            onClick={() => navigate("/settings")}
-            className="h-11 gap-2 shadow-lg"
-          >
-            <Settings className="w-5 h-5" />
-            <span>Impostazioni</span>
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={() => navigate("/recover-work")}
+              className="h-11 gap-2 shadow-lg"
+            >
+              <RotateCcw className="w-5 h-5" />
+              <span>Recupera Lavoro</span>
+            </Button>
+            <Button
+              onClick={() => navigate("/settings")}
+              className="h-11 gap-2 shadow-lg"
+            >
+              <Settings className="w-5 h-5" />
+              <span>Impostazioni</span>
+            </Button>
+          </div>
         </motion.div>
       </div>
 
