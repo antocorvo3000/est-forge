@@ -119,6 +119,10 @@ const ModifyQuote = () => {
   const [clientData, setClientData] = useState<ClientData | null>(null);
   const [pageTitle, setPageTitle] = useState("Modifica Preventivo");
 
+  // Numero e anno del preventivo (salvati all'inizio)
+  const [quoteNumber, setQuoteNumber] = useState<number | null>(null);
+  const [quoteYear, setQuoteYear] = useState<number | null>(null);
+
   const [workAddress, setWorkAddress] = useState("");
   const [workCity, setWorkCity] = useState("");
   const [workProvince, setWorkProvince] = useState("");
@@ -148,6 +152,7 @@ const ModifyQuote = () => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPdfWarningDialog, setShowPdfWarningDialog] = useState(false);
+  const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
   
   const [initialData, setInitialData] = useState<string>("");
   const [isCloningSaved, setIsCloningSaved] = useState(false);
@@ -259,6 +264,10 @@ const ModifyQuote = () => {
     try {
       setLoading(true);
       
+      // Salva numero e anno dalla cache
+      if (cacheData.numero) setQuoteNumber(cacheData.numero);
+      if (cacheData.anno) setQuoteYear(cacheData.anno);
+      
       if (cacheData.dati_cliente) {
         setClientData(cacheData.dati_cliente);
       }
@@ -305,6 +314,10 @@ const ModifyQuote = () => {
       const data = await getQuoteById(id!);
       
       if (data) {
+        // Salva numero e anno
+        setQuoteNumber(isCloning ? location.state?.cloneNumber : data.numero);
+        setQuoteYear(isCloning ? location.state?.cloneYear : data.anno);
+        
         if (data.clienti && !location.state?.clientData) {
           setClientData({
             name: data.clienti.nome_ragione_sociale || "",
@@ -450,8 +463,8 @@ const ModifyQuote = () => {
   // Auto-save per recupero lavoro interrotto
   const { cacheId: autoSaveCacheId } = useAutoSave({
     data: {
-      numero: isCloning ? location.state?.cloneNumber : quoteData?.numero,
-      anno: isCloning ? location.state?.cloneYear : quoteData?.anno,
+      numero: quoteNumber || undefined,
+      anno: quoteYear || undefined,
       cliente_id: undefined,
       oggetto: subject,
       ubicazione_via: workAddress,
@@ -476,7 +489,7 @@ const ModifyQuote = () => {
       })),
       dati_cliente: clientData || undefined,
     },
-    enabled: !isSaved && !loading,
+    enabled: !isSaved && !loading && quoteNumber !== null && quoteYear !== null,
     delay: 2000,
     cacheId: existingCacheId,
   });
@@ -487,6 +500,12 @@ const ModifyQuote = () => {
     
     if (missingClient || missingWork) {
       setShowSaveDialog(true);
+      return;
+    }
+    
+    // Se è un recupero di una modifica, chiedi conferma di sovrascrittura
+    if (fromCache && cacheData?.tipo_operazione === 'modifica' && id) {
+      setShowOverwriteDialog(true);
       return;
     }
     
@@ -1369,6 +1388,33 @@ const ModifyQuote = () => {
                 className="text-lg font-bold px-8 py-6"
               >
                 Salva e Genera PDF
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={showOverwriteDialog} onOpenChange={setShowOverwriteDialog}>
+          <AlertDialogContent className="bg-white border-2 border-border max-w-lg p-8">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-2xl font-bold text-orange-600">
+                Conferma sovrascrittura
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-lg font-semibold text-black mt-4">
+                Stai per sovrascrivere il preventivo esistente {quoteNumber?.toString().padStart(2, '0')}-{quoteYear}. Questa azione aggiornerà il preventivo originale con le modifiche recuperate. Vuoi procedere?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-6 gap-3">
+              <AlertDialogCancel className="text-lg font-bold px-8 py-6">
+                Annulla
+              </AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => {
+                  setShowOverwriteDialog(false);
+                  saveQuote();
+                }}
+                className="bg-orange-600 hover:bg-orange-700 text-white text-lg font-bold px-8 py-6"
+              >
+                Sovrascrivi
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

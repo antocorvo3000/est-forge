@@ -274,8 +274,36 @@ export async function salvaCachePreventivo(dati: {
     return dati.id;
   }
   
-  // Se numero e anno sono presenti, cerca se esiste già un record con gli stessi valori
-  if (dati.numero && dati.anno) {
+  // Per modifiche, cerca per preventivo_originale_id e tipo_operazione
+  if (dati.tipo_operazione === 'modifica' && dati.preventivo_originale_id) {
+    const { data: existing, error: searchError } = await supabase
+      .from("preventivi_cache")
+      .select("id")
+      .eq("preventivo_originale_id", dati.preventivo_originale_id)
+      .eq("tipo_operazione", "modifica")
+      .maybeSingle();
+
+    if (searchError) {
+      console.error("Errore ricerca cache esistente per modifica:", searchError);
+    }
+
+    // Se esiste, aggiorna quel record
+    if (existing) {
+      const { error } = await supabase
+        .from("preventivi_cache")
+        .update(cacheData)
+        .eq("id", existing.id);
+
+      if (error) {
+        console.error("Errore aggiornamento cache modifica esistente:", error);
+        throw error;
+      }
+      return existing.id;
+    }
+  }
+  
+  // Per creazioni e clonazioni, se numero e anno sono presenti cerca per quelli
+  if (dati.numero && dati.anno && (dati.tipo_operazione === 'creazione' || dati.tipo_operazione === 'clonazione')) {
     const { data: existing, error: searchError } = await supabase
       .from("preventivi_cache")
       .select("id")
