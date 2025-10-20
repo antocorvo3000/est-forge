@@ -21,10 +21,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useQuotes } from "@/hooks/useQuotes";
-import { salvaCliente, salvaPreventivo, salvaRighePreventivo } from "@/lib/database";
+import { salvaCliente, salvaPreventivo, salvaRighePreventivo, eliminaCachePreventivo } from "@/lib/database";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/toast";
 import type { ClientData } from "./ClientDetails";
+import { useAutoSave } from "@/hooks/useAutoSave";
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat("it-IT", {
@@ -301,6 +302,38 @@ const CreateQuote = () => {
     return subtotal - discount;
   };
 
+  // Auto-save per recupero lavoro interrotto
+  const { cacheId } = useAutoSave({
+    data: {
+      numero: location.state?.customNumber,
+      anno: location.state?.customYear,
+      cliente_id: undefined,
+      oggetto: subject,
+      ubicazione_via: workAddress,
+      ubicazione_citta: workCity,
+      ubicazione_provincia: workProvince,
+      ubicazione_cap: workZip,
+      subtotale: calculateSubtotal(),
+      sconto_percentuale: discountEnabled ? (typeof discountValue === 'number' ? discountValue : 0) : 0,
+      sconto_valore: discountEnabled ? calculateDiscount() : 0,
+      totale: calculateTotal(),
+      note: notesEnabled ? notes : undefined,
+      modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+      stato: 'bozza',
+      tipo_operazione: 'creazione',
+      righe: lines.map(line => ({
+        descrizione: line.description,
+        unita_misura: line.unit,
+        quantita: line.quantity,
+        prezzo_unitario: line.unitPrice,
+        totale: line.total,
+      })),
+      dati_cliente: clientData || undefined,
+    },
+    enabled: !isSaved,
+    delay: 2000,
+  });
+
   const handleSave = () => {
     const missingClient = !clientData || !clientData.name.trim();
     const missingWork = !workAddress.trim() || !workCity.trim();
@@ -407,6 +440,11 @@ const CreateQuote = () => {
 
       if (righe.length > 0) {
         await salvaRighePreventivo(preventivo.id, righe);
+      }
+
+      // Elimina la cache dopo il salvataggio
+      if (cacheId) {
+        await eliminaCachePreventivo(cacheId);
       }
 
       setIsSaved(true);

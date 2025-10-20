@@ -21,9 +21,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useQuotes } from "@/hooks/useQuotes";
-import { salvaCliente, aggiornaPreventivo, salvaRighePreventivo } from "@/lib/database";
+import { salvaCliente, aggiornaPreventivo, salvaRighePreventivo, eliminaCachePreventivo } from "@/lib/database";
 import { toast } from "@/lib/toast";
 import type { ClientData } from "./ClientDetails";
+import { useAutoSave } from "@/hooks/useAutoSave";
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('it-IT', {
@@ -111,8 +112,12 @@ const ModifyQuote = () => {
 
   const quoteData = location.state?.quote;
   const isCloning = location.state?.isCloning || false;
+  const fromCache = location.state?.fromCache || false;
+  const cacheData = location.state?.cacheData;
+  const existingCacheId = location.state?.cacheId;
 
   const [clientData, setClientData] = useState<ClientData | null>(null);
+  const [pageTitle, setPageTitle] = useState("Modifica Preventivo");
 
   const [workAddress, setWorkAddress] = useState("");
   const [workCity, setWorkCity] = useState("");
@@ -146,14 +151,20 @@ const ModifyQuote = () => {
   
   const [initialData, setInitialData] = useState<string>("");
   const [isCloningSaved, setIsCloningSaved] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
-    if (id && !location.state?.clientData) {
+    if (fromCache && cacheData) {
+      loadCacheData();
+      setPageTitle("Recupera Lavoro Interrotto");
+    } else if (id && !location.state?.clientData) {
       loadQuoteData();
+      setPageTitle(isCloning ? "Clona Preventivo" : "Modifica Preventivo");
     } else if (id && location.state?.clientData) {
       loadQuoteData();
+      setPageTitle(isCloning ? "Clona Preventivo" : "Modifica Preventivo");
     }
-  }, [id]);
+  }, [id, fromCache]);
 
   useEffect(() => {
     if (!loading && !isCloning && clientData) {
@@ -243,6 +254,50 @@ const ModifyQuote = () => {
       setClientData(location.state.clientData);
     }
   }, [location.state?.clientData]);
+
+  const loadCacheData = () => {
+    try {
+      setLoading(true);
+      
+      if (cacheData.dati_cliente) {
+        setClientData(cacheData.dati_cliente);
+      }
+
+      setWorkAddress(cacheData.ubicazione_via || "");
+      setWorkCity(cacheData.ubicazione_citta || "");
+      setWorkProvince(cacheData.ubicazione_provincia || "");
+      setWorkZip(cacheData.ubicazione_cap || "");
+
+      setSubject(cacheData.oggetto || "");
+
+      if (cacheData.righe && cacheData.righe.length > 0) {
+        const loadedLines = cacheData.righe.map((riga: any, index: number) => ({
+          id: riga.id || `${Date.now()}-${index}`,
+          description: riga.descrizione || "",
+          unit: riga.unita_misura || "pz",
+          quantity: typeof riga.quantita === 'number' ? riga.quantita : parseFloat(riga.quantita) || 0,
+          unitPrice: typeof riga.prezzo_unitario === 'number' ? riga.prezzo_unitario : parseFloat(riga.prezzo_unitario) || 0,
+          total: typeof riga.totale === 'number' ? riga.totale : parseFloat(riga.totale) || 0,
+        }));
+        setLines(loadedLines);
+      }
+
+      const scontoPerc = cacheData.sconto_percentuale ? String(cacheData.sconto_percentuale) : "0";
+      const hasDiscount = parseFloat(scontoPerc) > 0;
+      setDiscountEnabled(hasDiscount);
+      setDiscountValue(parseFloat(scontoPerc));
+
+      setNotesEnabled(!!cacheData.note);
+      setNotes(cacheData.note || "");
+
+      setPaymentMethod(cacheData.modalita_pagamento || "da-concordare");
+    } catch (error) {
+      console.error("Errore caricamento cache:", error);
+      toast.error("Errore nel caricamento dei dati dalla cache");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadQuoteData = async () => {
     try {
@@ -392,6 +447,40 @@ const ModifyQuote = () => {
     return subtotal - discount;
   };
 
+  // Auto-save per recupero lavoro interrotto
+  const { cacheId: autoSaveCacheId } = useAutoSave({
+    data: {
+      numero: isCloning ? location.state?.cloneNumber : quoteData?.numero,
+      anno: isCloning ? location.state?.cloneYear : quoteData?.anno,
+      cliente_id: undefined,
+      oggetto: subject,
+      ubicazione_via: workAddress,
+      ubicazione_citta: workCity,
+      ubicazione_provincia: workProvince,
+      ubicazione_cap: workZip,
+      subtotale: calculateSubtotal(),
+      sconto_percentuale: discountEnabled ? (typeof discountValue === 'number' ? discountValue : 0) : 0,
+      sconto_valore: discountEnabled ? calculateDiscount() : 0,
+      totale: calculateTotal(),
+      note: notesEnabled ? notes : undefined,
+      modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+      stato: 'bozza',
+      tipo_operazione: isCloning ? 'clonazione' : 'modifica',
+      preventivo_originale_id: id,
+      righe: lines.map(line => ({
+        descrizione: line.description,
+        unita_misura: line.unit,
+        quantita: line.quantity,
+        prezzo_unitario: line.unitPrice,
+        totale: line.total,
+      })),
+      dati_cliente: clientData || undefined,
+    },
+    enabled: !isSaved && !loading,
+    delay: 2000,
+    cacheId: existingCacheId,
+  });
+
   const handleSave = () => {
     const missingClient = !clientData || !clientData.name.trim();
     const missingWork = !workAddress.trim() || !workCity.trim();
@@ -461,7 +550,13 @@ const ModifyQuote = () => {
         if (righe.length > 0) {
           await salvaRighePreventivo(nuovoPreventivo.id, righe);
         }
+
+        // Elimina la cache dopo il salvataggio
+        if (autoSaveCacheId || existingCacheId) {
+          await eliminaCachePreventivo(autoSaveCacheId || existingCacheId);
+        }
         
+        setIsSaved(true);
         toast.success("Preventivo clonato con successo");
       } else {
         await aggiornaPreventivo(id, {
@@ -492,11 +587,17 @@ const ModifyQuote = () => {
         if (righe.length > 0) {
           await salvaRighePreventivo(id, righe);
         }
+
+        // Elimina la cache dopo il salvataggio
+        if (autoSaveCacheId || existingCacheId) {
+          await eliminaCachePreventivo(autoSaveCacheId || existingCacheId);
+        }
         
         if (isCloning) {
           setIsCloningSaved(true);
         }
         
+        setIsSaved(true);
         toast.success("Preventivo modificato con successo");
       }
       
@@ -666,7 +767,7 @@ const ModifyQuote = () => {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-3xl font-extrabold tracking-tight">
-            {isCloning ? "Clona Preventivo" : "Modifica Preventivo"}
+            {pageTitle}
           </h1>
         </motion.div>
 
