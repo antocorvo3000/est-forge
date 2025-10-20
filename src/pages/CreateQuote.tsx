@@ -756,7 +756,7 @@ const CreateQuote = () => {
             </div>
           </motion.div>
 
-          <div className="absolute top-0 -right-14 flex flex-col">
+          <div className="absolute top-0 -right-10 flex flex-col">
             {lines.map((line, index) => (
               <div
                 key={line.id}
