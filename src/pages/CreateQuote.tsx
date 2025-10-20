@@ -79,8 +79,19 @@ const CreateQuote = () => {
   };
 
   const handleNumberBlur = (index: number, field: "quantity" | "unitPrice", value: string) => {
-    const numValue = parseItalianNumber(value);
-    updateLine(index, field, numValue);
+    if (!value || value.trim() === "") {
+      updateLine(index, field, 0);
+      return;
+    }
+
+    const cleaned = value.replace(/\./g, "").replace(",", ".");
+    const num = parseFloat(cleaned);
+
+    if (isNaN(num)) {
+      updateLine(index, field, 0);
+    } else {
+      updateLine(index, field, num);
+    }
   };
 
   const formatNumberInput = (value: number | string): string => {
@@ -116,6 +127,20 @@ const CreateQuote = () => {
         textarea.style.height = textarea.scrollHeight + "px";
       }
     });
+  }, [lines]);
+
+  // Forza il resize anche dopo un breve delay per i dati caricati dal database
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      lines.forEach((_, index) => {
+        const textarea = document.querySelector(`#desc-${index}`) as HTMLTextAreaElement;
+        if (textarea && textarea.value) {
+          textarea.style.height = "auto";
+          textarea.style.height = textarea.scrollHeight + "px";
+        }
+      });
+    }, 200);
+    return () => clearTimeout(timer);
   }, [lines]);
 
   useEffect(() => {
@@ -221,21 +246,39 @@ const CreateQuote = () => {
   };
 
   const getEffectiveLineTotal = (line: QuoteLine) => {
-    return line.quantity * getEffectiveUnitPrice(line.unitPrice);
+    const qty = typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0;
+    const price = typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0;
+    return qty * getEffectiveUnitPrice(price);
   };
 
   const calculateSubtotal = () => {
     if (discountEnabled && !showDiscountInTable) {
-      return lines.reduce((sum, line) => sum + getEffectiveLineTotal(line), 0);
+      return lines.reduce((sum, line) => {
+        const qty = typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0;
+        const price = typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0;
+        return sum + qty * getEffectiveUnitPrice(price);
+      }, 0);
     }
-    return lines.reduce((sum, line) => sum + line.total, 0);
+    return lines.reduce((sum, line) => {
+      const qty = typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0;
+      const price = typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0;
+      return sum + qty * price;
+    }, 0);
   };
 
   const calculateDiscount = () => {
     if (!discountEnabled) return 0;
     const discount = typeof discountValue === "number" ? discountValue : 0;
     if (showDiscountInTable) {
-      return (lines.reduce((sum, line) => sum + line.total, 0) * discount) / 100;
+      return (
+        (lines.reduce((sum, line) => {
+          const qty = typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0;
+          const price = typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0;
+          return sum + qty * price;
+        }, 0) *
+          discount) /
+        100
+      );
     }
     return 0;
   };
@@ -686,11 +729,16 @@ const CreateQuote = () => {
                         <Input
                           type="text"
                           id={`qty-${index}`}
-                          value={line.quantity === 0 ? "" : formatNumberInput(line.quantity)}
+                          value={line.quantity === 0 ? "" : line.quantity}
                           onChange={(e) => {
-                            const cleaned = e.target.value.replace(/[^\d,]/g, "");
-                            const num = parseItalianNumber(cleaned);
-                            updateLine(index, "quantity", num);
+                            const value = e.target.value;
+                            // Permetti solo numeri, virgola e punto durante la digitazione
+                            if (value === "" || /^[\d.,]*$/.test(value)) {
+                              // Salva il valore raw senza formattazione
+                              const newLines = [...lines];
+                              newLines[index] = { ...newLines[index], quantity: value as any };
+                              setLines(newLines);
+                            }
                           }}
                           onBlur={(e) => handleNumberBlur(index, "quantity", e.target.value)}
                           onKeyDown={(e) => handleKeyDown(e, index, "quantity")}
@@ -704,11 +752,16 @@ const CreateQuote = () => {
                           <Input
                             type="text"
                             id={`price-${index}`}
-                            value={line.unitPrice === 0 ? "" : formatNumberInput(line.unitPrice)}
+                            value={line.unitPrice === 0 ? "" : line.unitPrice}
                             onChange={(e) => {
-                              const cleaned = e.target.value.replace(/[^\d,]/g, "");
-                              const num = parseItalianNumber(cleaned);
-                              updateLine(index, "unitPrice", num);
+                              const value = e.target.value;
+                              // Permetti solo numeri, virgola e punto durante la digitazione
+                              if (value === "" || /^[\d.,]*$/.test(value)) {
+                                // Salva il valore raw senza formattazione
+                                const newLines = [...lines];
+                                newLines[index] = { ...newLines[index], unitPrice: value as any };
+                                setLines(newLines);
+                              }
                             }}
                             onBlur={(e) => handleNumberBlur(index, "unitPrice", e.target.value)}
                             onKeyDown={(e) => handleKeyDown(e, index, "unitPrice")}
@@ -724,7 +777,7 @@ const CreateQuote = () => {
                                 <Label className="text-xs text-muted-foreground">Scontato:</Label>
                                 <Input
                                   type="text"
-                                  value={`€ ${formatCurrency(getEffectiveUnitPrice(line.unitPrice))}`}
+                                  value={`€ ${formatCurrency(getEffectiveUnitPrice(typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0))}`}
                                   readOnly
                                   className="bg-muted cursor-default"
                                   style={{ fontSize: `${settings.fontSizeQuote}rem` }}
@@ -821,7 +874,17 @@ const CreateQuote = () => {
                         }
                       }
                     }}
-                    onFocus={(e) => e.target.select()}
+                    onFocus={(e) => {
+                      if (discountValue === 0) {
+                        setDiscountValue("");
+                      }
+                      e.target.select();
+                    }}
+                    onBlur={(e) => {
+                      if (e.target.value === "") {
+                        setDiscountValue(0);
+                      }
+                    }}
                     placeholder="Inserisci percentuale"
                     className="bg-white"
                     style={{ fontSize: `${settings.fontSizeQuote}rem` }}
