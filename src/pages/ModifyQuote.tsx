@@ -63,6 +63,8 @@ const ModifyQuote = () => {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [loading, setLoading] = useState(true);
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
+  const buttonContainerRef = useRef<HTMLDivElement>(null);
+  const totalInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const formatItalianNumber = (value: number): string => {
     return new Intl.NumberFormat('it-IT', {
@@ -72,15 +74,32 @@ const ModifyQuote = () => {
   };
 
   const parseItalianNumber = (value: string): number => {
-    // Rimuove i separatori di migliaia e sostituisce la virgola con il punto
     const cleaned = value.replace(/\./g, '').replace(',', '.');
     const parsed = parseFloat(cleaned);
     return isNaN(parsed) ? 0 : parsed;
   };
 
   const handleNumberBlur = (index: number, field: "quantity" | "unitPrice", value: string) => {
-    const numValue = parseItalianNumber(value);
-    updateLine(index, field, numValue);
+    if (!value || value.trim() === "") {
+      updateLine(index, field, 0);
+      return;
+    }
+    
+    const cleaned = value.replace(/\./g, '').replace(',', '.');
+    const num = parseFloat(cleaned);
+    
+    if (isNaN(num)) {
+      updateLine(index, field, 0);
+    } else {
+      updateLine(index, field, num);
+      
+      setTimeout(() => {
+        const input = document.getElementById(field === "quantity" ? `qty-${index}` : `price-${index}`) as HTMLInputElement;
+        if (input && num !== 0) {
+          input.value = formatItalianNumber(num);
+        }
+      }, 0);
+    }
   };
 
   const formatNumberInput = (value: number | string): string => {
@@ -90,65 +109,52 @@ const ModifyQuote = () => {
     return formatItalianNumber(num);
   };
 
-  // Get quote data from location state
   const quoteData = location.state?.quote;
   const isCloning = location.state?.isCloning || false;
 
-  // Client data from navigation state
   const [clientData, setClientData] = useState<ClientData | null>(null);
 
-  // Work location
   const [workAddress, setWorkAddress] = useState("");
   const [workCity, setWorkCity] = useState("");
   const [workProvince, setWorkProvince] = useState("");
   const [workZip, setWorkZip] = useState("");
 
-  // Quote details
   const [subject, setSubject] = useState("");
   const [lines, setLines] = useState<QuoteLine[]>([
     { id: "1", description: "", unit: "pz", quantity: 0, unitPrice: 0, total: 0 }
   ]);
 
-  // Discount
   const [discountEnabled, setDiscountEnabled] = useState(false);
   const [discountValue, setDiscountValue] = useState<number | "">(0);
   const [showDiscountInTable, setShowDiscountInTable] = useState(false);
 
-  // Reset discount value to empty when enabling discount
   useEffect(() => {
     if (discountEnabled && discountValue === 0 && !loading) {
       setDiscountValue("");
     }
   }, [discountEnabled, loading]);
 
-  // Notes
   const [notesEnabled, setNotesEnabled] = useState(false);
   const [notes, setNotes] = useState("");
 
-  // Payment
   const [paymentMethod, setPaymentMethod] = useState("da-concordare");
   const [customPayment, setCustomPayment] = useState("");
 
-  // Dialogs
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPdfWarningDialog, setShowPdfWarningDialog] = useState(false);
   
-  // Track modifications
   const [initialData, setInitialData] = useState<string>("");
   const [isCloningSaved, setIsCloningSaved] = useState(false);
 
-  // Load quote data from database
   useEffect(() => {
     if (id && !location.state?.clientData) {
       loadQuoteData();
     } else if (id && location.state?.clientData) {
-      // Se abbiamo dati cliente dalla navigazione, carica solo i dati del preventivo
       loadQuoteData();
     }
   }, [id]);
 
-  // Save initial state after data is loaded (only if not cloning)
   useEffect(() => {
     if (!loading && !isCloning && clientData) {
       const initialState = JSON.stringify({
@@ -171,10 +177,8 @@ const ModifyQuote = () => {
     }
   }, [loading, isCloning]);
 
-  // Auto-resize textareas after data is loaded
   useEffect(() => {
     if (!loading && lines.length > 0) {
-      // Use setTimeout to ensure DOM is updated
       setTimeout(() => {
         lines.forEach((_, index) => {
           const textarea = document.getElementById(`desc-${index}`) as HTMLTextAreaElement;
@@ -187,7 +191,53 @@ const ModifyQuote = () => {
     }
   }, [loading, lines]);
 
-  // Sync client data when returning from client details - PRIORITÀ AI DATI MODIFICATI
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      lines.forEach((_, index) => {
+        const textarea = document.querySelector(`#desc-${index}`) as HTMLTextAreaElement;
+        if (textarea && textarea.value) {
+          textarea.style.height = 'auto';
+          textarea.style.height = textarea.scrollHeight + 'px';
+        }
+      });
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [lines]);
+
+  useEffect(() => {
+    const updateButtonPositions = () => {
+      lines.forEach((_, index) => {
+        const totalInput = totalInputRefs.current[index];
+        const buttonContainer = document.querySelector(`[data-button-index="${index}"]`) as HTMLElement;
+        
+        if (totalInput && buttonContainer) {
+          const inputRect = totalInput.getBoundingClientRect();
+          const tableContainer = totalInput.closest('.glass');
+          
+          if (tableContainer) {
+            const containerRect = tableContainer.getBoundingClientRect();
+            const relativeTop = inputRect.top - containerRect.top;
+            const inputHeight = inputRect.height;
+            
+            buttonContainer.style.position = 'absolute';
+            buttonContainer.style.top = `${relativeTop}px`;
+            buttonContainer.style.height = `${inputHeight}px`;
+          }
+        }
+      });
+    };
+
+    updateButtonPositions();
+    const timer = setTimeout(updateButtonPositions, 50);
+    
+    window.addEventListener('resize', updateButtonPositions);
+    
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', updateButtonPositions);
+    };
+  }, [lines]);
+
   useEffect(() => {
     if (location.state?.clientData) {
       setClientData(location.state.clientData);
@@ -200,7 +250,6 @@ const ModifyQuote = () => {
       const data = await getQuoteById(id!);
       
       if (data) {
-        // Set client data SOLO se non abbiamo già dati dal location.state
         if (data.clienti && !location.state?.clientData) {
           setClientData({
             name: data.clienti.nome_ragione_sociale || "",
@@ -214,16 +263,13 @@ const ModifyQuote = () => {
           });
         }
 
-        // Set work location
         setWorkAddress(data.ubicazione_via || "");
         setWorkCity(data.ubicazione_citta || "");
         setWorkProvince(data.ubicazione_provincia || "");
         setWorkZip(data.ubicazione_cap || "");
 
-        // Set quote details
         setSubject(data.oggetto || "");
 
-        // Set lines
         if (data.righe_preventivo && data.righe_preventivo.length > 0) {
           const loadedLines = data.righe_preventivo
             .sort((a: any, b: any) => a.numero_riga - b.numero_riga)
@@ -238,18 +284,15 @@ const ModifyQuote = () => {
           setLines(loadedLines);
         }
 
-        // Set discount
         const scontoPerc = data.sconto_percentuale ? String(data.sconto_percentuale) : "0";
         const scontoVal = data.sconto_valore ? String(data.sconto_valore) : "0";
         const hasDiscount = parseFloat(scontoPerc) > 0 || parseFloat(scontoVal) > 0;
         setDiscountEnabled(hasDiscount);
         setDiscountValue(parseFloat(scontoPerc));
 
-        // Set notes
         setNotesEnabled(!!data.note);
         setNotes(data.note || "");
 
-        // Set payment
         setPaymentMethod(data.modalita_pagamento || "da-concordare");
       }
     } catch (error) {
@@ -286,7 +329,9 @@ const ModifyQuote = () => {
     newLines[index] = { ...newLines[index], [field]: value };
     
     if (field === "quantity" || field === "unitPrice") {
-      newLines[index].total = newLines[index].quantity * newLines[index].unitPrice;
+      const qty = typeof newLines[index].quantity === 'number' ? newLines[index].quantity : parseFloat(newLines[index].quantity) || 0;
+      const price = typeof newLines[index].unitPrice === 'number' ? newLines[index].unitPrice : parseFloat(newLines[index].unitPrice) || 0;
+      newLines[index].total = qty * price;
     }
     
     setLines(newLines);
@@ -299,7 +344,6 @@ const ModifyQuote = () => {
     }
   };
 
-  // Calcola il prezzo unitario effettivo (con sconto applicato se necessario)
   const getEffectiveUnitPrice = (unitPrice: number) => {
     const discount = typeof discountValue === 'number' ? discountValue : 0;
     if (discountEnabled && !showDiscountInTable && discount > 0) {
@@ -308,25 +352,36 @@ const ModifyQuote = () => {
     return unitPrice;
   };
 
-  // Calcola il totale effettivo di una riga
   const getEffectiveLineTotal = (line: QuoteLine) => {
-    return line.quantity * getEffectiveUnitPrice(line.unitPrice);
+    const qty = typeof line.quantity === 'number' ? line.quantity : parseFloat(line.quantity) || 0;
+    const price = typeof line.unitPrice === 'number' ? line.unitPrice : parseFloat(line.unitPrice) || 0;
+    return qty * getEffectiveUnitPrice(price);
   };
 
   const calculateSubtotal = () => {
     if (discountEnabled && !showDiscountInTable) {
-      // Se lo sconto è spalmato sui prezzi, il subtotale è già scontato
-      return lines.reduce((sum, line) => sum + getEffectiveLineTotal(line), 0);
+      return lines.reduce((sum, line) => {
+        const qty = typeof line.quantity === 'number' ? line.quantity : parseFloat(line.quantity) || 0;
+        const price = typeof line.unitPrice === 'number' ? line.unitPrice : parseFloat(line.unitPrice) || 0;
+        return sum + (qty * getEffectiveUnitPrice(price));
+      }, 0);
     }
-    return lines.reduce((sum, line) => sum + line.total, 0);
+    return lines.reduce((sum, line) => {
+      const qty = typeof line.quantity === 'number' ? line.quantity : parseFloat(line.quantity) || 0;
+      const price = typeof line.unitPrice === 'number' ? line.unitPrice : parseFloat(line.unitPrice) || 0;
+      return sum + (qty * price);
+    }, 0);
   };
 
   const calculateDiscount = () => {
     if (!discountEnabled) return 0;
     const discount = typeof discountValue === 'number' ? discountValue : 0;
-    // Lo sconto viene mostrato solo se showDiscountInTable è true
     if (showDiscountInTable) {
-      return (lines.reduce((sum, line) => sum + line.total, 0) * discount) / 100;
+      return (lines.reduce((sum, line) => {
+        const qty = typeof line.quantity === 'number' ? line.quantity : parseFloat(line.quantity) || 0;
+        const price = typeof line.unitPrice === 'number' ? line.unitPrice : parseFloat(line.unitPrice) || 0;
+        return sum + (qty * price);
+      }, 0) * discount) / 100;
     }
     return 0;
   };
@@ -338,7 +393,6 @@ const ModifyQuote = () => {
   };
 
   const handleSave = () => {
-    // Check if client data or work location are missing
     const missingClient = !clientData || !clientData.name.trim();
     const missingWork = !workAddress.trim() || !workCity.trim();
     
@@ -354,7 +408,6 @@ const ModifyQuote = () => {
     try {
       if (!id) return;
 
-      // 1. Salva/aggiorna cliente
       let cliente_id = null;
       if (clientData && clientData.name) {
         const cliente = await salvaCliente({
@@ -370,14 +423,12 @@ const ModifyQuote = () => {
         cliente_id = cliente.id;
       }
 
-      // 2. Calcola totali
       const subtotale = calculateSubtotal();
       const sconto_percentuale = discountEnabled ? discountValue : 0;
       const sconto_valore = discountEnabled ? calculateDiscount() : 0;
       const totale = calculateTotal();
 
       if (isCloning && location.state?.cloneNumber && location.state?.cloneYear) {
-        // CLONAZIONE: crea un nuovo preventivo con la nuova numerazione
         const { salvaPreventivo } = await import("@/lib/database");
         
         const nuovoPreventivo = await salvaPreventivo({
@@ -397,15 +448,14 @@ const ModifyQuote = () => {
           modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
         });
 
-        // 4. Salva righe preventivo per il nuovo preventivo
         const righe = lines
           .filter(line => line.description.trim())
           .map(line => ({
             descrizione: line.description,
             unita_misura: line.unit,
-            quantita: line.quantity,
-            prezzo_unitario: line.unitPrice,
-            totale: line.total,
+            quantita: typeof line.quantity === 'number' ? line.quantity : parseFloat(line.quantity) || 0,
+            prezzo_unitario: typeof line.unitPrice === 'number' ? line.unitPrice : parseFloat(line.unitPrice) || 0,
+            totale: typeof line.total === 'number' ? line.total : parseFloat(line.total) || 0,
           }));
         
         if (righe.length > 0) {
@@ -414,7 +464,6 @@ const ModifyQuote = () => {
         
         toast.success("Preventivo clonato con successo");
       } else {
-        // MODIFICA: aggiorna preventivo esistente
         await aggiornaPreventivo(id, {
           cliente_id,
           oggetto: subject,
@@ -430,15 +479,14 @@ const ModifyQuote = () => {
           modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
         });
 
-        // 4. Salva righe preventivo
         const righe = lines
           .filter(line => line.description.trim())
           .map(line => ({
             descrizione: line.description,
             unita_misura: line.unit,
-            quantita: line.quantity,
-            prezzo_unitario: line.unitPrice,
-            totale: line.total,
+            quantita: typeof line.quantity === 'number' ? line.quantity : parseFloat(line.quantity) || 0,
+            prezzo_unitario: typeof line.unitPrice === 'number' ? line.unitPrice : parseFloat(line.unitPrice) || 0,
+            totale: typeof line.total === 'number' ? line.total : parseFloat(line.total) || 0,
           }));
         
         if (righe.length > 0) {
@@ -471,7 +519,7 @@ const ModifyQuote = () => {
   };
 
   const hasModifications = () => {
-    if (isCloning) return false; // In cloning mode, no need to check modifications
+    if (isCloning) return false;
     
     const currentState = JSON.stringify({
       clientData,
@@ -494,13 +542,11 @@ const ModifyQuote = () => {
   };
 
   const handleViewPdf = async () => {
-    // Se siamo in cloning e non abbiamo salvato, mostra il dialog
     if (isCloning && !isCloningSaved) {
       setShowPdfWarningDialog(true);
       return;
     }
     
-    // Check for unsaved modifications (only if not cloning)
     if (!isCloning && hasModifications()) {
       setShowPdfWarningDialog(true);
       return;
@@ -510,7 +556,6 @@ const ModifyQuote = () => {
   };
 
   const proceedToGeneratePdf = async () => {
-    // Validazione dati minimi
     if (!clientData || !clientData.name.trim()) {
       toast.error("Inserire i dati del cliente prima di generare il PDF");
       return;
@@ -525,7 +570,6 @@ const ModifyQuote = () => {
     }
 
     try {
-      // Ottieni numero e anno del preventivo dal database
       let numero = 1;
       let anno = new Date().getFullYear();
       
@@ -537,13 +581,11 @@ const ModifyQuote = () => {
         }
       }
       
-      // Se siamo in modalità clonazione, usa i nuovi numeri
       if (isCloning && location.state?.cloneNumber && location.state?.cloneYear) {
         numero = location.state.cloneNumber;
         anno = location.state.cloneYear;
       }
       
-      // Prepara i dati per il PDF
       const pdfData = {
         numero,
         anno,
@@ -569,10 +611,10 @@ const ModifyQuote = () => {
           .map(line => ({
             descrizione: line.description,
             unita_misura: line.unit,
-            quantita: line.quantity,
+            quantita: typeof line.quantity === 'number' ? line.quantity : parseFloat(line.quantity) || 0,
             prezzo_unitario: discountEnabled && !showDiscountInTable 
-              ? getEffectiveUnitPrice(line.unitPrice)
-              : line.unitPrice,
+              ? getEffectiveUnitPrice(typeof line.unitPrice === 'number' ? line.unitPrice : parseFloat(line.unitPrice) || 0)
+              : (typeof line.unitPrice === 'number' ? line.unitPrice : parseFloat(line.unitPrice) || 0),
             totale: getEffectiveLineTotal(line),
           })),
         subtotale: calculateSubtotal(),
@@ -584,7 +626,6 @@ const ModifyQuote = () => {
         showDiscountInTable: showDiscountInTable,
       };
 
-      // Naviga passando solo i dati, il PDF sarà generato nella pagina di preview
       navigate("/pdf-preview", {
         state: {
           quoteData: pdfData,
@@ -611,7 +652,6 @@ const ModifyQuote = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-        {/* Header with back button */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -630,9 +670,7 @@ const ModifyQuote = () => {
           </h1>
         </motion.div>
 
-        {/* Company and Client Info */}
         <div className="grid md:grid-cols-2 gap-6 mb-6">
-          {/* Company Info - Left */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -657,7 +695,6 @@ const ModifyQuote = () => {
             </div>
           </motion.div>
 
-          {/* Client Info - Right */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -695,7 +732,6 @@ const ModifyQuote = () => {
           </motion.div>
         </div>
 
-        {/* Work Location - WITH FONT SCALING */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -705,43 +741,6 @@ const ModifyQuote = () => {
           <h2 className="text-xl font-bold mb-4">Ubicazione del Lavoro</h2>
           
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="workAddress" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Via</Label>
-              <Input
-                id="workAddress"
-                value={workAddress}
-                onChange={(e) => setWorkAddress(e.target.value)}
-                placeholder="Via e numero civico"
-                className="bg-white"
-                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="workCity" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Città</Label>
-              <CityCombobox
-                value={workCity}
-                onSelect={(city, province, cap) => {
-                  setWorkCity(city);
-                  setWorkProvince(province);
-                  setWorkZip(cap);
-                }}
-                placeholder="Seleziona città..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="workProvince" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Provincia</Label>
-              <Input
-                id="workProvince"
-                value={workProvince}
-                readOnly
-                placeholder="PR"
-                className="bg-muted cursor-not-allowed"
-                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-              />
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="workZip" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>CAP</Label>
               <Input
@@ -756,7 +755,6 @@ const ModifyQuote = () => {
           </div>
         </motion.div>
 
-        {/* Subject - WITH FONT SCALING */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -776,7 +774,6 @@ const ModifyQuote = () => {
           </div>
         </motion.div>
 
-        {/* Quote Table - WITH FONT SCALING ON ALL TEXT ELEMENTS */}
         <div className="mb-6 relative">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -794,8 +791,8 @@ const ModifyQuote = () => {
                     <th className="text-left p-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Descrizione</th>
                     <th className="text-left p-2 w-24" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>U.M.</th>
                     <th className="text-left p-2 w-32" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Qtà</th>
-                    <th className="text-left p-2 w-40" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Prezzo Unit.</th>
-                    <th className="text-left p-2 w-36" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Totale</th>
+                    <th className="text-left p-2" style={{ fontSize: `${settings.fontSizeQuote}rem`, width: '141px' }}>Prezzo Unit.</th>
+                    <th className="text-left p-2" style={{ fontSize: `${settings.fontSizeQuote}rem`, width: '163px' }}>Totale</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -843,11 +840,14 @@ const ModifyQuote = () => {
                         <Input
                           type="text"
                           id={`qty-${index}`}
-                          value={line.quantity === 0 ? "" : formatNumberInput(line.quantity)}
+                          value={line.quantity === 0 ? "" : (typeof line.quantity === 'number' ? formatItalianNumber(line.quantity) : line.quantity)}
                           onChange={(e) => {
-                            const cleaned = e.target.value.replace(/[^\d,]/g, '');
-                            const num = parseItalianNumber(cleaned);
-                            updateLine(index, "quantity", num);
+                            const value = e.target.value;
+                            if (value === "" || /^[\d.,]*$/.test(value)) {
+                              const newLines = [...lines];
+                              newLines[index] = { ...newLines[index], quantity: value as any };
+                              setLines(newLines);
+                            }
                           }}
                           onBlur={(e) => handleNumberBlur(index, "quantity", e.target.value)}
                           onKeyDown={(e) => handleKeyDown(e, index, "quantity")}
@@ -861,11 +861,14 @@ const ModifyQuote = () => {
                           <Input
                             type="text"
                             id={`price-${index}`}
-                            value={line.unitPrice === 0 ? "" : formatNumberInput(line.unitPrice)}
+                            value={line.unitPrice === 0 ? "" : (typeof line.unitPrice === 'number' ? formatItalianNumber(line.unitPrice) : line.unitPrice)}
                             onChange={(e) => {
-                              const cleaned = e.target.value.replace(/[^\d,]/g, '');
-                              const num = parseItalianNumber(cleaned);
-                              updateLine(index, "unitPrice", num);
+                              const value = e.target.value;
+                              if (value === "" || /^[\d.,]*$/.test(value)) {
+                                const newLines = [...lines];
+                                newLines[index] = { ...newLines[index], unitPrice: value as any };
+                                setLines(newLines);
+                              }
                             }}
                             onBlur={(e) => handleNumberBlur(index, "unitPrice", e.target.value)}
                             onKeyDown={(e) => handleKeyDown(e, index, "unitPrice")}
@@ -878,7 +881,7 @@ const ModifyQuote = () => {
                               <Label className="text-xs text-muted-foreground">Scontato:</Label>
                               <Input
                                 type="text"
-                                value={`€ ${formatCurrency(getEffectiveUnitPrice(line.unitPrice))}`}
+                                value={`€ ${formatCurrency(getEffectiveUnitPrice(typeof line.unitPrice === 'number' ? line.unitPrice : parseFloat(line.unitPrice) || 0))}`}
                                 readOnly
                                 className="bg-muted cursor-default"
                                 style={{ fontSize: `${settings.fontSizeQuote}rem` }}
@@ -889,6 +892,7 @@ const ModifyQuote = () => {
                       </td>
                       <td className="p-2 align-bottom">
                         <Input
+                          ref={el => totalInputRefs.current[index] = el}
                           type="text"
                           value={`€ ${formatCurrency(getEffectiveLineTotal(line))}`}
                           readOnly
@@ -911,41 +915,35 @@ const ModifyQuote = () => {
             </div>
           </motion.div>
           
-          <div className="absolute top-[88px] -right-20 flex flex-col">
-            {lines.map((line, index) => {
-              const rowRef = rowRefs.current[index];
-              const rowHeight = rowRef?.offsetHeight || 80;
-              return (
-                <div 
-                  key={line.id} 
-                  data-button-row 
-                  className="flex gap-1 items-center justify-end" 
-                  style={{ height: `${rowHeight}px`, marginBottom: '0px' }}
+          <div className="absolute top-0 -right-2 flex flex-col">
+            {lines.map((line, index) => (
+              <div 
+                key={line.id} 
+                data-button-index={index}
+                className="flex gap-1 items-center justify-end transition-all"
+              >
+                <Button 
+                  size="icon" 
+                  onClick={() => addLine(index)} 
+                  className="h-8 w-8"
                 >
+                  <Plus className="w-4 h-4" />
+                </Button>
+                {lines.length > 1 && (
                   <Button 
                     size="icon" 
-                    onClick={() => addLine(index)} 
+                    variant="destructive" 
+                    onClick={() => removeLine(index)} 
                     className="h-8 w-8"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" />
                   </Button>
-                  {lines.length > 1 && (
-                    <Button 
-                      size="icon" 
-                      variant="destructive" 
-                      onClick={() => removeLine(index)} 
-                      className="h-8 w-8"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              );
-            })}
+                )}
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Discount Section - WITH FONT SCALING */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -983,7 +981,17 @@ const ModifyQuote = () => {
                         }
                       }
                     }}
-                    onFocus={(e) => e.target.select()}
+                    onFocus={(e) => {
+                      if (discountValue === 0) {
+                        setDiscountValue("");
+                      }
+                      e.target.select();
+                    }}
+                    onBlur={(e) => {
+                      if (e.target.value === "") {
+                        setDiscountValue(0);
+                      }
+                    }}
                     placeholder="Inserisci percentuale"
                     className="bg-white"
                     style={{ fontSize: `${settings.fontSizeQuote}rem` }}
@@ -1019,7 +1027,6 @@ const ModifyQuote = () => {
           )}
         </motion.div>
 
-        {/* Notes Section - WITH FONT SCALING */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1051,7 +1058,6 @@ const ModifyQuote = () => {
           )}
         </motion.div>
 
-        {/* Payment Method - WITH FONT SCALING */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1091,7 +1097,6 @@ const ModifyQuote = () => {
           )}
         </motion.div>
 
-        {/* Total - WITH FONT SCALING */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1111,7 +1116,6 @@ const ModifyQuote = () => {
           </div>
         </motion.div>
 
-        {/* Action Buttons - WITH FONT SCALING */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1149,7 +1153,6 @@ const ModifyQuote = () => {
           )}
         </motion.div>
 
-        {/* Save Confirmation Dialog */}
         <AlertDialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
           <AlertDialogContent className="bg-white">
             <AlertDialogHeader>
@@ -1178,7 +1181,6 @@ const ModifyQuote = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Delete Confirmation Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <AlertDialogContent className="bg-white">
             <AlertDialogHeader>
@@ -1196,7 +1198,6 @@ const ModifyQuote = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* PDF Warning Dialog */}
         <AlertDialog open={showPdfWarningDialog} onOpenChange={setShowPdfWarningDialog}>
           <AlertDialogContent className="bg-white border-2 border-border max-w-lg p-8">
             <AlertDialogHeader>
@@ -1231,4 +1232,40 @@ const ModifyQuote = () => {
   );
 };
 
-export default ModifyQuote;
+export default ModifyQuote;<Label htmlFor="workAddress" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Via</Label>
+              <Input
+                id="workAddress"
+                value={workAddress}
+                onChange={(e) => setWorkAddress(e.target.value)}
+                placeholder="Via e numero civico"
+                className="bg-white"
+                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="workCity" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Città</Label>
+              <CityCombobox
+                value={workCity}
+                onSelect={(city, province, cap) => {
+                  setWorkCity(city);
+                  setWorkProvince(province);
+                  setWorkZip(cap);
+                }}
+                placeholder="Seleziona città..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="workProvince" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Provincia</Label>
+              <Input
+                id="workProvince"
+                value={workProvince}
+                readOnly
+                placeholder="PR"
+                className="bg-muted cursor-not-allowed"
+                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+              />
+            </div>
+
+            <div className="space-y-2">
