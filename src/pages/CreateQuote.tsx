@@ -84,13 +84,25 @@ const CreateQuote = () => {
       return;
     }
 
+    // Rimuove i separatori di migliaia e sostituisce la virgola con il punto per il parsing
     const cleaned = value.replace(/\./g, "").replace(",", ".");
     const num = parseFloat(cleaned);
 
     if (isNaN(num)) {
       updateLine(index, field, 0);
     } else {
+      // Salva il numero formattato correttamente
       updateLine(index, field, num);
+
+      // Forza l'aggiornamento dell'input con la formattazione italiana
+      setTimeout(() => {
+        const input = document.getElementById(
+          field === "quantity" ? `qty-${index}` : `price-${index}`,
+        ) as HTMLInputElement;
+        if (input && num !== 0) {
+          input.value = formatItalianNumber(num);
+        }
+      }, 0);
     }
   };
 
@@ -729,7 +741,13 @@ const CreateQuote = () => {
                         <Input
                           type="text"
                           id={`qty-${index}`}
-                          value={line.quantity === 0 ? "" : line.quantity}
+                          value={
+                            line.quantity === 0
+                              ? ""
+                              : typeof line.quantity === "number"
+                                ? formatItalianNumber(line.quantity)
+                                : line.quantity
+                          }
                           onChange={(e) => {
                             const value = e.target.value;
                             // Permetti solo numeri, virgola e punto durante la digitazione
@@ -752,7 +770,13 @@ const CreateQuote = () => {
                           <Input
                             type="text"
                             id={`price-${index}`}
-                            value={line.unitPrice === 0 ? "" : line.unitPrice}
+                            value={
+                              line.unitPrice === 0
+                                ? ""
+                                : typeof line.unitPrice === "number"
+                                  ? formatItalianNumber(line.unitPrice)
+                                  : line.unitPrice
+                            }
                             onChange={(e) => {
                               const value = e.target.value;
                               // Permetti solo numeri, virgola e punto durante la digitazione
