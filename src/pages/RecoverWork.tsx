@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CachedWorkItem } from "@/components/CachedWorkItem";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { caricaCachePreventivi, eliminaCachePreventivo } from "@/lib/database";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/toast";
 import { format } from "date-fns";
 import {
@@ -29,12 +30,23 @@ interface CachedWork {
   id: string;
   numero?: number;
   anno?: number;
+  cliente_id?: string;
   oggetto?: string;
+  ubicazione_via?: string;
+  ubicazione_citta?: string;
+  ubicazione_provincia?: string;
+  ubicazione_cap?: string;
+  subtotale?: number;
+  sconto_percentuale?: number;
+  sconto_valore?: number;
+  totale?: number;
+  note?: string;
+  modalita_pagamento?: string;
+  stato?: string;
   tipo_operazione: string;
   preventivo_originale_id?: string;
   righe: any[];
   dati_cliente: any;
-  totale?: number;
   aggiornato_il: string;
 }
 
@@ -81,9 +93,60 @@ const RecoverWork = () => {
   const handleDeleteConfirm = async () => {
     if (deleteDialog.workId) {
       try {
+        // Trova e salva i dati del lavoro prima di eliminarlo
+        const workToDelete = cachedWorks.find(w => w.id === deleteDialog.workId);
+        
+        if (!workToDelete) {
+          toast.error("Lavoro non trovato");
+          return;
+        }
+
         await eliminaCachePreventivo(deleteDialog.workId);
         await loadCachedWorks();
-        toast.success("Lavoro interrotto eliminato");
+        
+        toast.success("Lavoro interrotto eliminato", {
+          action: {
+            label: "Annulla",
+            onClick: async () => {
+              try {
+                // Ripristina il lavoro eliminato
+                const { error } = await supabase
+                  .from('preventivi_cache')
+                  .insert({
+                    id: workToDelete.id,
+                    numero: workToDelete.numero,
+                    anno: workToDelete.anno,
+                    cliente_id: workToDelete.cliente_id,
+                    oggetto: workToDelete.oggetto,
+                    ubicazione_via: workToDelete.ubicazione_via,
+                    ubicazione_citta: workToDelete.ubicazione_citta,
+                    ubicazione_provincia: workToDelete.ubicazione_provincia,
+                    ubicazione_cap: workToDelete.ubicazione_cap,
+                    subtotale: workToDelete.subtotale,
+                    sconto_percentuale: workToDelete.sconto_percentuale,
+                    sconto_valore: workToDelete.sconto_valore,
+                    totale: workToDelete.totale,
+                    note: workToDelete.note,
+                    modalita_pagamento: workToDelete.modalita_pagamento,
+                    stato: workToDelete.stato,
+                    tipo_operazione: workToDelete.tipo_operazione,
+                    preventivo_originale_id: workToDelete.preventivo_originale_id,
+                    righe: JSON.stringify(workToDelete.righe),
+                    dati_cliente: JSON.stringify(workToDelete.dati_cliente),
+                  });
+
+                if (error) throw error;
+
+                await loadCachedWorks();
+                toast.success("Lavoro interrotto ripristinato con successo");
+              } catch (error) {
+                console.error("Errore ripristino:", error);
+                toast.error("Errore durante il ripristino");
+              }
+            }
+          }
+        });
+        
         setDeleteDialog({ open: false });
       } catch (error) {
         toast.error("Errore durante l'eliminazione");
