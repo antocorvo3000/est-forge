@@ -45,11 +45,18 @@ const ClientDetails = () => {
       phone: clientPhone,
       email: clientEmail,
     };
-    
+
     const returnTo = location.state?.returnTo || "/create-quote";
-    const quote = location.state?.quote;
-    
-    navigate(returnTo, { state: { clientData, quote } });
+
+    // Preserva TUTTO lo state originale tranne clientData vecchio
+    const { clientData: _, ...restState } = location.state || {};
+
+    navigate(returnTo, {
+      state: {
+        ...restState, // Include fromCache, cacheId, cacheData, isCloning, quote, ecc.
+        clientData, // Sovrascrivi con i nuovi dati cliente
+      },
+    });
   };
 
   return (
@@ -61,12 +68,7 @@ const ClientDetails = () => {
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-4 mb-6"
         >
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/create-quote")}
-            className="rounded-full"
-          >
+          <Button variant="ghost" size="icon" onClick={() => navigate("/create-quote")} className="rounded-full">
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-3xl font-extrabold tracking-tight">Dati Cliente</h1>
@@ -80,7 +82,9 @@ const ClientDetails = () => {
           className="glass rounded-2xl p-6 space-y-4"
         >
           <div className="space-y-2">
-            <Label htmlFor="clientName" style={{ fontSize: `${settings.fontSizeClient}rem` }}>Nome/Ragione Sociale</Label>
+            <Label htmlFor="clientName" style={{ fontSize: `${settings.fontSizeClient}rem` }}>
+              Nome/Ragione Sociale
+            </Label>
             <Input
               id="clientName"
               value={clientName}
@@ -92,7 +96,9 @@ const ClientDetails = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="clientTaxCode" style={{ fontSize: `${settings.fontSizeClient}rem` }}>Codice Fiscale / P.IVA</Label>
+            <Label htmlFor="clientTaxCode" style={{ fontSize: `${settings.fontSizeClient}rem` }}>
+              Codice Fiscale / P.IVA
+            </Label>
             <Input
               id="clientTaxCode"
               value={clientTaxCode}
@@ -104,7 +110,9 @@ const ClientDetails = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="clientAddress" style={{ fontSize: `${settings.fontSizeClient}rem` }}>Via</Label>
+            <Label htmlFor="clientAddress" style={{ fontSize: `${settings.fontSizeClient}rem` }}>
+              Via
+            </Label>
             <Input
               id="clientAddress"
               value={clientAddress}
@@ -116,7 +124,9 @@ const ClientDetails = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="clientCity" style={{ fontSize: `${settings.fontSizeClient}rem` }}>Città</Label>
+            <Label htmlFor="clientCity" style={{ fontSize: `${settings.fontSizeClient}rem` }}>
+              Città
+            </Label>
             <CityCombobox
               value={clientCity}
               onSelect={(city, province, cap) => {
@@ -130,7 +140,9 @@ const ClientDetails = () => {
 
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-2">
-              <Label htmlFor="clientProvince" style={{ fontSize: `${settings.fontSizeClient}rem` }}>Provincia</Label>
+              <Label htmlFor="clientProvince" style={{ fontSize: `${settings.fontSizeClient}rem` }}>
+                Provincia
+              </Label>
               <Input
                 id="clientProvince"
                 value={clientProvince}
@@ -141,7 +153,9 @@ const ClientDetails = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="clientZip" style={{ fontSize: `${settings.fontSizeClient}rem` }}>CAP</Label>
+              <Label htmlFor="clientZip" style={{ fontSize: `${settings.fontSizeClient}rem` }}>
+                CAP
+              </Label>
               <Input
                 id="clientZip"
                 value={clientZip}
@@ -154,7 +168,9 @@ const ClientDetails = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="clientPhone" style={{ fontSize: `${settings.fontSizeClient}rem` }}>Telefono</Label>
+            <Label htmlFor="clientPhone" style={{ fontSize: `${settings.fontSizeClient}rem` }}>
+              Telefono
+            </Label>
             <Input
               id="clientPhone"
               value={clientPhone}
@@ -166,7 +182,9 @@ const ClientDetails = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="clientEmail" style={{ fontSize: `${settings.fontSizeClient}rem` }}>Email</Label>
+            <Label htmlFor="clientEmail" style={{ fontSize: `${settings.fontSizeClient}rem` }}>
+              Email
+            </Label>
             <Input
               id="clientEmail"
               type="email"
