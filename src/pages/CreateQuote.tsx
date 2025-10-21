@@ -252,7 +252,12 @@ const CreateQuote = () => {
     };
 
     calculateQuoteNumber();
-  }, [location.state?.customNumber, location.state?.customYear, settings.customNumberingEnabled, settings.startingQuoteNumber]);
+  }, [
+    location.state?.customNumber,
+    location.state?.customYear,
+    settings.customNumberingEnabled,
+    settings.startingQuoteNumber,
+  ]);
 
   const addLine = (afterIndex: number) => {
     const newLine: QuoteLine = {
@@ -356,14 +361,14 @@ const CreateQuote = () => {
       ubicazione_provincia: workProvince,
       ubicazione_cap: workZip,
       subtotale: calculateSubtotal(),
-      sconto_percentuale: discountEnabled ? (typeof discountValue === 'number' ? discountValue : 0) : 0,
+      sconto_percentuale: discountEnabled ? (typeof discountValue === "number" ? discountValue : 0) : 0,
       sconto_valore: discountEnabled ? calculateDiscount() : 0,
       totale: calculateTotal(),
       note: notesEnabled ? notes : undefined,
       modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
-      stato: 'bozza',
-      tipo_operazione: 'creazione',
-      righe: lines.map(line => ({
+      stato: "bozza",
+      tipo_operazione: "creazione",
+      righe: lines.map((line) => ({
         descrizione: line.description,
         unita_misura: line.unit,
         quantita: line.quantity,
@@ -596,7 +601,17 @@ const CreateQuote = () => {
             <div className="flex items-start justify-between mb-4">
               <h2 className="text-xl font-bold">Dati Cliente</h2>
               <Button
-                onClick={() => navigate("/client-details", { state: { clientData } })}
+                onClick={() =>
+                  navigate("/client-details", {
+                    state: {
+                      clientData,
+                      returnTo: "/create-quote",
+                      // Preserva customNumber e customYear se presenti
+                      customNumber: location.state?.customNumber,
+                      customYear: location.state?.customYear,
+                    },
+                  })
+                }
                 size="sm"
                 className="gap-2"
               >
