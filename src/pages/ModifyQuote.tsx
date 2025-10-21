@@ -27,7 +27,7 @@ import type { ClientData } from "./ClientDetails";
 import { useAutoSave } from "@/hooks/useAutoSave";
 
 const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('it-IT', {
+  return new Intl.NumberFormat("it-IT", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
@@ -68,14 +68,14 @@ const ModifyQuote = () => {
   const totalInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const formatItalianNumber = (value: number): string => {
-    return new Intl.NumberFormat('it-IT', {
+    return new Intl.NumberFormat("it-IT", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value);
   };
 
   const parseItalianNumber = (value: string): number => {
-    const cleaned = value.replace(/\./g, '').replace(',', '.');
+    const cleaned = value.replace(/\./g, "").replace(",", ".");
     const parsed = parseFloat(cleaned);
     return isNaN(parsed) ? 0 : parsed;
   };
@@ -85,17 +85,19 @@ const ModifyQuote = () => {
       updateLine(index, field, 0);
       return;
     }
-    
-    const cleaned = value.replace(/\./g, '').replace(',', '.');
+
+    const cleaned = value.replace(/\./g, "").replace(",", ".");
     const num = parseFloat(cleaned);
-    
+
     if (isNaN(num)) {
       updateLine(index, field, 0);
     } else {
       updateLine(index, field, num);
-      
+
       setTimeout(() => {
-        const input = document.getElementById(field === "quantity" ? `qty-${index}` : `price-${index}`) as HTMLInputElement;
+        const input = document.getElementById(
+          field === "quantity" ? `qty-${index}` : `price-${index}`,
+        ) as HTMLInputElement;
         if (input && num !== 0) {
           input.value = formatItalianNumber(num);
         }
@@ -105,7 +107,7 @@ const ModifyQuote = () => {
 
   const formatNumberInput = (value: number | string): string => {
     if (value === "" || value === null || value === undefined) return "";
-    const num = typeof value === 'string' ? parseFloat(value) : value;
+    const num = typeof value === "string" ? parseFloat(value) : value;
     if (isNaN(num)) return "";
     return formatItalianNumber(num);
   };
@@ -130,7 +132,7 @@ const ModifyQuote = () => {
 
   const [subject, setSubject] = useState("");
   const [lines, setLines] = useState<QuoteLine[]>([
-    { id: "1", description: "", unit: "pz", quantity: 0, unitPrice: 0, total: 0 }
+    { id: "1", description: "", unit: "pz", quantity: 0, unitPrice: 0, total: 0 },
   ]);
 
   const [discountEnabled, setDiscountEnabled] = useState(false);
@@ -153,7 +155,7 @@ const ModifyQuote = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPdfWarningDialog, setShowPdfWarningDialog] = useState(false);
   const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
-  
+
   const [initialData, setInitialData] = useState<string>("");
   const [isCloningSaved, setIsCloningSaved] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -199,8 +201,8 @@ const ModifyQuote = () => {
         lines.forEach((_, index) => {
           const textarea = document.getElementById(`desc-${index}`) as HTMLTextAreaElement;
           if (textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
+            textarea.style.height = "auto";
+            textarea.style.height = textarea.scrollHeight + "px";
           }
         });
       }, 0);
@@ -212,8 +214,8 @@ const ModifyQuote = () => {
       lines.forEach((_, index) => {
         const textarea = document.querySelector(`#desc-${index}`) as HTMLTextAreaElement;
         if (textarea && textarea.value) {
-          textarea.style.height = 'auto';
-          textarea.style.height = textarea.scrollHeight + 'px';
+          textarea.style.height = "auto";
+          textarea.style.height = textarea.scrollHeight + "px";
         }
       });
     }, 200);
@@ -225,17 +227,17 @@ const ModifyQuote = () => {
       lines.forEach((_, index) => {
         const totalInput = totalInputRefs.current[index];
         const buttonContainer = document.querySelector(`[data-button-index="${index}"]`) as HTMLElement;
-        
+
         if (totalInput && buttonContainer) {
           const inputRect = totalInput.getBoundingClientRect();
-          const tableContainer = totalInput.closest('.glass');
-          
+          const tableContainer = totalInput.closest(".glass");
+
           if (tableContainer) {
             const containerRect = tableContainer.getBoundingClientRect();
             const relativeTop = inputRect.top - containerRect.top;
             const inputHeight = inputRect.height;
-            
-            buttonContainer.style.position = 'absolute';
+
+            buttonContainer.style.position = "absolute";
             buttonContainer.style.top = `${relativeTop}px`;
             buttonContainer.style.height = `${inputHeight}px`;
           }
@@ -245,12 +247,12 @@ const ModifyQuote = () => {
 
     updateButtonPositions();
     const timer = setTimeout(updateButtonPositions, 50);
-    
-    window.addEventListener('resize', updateButtonPositions);
-    
+
+    window.addEventListener("resize", updateButtonPositions);
+
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('resize', updateButtonPositions);
+      window.removeEventListener("resize", updateButtonPositions);
     };
   }, [lines]);
 
@@ -263,11 +265,11 @@ const ModifyQuote = () => {
   const loadCacheData = () => {
     try {
       setLoading(true);
-      
+
       // Salva numero e anno dalla cache
       if (cacheData.numero) setQuoteNumber(cacheData.numero);
       if (cacheData.anno) setQuoteYear(cacheData.anno);
-      
+
       if (cacheData.dati_cliente) {
         setClientData(cacheData.dati_cliente);
       }
@@ -284,9 +286,10 @@ const ModifyQuote = () => {
           id: riga.id || `${Date.now()}-${index}`,
           description: riga.descrizione || "",
           unit: riga.unita_misura || "pz",
-          quantity: typeof riga.quantita === 'number' ? riga.quantita : parseFloat(riga.quantita) || 0,
-          unitPrice: typeof riga.prezzo_unitario === 'number' ? riga.prezzo_unitario : parseFloat(riga.prezzo_unitario) || 0,
-          total: typeof riga.totale === 'number' ? riga.totale : parseFloat(riga.totale) || 0,
+          quantity: typeof riga.quantita === "number" ? riga.quantita : parseFloat(riga.quantita) || 0,
+          unitPrice:
+            typeof riga.prezzo_unitario === "number" ? riga.prezzo_unitario : parseFloat(riga.prezzo_unitario) || 0,
+          total: typeof riga.totale === "number" ? riga.totale : parseFloat(riga.totale) || 0,
         }));
         setLines(loadedLines);
       }
@@ -312,12 +315,12 @@ const ModifyQuote = () => {
     try {
       setLoading(true);
       const data = await getQuoteById(id!);
-      
+
       if (data) {
         // Salva numero e anno
         setQuoteNumber(isCloning ? location.state?.cloneNumber : data.numero);
         setQuoteYear(isCloning ? location.state?.cloneYear : data.anno);
-        
+
         if (data.clienti && !location.state?.clientData) {
           setClientData({
             name: data.clienti.nome_ragione_sociale || "",
@@ -379,7 +382,7 @@ const ModifyQuote = () => {
       unit: "pz",
       quantity: 0,
       unitPrice: 0,
-      total: 0
+      total: 0,
     };
     const newLines = [...lines];
     newLines.splice(afterIndex + 1, 0, newLine);
@@ -395,13 +398,19 @@ const ModifyQuote = () => {
   const updateLine = (index: number, field: keyof QuoteLine, value: any) => {
     const newLines = [...lines];
     newLines[index] = { ...newLines[index], [field]: value };
-    
+
     if (field === "quantity" || field === "unitPrice") {
-      const qty = typeof newLines[index].quantity === 'number' ? newLines[index].quantity : parseFloat(newLines[index].quantity) || 0;
-      const price = typeof newLines[index].unitPrice === 'number' ? newLines[index].unitPrice : parseFloat(newLines[index].unitPrice) || 0;
+      const qty =
+        typeof newLines[index].quantity === "number"
+          ? newLines[index].quantity
+          : parseFloat(newLines[index].quantity) || 0;
+      const price =
+        typeof newLines[index].unitPrice === "number"
+          ? newLines[index].unitPrice
+          : parseFloat(newLines[index].unitPrice) || 0;
       newLines[index].total = qty * price;
     }
-    
+
     setLines(newLines);
   };
 
@@ -413,7 +422,7 @@ const ModifyQuote = () => {
   };
 
   const getEffectiveUnitPrice = (unitPrice: number) => {
-    const discount = typeof discountValue === 'number' ? discountValue : 0;
+    const discount = typeof discountValue === "number" ? discountValue : 0;
     if (discountEnabled && !showDiscountInTable && discount > 0) {
       return unitPrice * (1 - discount / 100);
     }
@@ -421,35 +430,39 @@ const ModifyQuote = () => {
   };
 
   const getEffectiveLineTotal = (line: QuoteLine) => {
-    const qty = typeof line.quantity === 'number' ? line.quantity : parseFloat(line.quantity) || 0;
-    const price = typeof line.unitPrice === 'number' ? line.unitPrice : parseFloat(line.unitPrice) || 0;
+    const qty = typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0;
+    const price = typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0;
     return qty * getEffectiveUnitPrice(price);
   };
 
   const calculateSubtotal = () => {
     if (discountEnabled && !showDiscountInTable) {
       return lines.reduce((sum, line) => {
-        const qty = typeof line.quantity === 'number' ? line.quantity : parseFloat(line.quantity) || 0;
-        const price = typeof line.unitPrice === 'number' ? line.unitPrice : parseFloat(line.unitPrice) || 0;
-        return sum + (qty * getEffectiveUnitPrice(price));
+        const qty = typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0;
+        const price = typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0;
+        return sum + qty * getEffectiveUnitPrice(price);
       }, 0);
     }
     return lines.reduce((sum, line) => {
-      const qty = typeof line.quantity === 'number' ? line.quantity : parseFloat(line.quantity) || 0;
-      const price = typeof line.unitPrice === 'number' ? line.unitPrice : parseFloat(line.unitPrice) || 0;
-      return sum + (qty * price);
+      const qty = typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0;
+      const price = typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0;
+      return sum + qty * price;
     }, 0);
   };
 
   const calculateDiscount = () => {
     if (!discountEnabled) return 0;
-    const discount = typeof discountValue === 'number' ? discountValue : 0;
+    const discount = typeof discountValue === "number" ? discountValue : 0;
     if (showDiscountInTable) {
-      return (lines.reduce((sum, line) => {
-        const qty = typeof line.quantity === 'number' ? line.quantity : parseFloat(line.quantity) || 0;
-        const price = typeof line.unitPrice === 'number' ? line.unitPrice : parseFloat(line.unitPrice) || 0;
-        return sum + (qty * price);
-      }, 0) * discount) / 100;
+      return (
+        (lines.reduce((sum, line) => {
+          const qty = typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0;
+          const price = typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0;
+          return sum + qty * price;
+        }, 0) *
+          discount) /
+        100
+      );
     }
     return 0;
   };
@@ -472,15 +485,15 @@ const ModifyQuote = () => {
       ubicazione_provincia: workProvince,
       ubicazione_cap: workZip,
       subtotale: calculateSubtotal(),
-      sconto_percentuale: discountEnabled ? (typeof discountValue === 'number' ? discountValue : 0) : 0,
+      sconto_percentuale: discountEnabled ? (typeof discountValue === "number" ? discountValue : 0) : 0,
       sconto_valore: discountEnabled ? calculateDiscount() : 0,
       totale: calculateTotal(),
       note: notesEnabled ? notes : undefined,
       modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
-      stato: 'bozza',
-      tipo_operazione: isCloning ? 'clonazione' : 'modifica',
+      stato: "bozza",
+      tipo_operazione: isCloning ? "clonazione" : "modifica",
       preventivo_originale_id: id,
-      righe: lines.map(line => ({
+      righe: lines.map((line) => ({
         descrizione: line.description,
         unita_misura: line.unit,
         quantita: line.quantity,
@@ -497,24 +510,24 @@ const ModifyQuote = () => {
   const handleSave = () => {
     const missingClient = !clientData || !clientData.name.trim();
     const missingWork = !workAddress.trim() || !workCity.trim();
-    
+
     if (missingClient || missingWork) {
       setShowSaveDialog(true);
       return;
     }
-    
+
     // Se è un recupero di una modifica, chiedi conferma di sovrascrittura
-    if (fromCache && cacheData?.tipo_operazione === 'modifica' && id) {
+    if (fromCache && cacheData?.tipo_operazione === "modifica" && id) {
       setShowOverwriteDialog(true);
       return;
     }
-    
+
     // Se è un recupero di una clonazione, verifica se esiste già un preventivo con lo stesso numero/anno
-    if (fromCache && cacheData?.tipo_operazione === 'clonazione' && cacheData?.numero && cacheData?.anno) {
+    if (fromCache && cacheData?.tipo_operazione === "clonazione" && cacheData?.numero && cacheData?.anno) {
       // TODO: Verifica se esiste già un preventivo con questo numero/anno
       // Per ora procediamo direttamente
     }
-    
+
     saveQuote();
   };
 
@@ -543,12 +556,15 @@ const ModifyQuote = () => {
       const totale = calculateTotal();
 
       // Determina numero e anno per la clonazione
-      const cloneNumber = location.state?.cloneNumber || (fromCache && cacheData?.tipo_operazione === 'clonazione' ? cacheData.numero : null);
-      const cloneYear = location.state?.cloneYear || (fromCache && cacheData?.tipo_operazione === 'clonazione' ? cacheData.anno : null);
+      const cloneNumber =
+        location.state?.cloneNumber ||
+        (fromCache && cacheData?.tipo_operazione === "clonazione" ? cacheData.numero : null);
+      const cloneYear =
+        location.state?.cloneYear || (fromCache && cacheData?.tipo_operazione === "clonazione" ? cacheData.anno : null);
 
       if (isCloning && cloneNumber && cloneYear) {
         const { salvaPreventivo } = await import("@/lib/database");
-        
+
         const nuovoPreventivo = await salvaPreventivo({
           numero: cloneNumber,
           anno: cloneYear,
@@ -567,15 +583,15 @@ const ModifyQuote = () => {
         });
 
         const righe = lines
-          .filter(line => line.description.trim())
-          .map(line => ({
+          .filter((line) => line.description.trim())
+          .map((line) => ({
             descrizione: line.description,
             unita_misura: line.unit,
-            quantita: typeof line.quantity === 'number' ? line.quantity : parseFloat(line.quantity) || 0,
-            prezzo_unitario: typeof line.unitPrice === 'number' ? line.unitPrice : parseFloat(line.unitPrice) || 0,
-            totale: typeof line.total === 'number' ? line.total : parseFloat(line.total) || 0,
+            quantita: typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0,
+            prezzo_unitario: typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0,
+            totale: typeof line.total === "number" ? line.total : parseFloat(line.total) || 0,
           }));
-        
+
         if (righe.length > 0) {
           await salvaRighePreventivo(nuovoPreventivo.id, righe);
         }
@@ -584,7 +600,7 @@ const ModifyQuote = () => {
         if (autoSaveCacheId || existingCacheId) {
           await eliminaCachePreventivo(autoSaveCacheId || existingCacheId);
         }
-        
+
         setIsSaved(true);
         toast.success("Preventivo clonato con successo");
       } else {
@@ -604,15 +620,15 @@ const ModifyQuote = () => {
         });
 
         const righe = lines
-          .filter(line => line.description.trim())
-          .map(line => ({
+          .filter((line) => line.description.trim())
+          .map((line) => ({
             descrizione: line.description,
             unita_misura: line.unit,
-            quantita: typeof line.quantity === 'number' ? line.quantity : parseFloat(line.quantity) || 0,
-            prezzo_unitario: typeof line.unitPrice === 'number' ? line.unitPrice : parseFloat(line.unitPrice) || 0,
-            totale: typeof line.total === 'number' ? line.total : parseFloat(line.total) || 0,
+            quantita: typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0,
+            prezzo_unitario: typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0,
+            totale: typeof line.total === "number" ? line.total : parseFloat(line.total) || 0,
           }));
-        
+
         if (righe.length > 0) {
           await salvaRighePreventivo(id, righe);
         }
@@ -621,15 +637,15 @@ const ModifyQuote = () => {
         if (autoSaveCacheId || existingCacheId) {
           await eliminaCachePreventivo(autoSaveCacheId || existingCacheId);
         }
-        
+
         if (isCloning) {
           setIsCloningSaved(true);
         }
-        
+
         setIsSaved(true);
         toast.success("Preventivo modificato con successo");
       }
-      
+
       navigate("/");
     } catch (error) {
       console.error("Errore salvataggio:", error);
@@ -650,7 +666,7 @@ const ModifyQuote = () => {
 
   const hasModifications = () => {
     if (isCloning) return false;
-    
+
     const currentState = JSON.stringify({
       clientData,
       workAddress,
@@ -667,7 +683,7 @@ const ModifyQuote = () => {
       paymentMethod,
       customPayment,
     });
-    
+
     return initialData !== currentState;
   };
 
@@ -676,12 +692,12 @@ const ModifyQuote = () => {
       setShowPdfWarningDialog(true);
       return;
     }
-    
+
     if (!isCloning && hasModifications()) {
       setShowPdfWarningDialog(true);
       return;
     }
-    
+
     await proceedToGeneratePdf();
   };
 
@@ -694,7 +710,7 @@ const ModifyQuote = () => {
       toast.error("Inserire l'ubicazione del lavoro prima di generare il PDF");
       return;
     }
-    if (lines.every(line => !line.description.trim())) {
+    if (lines.every((line) => !line.description.trim())) {
       toast.error("Inserire almeno una voce nel preventivo");
       return;
     }
@@ -702,7 +718,7 @@ const ModifyQuote = () => {
     try {
       let numero = 1;
       let anno = new Date().getFullYear();
-      
+
       if (id) {
         const data = await getQuoteById(id);
         if (data) {
@@ -710,16 +726,19 @@ const ModifyQuote = () => {
           anno = data.anno;
         }
       }
-      
+
       // Per le clonazioni, usa il numero e anno dalla cache o da location.state
-      const cloneNumber = location.state?.cloneNumber || (fromCache && cacheData?.tipo_operazione === 'clonazione' ? cacheData.numero : null);
-      const cloneYear = location.state?.cloneYear || (fromCache && cacheData?.tipo_operazione === 'clonazione' ? cacheData.anno : null);
-      
+      const cloneNumber =
+        location.state?.cloneNumber ||
+        (fromCache && cacheData?.tipo_operazione === "clonazione" ? cacheData.numero : null);
+      const cloneYear =
+        location.state?.cloneYear || (fromCache && cacheData?.tipo_operazione === "clonazione" ? cacheData.anno : null);
+
       if (isCloning && cloneNumber && cloneYear) {
         numero = cloneNumber;
         anno = cloneYear;
       }
-      
+
       const pdfData = {
         numero,
         anno,
@@ -741,14 +760,19 @@ const ModifyQuote = () => {
           cap: workZip,
         },
         righe: lines
-          .filter(line => line.description.trim())
-          .map(line => ({
+          .filter((line) => line.description.trim())
+          .map((line) => ({
             descrizione: line.description,
             unita_misura: line.unit,
-            quantita: typeof line.quantity === 'number' ? line.quantity : parseFloat(line.quantity) || 0,
-            prezzo_unitario: discountEnabled && !showDiscountInTable 
-              ? getEffectiveUnitPrice(typeof line.unitPrice === 'number' ? line.unitPrice : parseFloat(line.unitPrice) || 0)
-              : (typeof line.unitPrice === 'number' ? line.unitPrice : parseFloat(line.unitPrice) || 0),
+            quantita: typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0,
+            prezzo_unitario:
+              discountEnabled && !showDiscountInTable
+                ? getEffectiveUnitPrice(
+                    typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0,
+                  )
+                : typeof line.unitPrice === "number"
+                  ? line.unitPrice
+                  : parseFloat(line.unitPrice) || 0,
             totale: getEffectiveLineTotal(line),
           })),
         subtotale: calculateSubtotal(),
@@ -791,34 +815,19 @@ const ModifyQuote = () => {
           animate={{ opacity: 1, y: 0 }}
           className="glass rounded-2xl p-3 sm:p-4 flex items-center gap-3 mb-6"
         >
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/")}
-            className="h-10 w-10"
-          >
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="h-10 w-10">
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-3xl font-extrabold tracking-tight">
-            {pageTitle}
-          </h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">{pageTitle}</h1>
         </motion.div>
 
         <div className="grid md:grid-cols-2 gap-6 mb-6">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="glass rounded-2xl p-6"
-          >
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="glass rounded-2xl p-6">
             <h2 className="text-xl font-bold mb-4">Dati Azienda</h2>
             <div className="space-y-2 text-sm">
               {settings.logoPath && (
                 <div className="flex justify-center mb-3">
-                  <img
-                    src={settings.logoPath}
-                    alt="Logo azienda"
-                    className="max-h-24 w-auto object-contain"
-                  />
+                  <img src={settings.logoPath} alt="Logo azienda" className="max-h-24 w-auto object-contain" />
                 </div>
               )}
               <div className="font-semibold text-lg">{settings.name}</div>
@@ -837,7 +846,20 @@ const ModifyQuote = () => {
             <div className="flex items-start justify-between mb-4">
               <h2 className="text-xl font-bold">Dati Cliente</h2>
               <Button
-                onClick={() => navigate("/client-details", { state: { clientData, returnTo: `/modify-quote/${id}`, quote: quoteData } })}
+                onClick={() =>
+                  navigate("/client-details", {
+                    state: {
+                      clientData,
+                      returnTo: `/modify-quote/${id}`,
+                      quote: quoteData,
+                      // PRESERVA tutti gli state necessari per il recupero
+                      fromCache,
+                      cacheId: existingCacheId,
+                      cacheData,
+                      isCloning,
+                    },
+                  })
+                }
                 size="sm"
                 className="gap-2"
               >
@@ -859,9 +881,7 @@ const ModifyQuote = () => {
                 {clientData.email && <div>Email: {clientData.email}</div>}
               </div>
             ) : (
-              <div className="text-muted-foreground text-sm">
-                Nessun dato cliente inserito
-              </div>
+              <div className="text-muted-foreground text-sm">Nessun dato cliente inserito</div>
             )}
           </motion.div>
         </div>
@@ -941,7 +961,9 @@ const ModifyQuote = () => {
           className="glass rounded-2xl p-6 mb-6"
         >
           <div className="space-y-2">
-            <Label htmlFor="subject" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Oggetto</Label>
+            <Label htmlFor="subject" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+              Oggetto
+            </Label>
             <Input
               id="subject"
               value={subject}
@@ -961,23 +983,44 @@ const ModifyQuote = () => {
             className="glass rounded-2xl p-6"
           >
             <h2 className="text-xl font-bold mb-4">Preventivo</h2>
-            
+
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left p-2 w-8" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>#</th>
-                    <th className="text-left p-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Descrizione</th>
-                    <th className="text-left p-2 w-24" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>U.M.</th>
-                    <th className="text-left p-2 w-32" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Qtà</th>
-                    <th className="text-left p-2" style={{ fontSize: `${settings.fontSizeQuote}rem`, width: '141px' }}>Prezzo Unit.</th>
-                    <th className="text-left p-2" style={{ fontSize: `${settings.fontSizeQuote}rem`, width: '163px' }}>Totale</th>
+                    <th className="text-left p-2 w-8" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                      #
+                    </th>
+                    <th className="text-left p-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                      Descrizione
+                    </th>
+                    <th className="text-left p-2 w-24" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                      U.M.
+                    </th>
+                    <th className="text-left p-2 w-32" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                      Qtà
+                    </th>
+                    <th className="text-left p-2" style={{ fontSize: `${settings.fontSizeQuote}rem`, width: "141px" }}>
+                      Prezzo Unit.
+                    </th>
+                    <th className="text-left p-2" style={{ fontSize: `${settings.fontSizeQuote}rem`, width: "163px" }}>
+                      Totale
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {lines.map((line, index) => (
-                    <tr key={line.id} ref={el => rowRefs.current[index] = el} className="border-b hover:bg-accent/20 transition-colors">
-                      <td className="p-2 text-muted-foreground align-bottom" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>{index + 1}</td>
+                    <tr
+                      key={line.id}
+                      ref={(el) => (rowRefs.current[index] = el)}
+                      className="border-b hover:bg-accent/20 transition-colors"
+                    >
+                      <td
+                        className="p-2 text-muted-foreground align-bottom"
+                        style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                      >
+                        {index + 1}
+                      </td>
                       <td className="p-2 align-top">
                         <Textarea
                           id={`desc-${index}`}
@@ -988,24 +1031,24 @@ const ModifyQuote = () => {
                           rows={1}
                           style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                           onInput={(e) => {
-                            e.currentTarget.style.height = 'auto';
-                            e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
+                            e.currentTarget.style.height = "auto";
+                            e.currentTarget.style.height = e.currentTarget.scrollHeight + "px";
                           }}
                         />
                       </td>
                       <td className="p-2 align-bottom">
-                        <Select
-                          value={line.unit}
-                          onValueChange={(value) => updateLine(index, "unit", value)}
-                        >
-                          <SelectTrigger className="bg-white text-left w-24" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                        <Select value={line.unit} onValueChange={(value) => updateLine(index, "unit", value)}>
+                          <SelectTrigger
+                            className="bg-white text-left w-24"
+                            style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                          >
                             <span>{line.unit}</span>
                           </SelectTrigger>
                           <SelectContent className="bg-white z-50">
                             {UNITS.map((unit) => (
-                              <SelectItem 
-                                key={unit.value} 
-                                value={unit.value} 
+                              <SelectItem
+                                key={unit.value}
+                                value={unit.value}
                                 className="text-left justify-start cursor-pointer"
                                 style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                               >
@@ -1019,7 +1062,13 @@ const ModifyQuote = () => {
                         <Input
                           type="text"
                           id={`qty-${index}`}
-                          value={line.quantity === 0 ? "" : (typeof line.quantity === 'number' ? formatItalianNumber(line.quantity) : line.quantity)}
+                          value={
+                            line.quantity === 0
+                              ? ""
+                              : typeof line.quantity === "number"
+                                ? formatItalianNumber(line.quantity)
+                                : line.quantity
+                          }
                           onChange={(e) => {
                             const value = e.target.value;
                             if (value === "" || /^[\d.,]*$/.test(value)) {
@@ -1040,7 +1089,13 @@ const ModifyQuote = () => {
                           <Input
                             type="text"
                             id={`price-${index}`}
-                            value={line.unitPrice === 0 ? "" : (typeof line.unitPrice === 'number' ? formatItalianNumber(line.unitPrice) : line.unitPrice)}
+                            value={
+                              line.unitPrice === 0
+                                ? ""
+                                : typeof line.unitPrice === "number"
+                                  ? formatItalianNumber(line.unitPrice)
+                                  : line.unitPrice
+                            }
                             onChange={(e) => {
                               const value = e.target.value;
                               if (value === "" || /^[\d.,]*$/.test(value)) {
@@ -1055,23 +1110,26 @@ const ModifyQuote = () => {
                             className="bg-white"
                             style={{ fontSize: `${settings.fontSizeQuote}rem` }}
                           />
-                          {discountEnabled && !showDiscountInTable && typeof discountValue === 'number' && discountValue > 0 && (
-                            <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">Scontato:</Label>
-                              <Input
-                                type="text"
-                                value={`€ ${formatCurrency(getEffectiveUnitPrice(typeof line.unitPrice === 'number' ? line.unitPrice : parseFloat(line.unitPrice) || 0))}`}
-                                readOnly
-                                className="bg-muted cursor-default"
-                                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-                              />
-                            </div>
-                          )}
+                          {discountEnabled &&
+                            !showDiscountInTable &&
+                            typeof discountValue === "number" &&
+                            discountValue > 0 && (
+                              <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">Scontato:</Label>
+                                <Input
+                                  type="text"
+                                  value={`€ ${formatCurrency(getEffectiveUnitPrice(typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0))}`}
+                                  readOnly
+                                  className="bg-muted cursor-default"
+                                  style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                                />
+                              </div>
+                            )}
                         </div>
                       </td>
                       <td className="p-2 align-bottom">
                         <Input
-                          ref={el => totalInputRefs.current[index] = el}
+                          ref={(el) => (totalInputRefs.current[index] = el)}
                           type="text"
                           value={`€ ${formatCurrency(getEffectiveLineTotal(line))}`}
                           readOnly
@@ -1093,28 +1151,19 @@ const ModifyQuote = () => {
               </div>
             </div>
           </motion.div>
-          
+
           <div className="absolute top-0 -right-2 flex flex-col">
             {lines.map((line, index) => (
-              <div 
-                key={line.id} 
+              <div
+                key={line.id}
                 data-button-index={index}
                 className="flex gap-1 items-center justify-end transition-all"
               >
-                <Button 
-                  size="icon" 
-                  onClick={() => addLine(index)} 
-                  className="h-8 w-8"
-                >
+                <Button size="icon" onClick={() => addLine(index)} className="h-8 w-8">
                   <Plus className="w-4 h-4" />
                 </Button>
                 {lines.length > 1 && (
-                  <Button 
-                    size="icon" 
-                    variant="destructive" 
-                    onClick={() => removeLine(index)} 
-                    className="h-8 w-8"
-                  >
+                  <Button size="icon" variant="destructive" onClick={() => removeLine(index)} className="h-8 w-8">
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 )}
@@ -1135,7 +1184,11 @@ const ModifyQuote = () => {
               checked={discountEnabled}
               onCheckedChange={(checked) => setDiscountEnabled(checked as boolean)}
             />
-            <Label htmlFor="discountEnabled" className="cursor-pointer" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+            <Label
+              htmlFor="discountEnabled"
+              className="cursor-pointer"
+              style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+            >
               Applica Sconto
             </Label>
           </div>
@@ -1144,7 +1197,9 @@ const ModifyQuote = () => {
             <div className="flex gap-6 pl-6">
               <div className="space-y-4 flex-shrink-0">
                 <div className="space-y-2 max-w-xs">
-                  <Label htmlFor="discountValue" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Valore Sconto (%)</Label>
+                  <Label htmlFor="discountValue" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                    Valore Sconto (%)
+                  </Label>
                   <Input
                     id="discountValue"
                     type="text"
@@ -1154,7 +1209,7 @@ const ModifyQuote = () => {
                       if (value === "") {
                         setDiscountValue("");
                       } else {
-                        const num = parseFloat(value.replace(',', '.'));
+                        const num = parseFloat(value.replace(",", "."));
                         if (!isNaN(num) && num >= 0 && num <= 100) {
                           setDiscountValue(num);
                         }
@@ -1183,22 +1238,33 @@ const ModifyQuote = () => {
                     checked={showDiscountInTable}
                     onCheckedChange={(checked) => setShowDiscountInTable(checked as boolean)}
                   />
-                  <Label htmlFor="showDiscountInTable" className="cursor-pointer" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                  <Label
+                    htmlFor="showDiscountInTable"
+                    className="cursor-pointer"
+                    style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                  >
                     Mostra sconto in tabella
                   </Label>
                 </div>
               </div>
 
               <div className="flex-1">
-                <div className="text-sm leading-relaxed text-muted-foreground" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                <div
+                  className="text-sm leading-relaxed text-muted-foreground"
+                  style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+                >
                   <p className="mb-2 font-semibold">Come funziona lo sconto:</p>
                   <p className="mb-3">
-                    <span className="font-medium">Se NON selezioni "Mostra sconto in tabella":</span><br />
-                    Lo sconto verrà spalmato su tutti i prezzi unitari del preventivo. I prezzi verranno automaticamente ridotti della percentuale indicata.
+                    <span className="font-medium">Se NON selezioni "Mostra sconto in tabella":</span>
+                    <br />
+                    Lo sconto verrà spalmato su tutti i prezzi unitari del preventivo. I prezzi verranno automaticamente
+                    ridotti della percentuale indicata.
                   </p>
                   <p>
-                    <span className="font-medium">Se SELEZIONI "Mostra sconto in tabella":</span><br />
-                    Alla generazione del PDF verrà creata una riga dedicata che mostra lo sconto applicato e il totale dello sconto.
+                    <span className="font-medium">Se SELEZIONI "Mostra sconto in tabella":</span>
+                    <br />
+                    Alla generazione del PDF verrà creata una riga dedicata che mostra lo sconto applicato e il totale
+                    dello sconto.
                   </p>
                 </div>
               </div>
@@ -1218,7 +1284,11 @@ const ModifyQuote = () => {
               checked={notesEnabled}
               onCheckedChange={(checked) => setNotesEnabled(checked as boolean)}
             />
-            <Label htmlFor="notesEnabled" className="cursor-pointer" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+            <Label
+              htmlFor="notesEnabled"
+              className="cursor-pointer"
+              style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+            >
               Aggiungi Note
             </Label>
           </div>
@@ -1244,25 +1314,41 @@ const ModifyQuote = () => {
           className="glass rounded-2xl p-6 space-y-4 mb-6"
         >
           <div className="space-y-2">
-            <Label htmlFor="paymentMethod" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Modalità di Pagamento</Label>
+            <Label htmlFor="paymentMethod" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+              Modalità di Pagamento
+            </Label>
             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
               <SelectTrigger className="bg-white" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-white">
-                <SelectItem value="da-concordare" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Da concordare</SelectItem>
-                <SelectItem value="bonifico" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Bonifico bancario</SelectItem>
-                <SelectItem value="contanti" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Contanti</SelectItem>
-                <SelectItem value="assegno" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Assegno</SelectItem>
-                <SelectItem value="carta" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Carta di credito</SelectItem>
-                <SelectItem value="personalizzato" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Personalizzato</SelectItem>
+                <SelectItem value="da-concordare" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                  Da concordare
+                </SelectItem>
+                <SelectItem value="bonifico" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                  Bonifico bancario
+                </SelectItem>
+                <SelectItem value="contanti" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                  Contanti
+                </SelectItem>
+                <SelectItem value="assegno" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                  Assegno
+                </SelectItem>
+                <SelectItem value="carta" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                  Carta di credito
+                </SelectItem>
+                <SelectItem value="personalizzato" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                  Personalizzato
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {paymentMethod === "personalizzato" && (
             <div className="space-y-2">
-              <Label htmlFor="customPayment" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Modalità Personalizzata</Label>
+              <Label htmlFor="customPayment" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+                Modalità Personalizzata
+              </Label>
               <Textarea
                 id="customPayment"
                 value={customPayment}
@@ -1283,10 +1369,10 @@ const ModifyQuote = () => {
           className="glass rounded-2xl p-6 mb-6"
         >
           <div className="text-center">
-            <div className="text-lg text-muted-foreground mb-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>Totale</div>
-            <div className="text-4xl font-extrabold">
-              € {formatCurrency(calculateTotal())}
+            <div className="text-lg text-muted-foreground mb-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+              Totale
             </div>
+            <div className="text-4xl font-extrabold">€ {formatCurrency(calculateTotal())}</div>
             {discountEnabled && (
               <div className="text-sm text-muted-foreground mt-2" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
                 Sconto applicato: € {formatCurrency(calculateDiscount())}
@@ -1338,13 +1424,20 @@ const ModifyQuote = () => {
               <AlertDialogTitle className="text-2xl font-extrabold">Dati incompleti</AlertDialogTitle>
               <AlertDialogDescription className="text-lg font-semibold text-foreground">
                 {!clientData?.name && !workAddress && (
-                  <>Non hai inserito <span className="font-extrabold">i dati del cliente</span> né <span className="font-extrabold">l'ubicazione del lavoro</span>.</>
+                  <>
+                    Non hai inserito <span className="font-extrabold">i dati del cliente</span> né{" "}
+                    <span className="font-extrabold">l'ubicazione del lavoro</span>.
+                  </>
                 )}
                 {!clientData?.name && workAddress && (
-                  <>Non hai inserito <span className="font-extrabold">i dati del cliente</span>.</>
+                  <>
+                    Non hai inserito <span className="font-extrabold">i dati del cliente</span>.
+                  </>
                 )}
                 {clientData?.name && !workAddress && (
-                  <>Non hai inserito <span className="font-extrabold">l'ubicazione del lavoro</span>.</>
+                  <>
+                    Non hai inserito <span className="font-extrabold">l'ubicazione del lavoro</span>.
+                  </>
                 )}
                 <div className="mt-3 text-lg">
                   Vuoi salvare comunque come <span className="font-extrabold">bozza</span>?
@@ -1384,17 +1477,14 @@ const ModifyQuote = () => {
                 {isCloning ? "Preventivo clonato non salvato" : "Modifiche non salvate"}
               </AlertDialogTitle>
               <AlertDialogDescription className="text-lg font-semibold text-black mt-4">
-                {isCloning 
+                {isCloning
                   ? "Il preventivo clonato non è ancora stato salvato. Vuoi salvarlo prima di generare il PDF?"
-                  : "Hai effettuato modifiche al preventivo. Vuoi salvarle prima di generare il PDF?"
-                }
+                  : "Hai effettuato modifiche al preventivo. Vuoi salvarle prima di generare il PDF?"}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="mt-6">
-              <AlertDialogCancel className="text-lg font-bold px-8 py-6">
-                Annulla
-              </AlertDialogCancel>
-              <AlertDialogAction 
+              <AlertDialogCancel className="text-lg font-bold px-8 py-6">Annulla</AlertDialogCancel>
+              <AlertDialogAction
                 onClick={() => {
                   setShowPdfWarningDialog(false);
                   handleSave();
@@ -1414,14 +1504,13 @@ const ModifyQuote = () => {
                 Conferma sovrascrittura
               </AlertDialogTitle>
               <AlertDialogDescription className="text-lg font-semibold text-black mt-4">
-                Stai per sovrascrivere il preventivo esistente {quoteNumber?.toString().padStart(2, '0')}-{quoteYear}. Questa azione aggiornerà il preventivo originale con le modifiche recuperate. Vuoi procedere?
+                Stai per sovrascrivere il preventivo esistente {quoteNumber?.toString().padStart(2, "0")}-{quoteYear}.
+                Questa azione aggiornerà il preventivo originale con le modifiche recuperate. Vuoi procedere?
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="mt-6 gap-3">
-              <AlertDialogCancel className="text-lg font-bold px-8 py-6">
-                Annulla
-              </AlertDialogCancel>
-              <AlertDialogAction 
+              <AlertDialogCancel className="text-lg font-bold px-8 py-6">Annulla</AlertDialogCancel>
+              <AlertDialogAction
                 onClick={() => {
                   setShowOverwriteDialog(false);
                   saveQuote();
