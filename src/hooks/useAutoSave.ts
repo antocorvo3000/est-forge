@@ -44,6 +44,14 @@ export function useAutoSave({
   const lastSavedData = useRef<string>("");
   const hasInitialSave = useRef(false);
 
+  // Aggiorna il cacheId se viene passato dall'esterno
+  useEffect(() => {
+    if (cacheId && cacheId !== currentCacheIdRef.current) {
+      currentCacheIdRef.current = cacheId;
+      console.log("CacheId aggiornato dall'esterno:", cacheId);
+    }
+  }, [cacheId]);
+
   const save = useCallback(async () => {
     if (!enabled) return;
 
@@ -59,6 +67,8 @@ export function useAutoSave({
         return;
       }
 
+      console.log("Auto-save: usando cacheId:", currentCacheIdRef.current);
+
       const id = await salvaCachePreventivo({
         ...data,
         id: currentCacheIdRef.current,
@@ -66,6 +76,7 @@ export function useAutoSave({
 
       if (!currentCacheIdRef.current) {
         currentCacheIdRef.current = id;
+        console.log("Auto-save: nuovo cacheId assegnato:", id);
       }
 
       lastSavedData.current = currentDataString;

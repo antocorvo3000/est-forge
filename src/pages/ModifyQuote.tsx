@@ -122,7 +122,14 @@ const ModifyQuote = () => {
   const isCloning = location.state?.isCloning || false;
   const fromCache = location.state?.fromCache || false;
   const cacheData = location.state?.cacheData;
-  const existingCacheId = location.state?.cacheId;
+  const existingCacheId = location.state?.cacheId || (fromCache && cacheData?.id ? cacheData.id : undefined);
+
+  // Log per debug
+  useEffect(() => {
+    if (fromCache && existingCacheId) {
+      console.log("ModifyQuote: recuperando da cache con ID:", existingCacheId);
+    }
+  }, [fromCache, existingCacheId]);
 
   const [clientData, setClientData] = useState<ClientData | null>(null);
   const [pageTitle, setPageTitle] = useState("Modifica Preventivo");
@@ -326,7 +333,7 @@ const ModifyQuote = () => {
 
       setPaymentMethod(cacheData.modalita_pagamento || "da-concordare");
 
-      console.log("Dati cache caricati, numero e anno pronti per auto-save");
+      console.log("Dati cache caricati, cacheId esistente:", existingCacheId);
     } catch (error) {
       console.error("Errore caricamento cache:", error);
       toast.error("Errore nel caricamento dei dati dalla cache");
