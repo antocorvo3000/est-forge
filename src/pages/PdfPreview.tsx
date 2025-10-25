@@ -7,12 +7,11 @@ import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
 
-// PDF viewer
 import { Worker, Viewer } from "@react-pdf-viewer/core";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/zoom/lib/styles/index.css";
-import "./pdf-transparent.css"; // solo per BG trasparente (niente height!)
+import "./pdf-transparent.css";
 
 interface QuoteData {
   numero: number;
@@ -58,7 +57,6 @@ const PdfPreview = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // zoom plugin (per i pulsanti esterni)
   const zoomPluginInstance = zoomPlugin();
   const { zoomTo } = zoomPluginInstance;
 
@@ -81,14 +79,9 @@ const PdfPreview = () => {
     (async () => {
       try {
         const pdf = await generateQuotePDF(data, companySettings);
-        // (se disponibile) ricava n. pagine
-        try {
-          const n = pdf.getNumberOfPages?.();
-          if (typeof n === "number") setTotalPages(n);
-        } catch {}
-
         const blob = pdf.output("blob");
-        const url = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
+        const pdfBlob = new Blob([blob], { type: "application/pdf" });
+        const url = URL.createObjectURL(pdfBlob);
         setPdfBlobUrl(url);
         setLoading(false);
       } catch (err) {
@@ -125,7 +118,6 @@ const PdfPreview = () => {
     toast.success("Invio alla stampante...");
   };
 
-  // zoom esterno
   const handleZoomIn = () => zoomTo((s) => s + 0.25);
   const handleZoomOut = () => zoomTo((s) => Math.max(0.5, s - 0.25));
 
@@ -161,36 +153,31 @@ const PdfPreview = () => {
         </motion.div>
 
         <div className="flex gap-6">
-          {/* ⬇️ Widget PDF: IDENTICO a prima, con scroll interno e altezza fissa */}
+          {/* 📄 Widget viewer — altezza fissa, scroll interno */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex-1 glass rounded-2xl p-4 overflow-hidden flex flex-col min-h-0" // <- min-h-0 per consentire lo scroll del figlio
+            className="flex-1 glass rounded-2xl p-4 overflow-hidden flex flex-col"
             style={{ maxHeight: "calc(100vh - 180px)" }}
           >
-            {/* Contenitore scrollabile (interno al widget) */}
             <div className="flex justify-center overflow-y-auto scrollbar-thin pr-2 flex-1 min-h-0">
               {pdfBlobUrl ? (
-                <div className="w-full flex flex-col items-center">
-                  <Worker workerUrl={workerUrl}>
-                    <Viewer
-                      fileUrl={pdfBlobUrl}
-                      plugins={[zoomPluginInstance]}
-                      // Mostra la PRIMA PAGINA intera nel widget
-                      defaultScale="page-fit"
-                      // aggiorna tot pagine/corrente
-                      onDocumentLoad={(e) => setTotalPages(e.doc.numPages)}
-                      onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
-                    />
-                  </Worker>
-                </div>
+                <Worker workerUrl={workerUrl}>
+                  <Viewer
+                    fileUrl={pdfBlobUrl}
+                    plugins={[zoomPluginInstance]}
+                    defaultScale="page-fit"
+                    onDocumentLoad={(e) => setTotalPages(e.doc.numPages)}
+                    onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
+                  />
+                </Worker>
               ) : (
                 <div className="text-gray-500 text-sm">⚠️ PDF non disponibile</div>
               )}
             </div>
           </motion.div>
 
-          {/* Pannello comandi (come prima) */}
+          {/* 🎛 Control panel */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -221,7 +208,7 @@ const PdfPreview = () => {
               title="Zoom In"
             >
               <ZoomIn className="w-5 h-5" />
-              <span className="text-center leading-tight whitespace-normal">Zoom avanti</span>
+              <span>Zoom avanti</span>
             </Button>
 
             <Button
@@ -231,7 +218,7 @@ const PdfPreview = () => {
               title="Zoom Out"
             >
               <ZoomOut className="w-5 h-5" />
-              <span className="text-center leading-tight whitespace-normal">Zoom indietro</span>
+              <span>Zoom indietro</span>
             </Button>
 
             <Button
@@ -244,7 +231,6 @@ const PdfPreview = () => {
               </span>
             </Button>
 
-            {/* (Opzionale) Navigazione frecce disabilitata graficamente, lasciata per simmetria UI */}
             <Button
               variant="outline"
               className="h-14 w-full flex items-center justify-center text-xs cursor-default pointer-events-none"

@@ -1,4 +1,4 @@
-/* Rende trasparente SOLO il background del viewer, senza toccare le altezze */
+/* Sfondo trasparente */
 .rpv-core__viewer,
 .rpv-core__inner-pages,
 .rpv-core__page-layer,
@@ -7,12 +7,10 @@
   box-shadow: none !important;
 }
 
-/* Centro pagina */
 .rpv-core__page-layer {
   margin: 0 auto !important;
 }
 
-/* Niente bordi/padding extra del viewer */
 .rpv-core__viewer {
   border: none !important;
   padding: 0 !important;
