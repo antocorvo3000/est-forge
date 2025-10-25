@@ -1,21 +1,19 @@
-/* Sfondo pagina PDF trasparente */
-.rpv-core__inner-page {
-  background-color: transparent !important;
-}
-
-/* Sfondo viewer trasparente */
-.rpv-core__viewer {
+/* Sfondo PDF trasparente */
+.rpv-core__inner-page,
+.rpv-core__viewer,
+.rpv-core__canvas-layer,
+.rpv-core__page-layer {
   background-color: transparent !important;
   box-shadow: none !important;
 }
 
-/* Nessun bordo bianco */
+/* Mantiene centrato il contenuto */
 .rpv-core__page-layer {
-  margin: 0 auto;
-  background-color: transparent !important;
+  margin: 0 auto !important;
 }
 
-/* Rimuove il padding bianco attorno */
-.rpv-core__canvas-layer {
-  background-color: transparent !important;
+/* Elimina bordo bianco */
+.rpv-core__viewer {
+  padding: 0 !important;
+  border: none !important;
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Download, Printer, ZoomIn, ZoomOut } from "lucide-react";
@@ -7,12 +7,11 @@ import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
 
-// 📄 PDF Viewer
 import { Worker, Viewer } from "@react-pdf-viewer/core";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/zoom/lib/styles/index.css";
-import "./pdf-transparent.css"; // 👈 CSS per sfondo trasparente
+import "./pdf-transparent.css";
 
 interface QuoteData {
   numero: number;
@@ -60,9 +59,12 @@ const PdfPreview = () => {
   const [returnPath, setReturnPath] = useState<string>("/");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [fitToPage, setFitToPage] = useState(true);
 
   const zoomPluginInstance = zoomPlugin();
   const { zoomTo } = zoomPluginInstance;
+
+  const viewerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const data = location.state?.quoteData as QuoteData;
@@ -83,11 +85,6 @@ const PdfPreview = () => {
     const initPdf = async () => {
       try {
         const pdf = await generateQuotePDF(data, companySettings);
-        try {
-          const n = pdf.getNumberOfPages?.();
-          if (typeof n === "number") setTotalPages(n);
-        } catch {}
-
         const blob = pdf.output("blob");
         const pdfBlob = new Blob([blob], { type: "application/pdf" });
         const url = URL.createObjectURL(pdfBlob);
@@ -102,7 +99,6 @@ const PdfPreview = () => {
     };
 
     initPdf();
-
     return () => {
       if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
     };
@@ -133,8 +129,16 @@ const PdfPreview = () => {
     toast.success("Invio alla stampante...");
   };
 
-  const handleZoomIn = () => zoomTo((scale) => scale + 0.25);
-  const handleZoomOut = () => zoomTo((scale) => Math.max(scale - 0.25, 0.5));
+  const handleZoomIn = () => {
+    setFitToPage(false);
+    zoomTo((scale) => scale + 0.25);
+  };
+
+  const handleZoomOut = () => {
+    setFitToPage(false);
+    zoomTo((scale) => Math.max(scale - 0.25, 0.5));
+  };
+
   const handleGoBack = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -168,20 +172,25 @@ const PdfPreview = () => {
           <h1 className="text-3xl font-extrabold tracking-tight">Genera PDF Preventivo</h1>
         </motion.div>
 
+        {/* Main */}
         <div className="flex gap-6">
-          {/* PDF Viewer */}
+          {/* PDF Viewer Widget */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex-1 glass rounded-2xl p-4 flex flex-col items-center justify-start"
-            style={{ overflow: "hidden" }} // 👈 rimuove scroll dal contenitore
+            style={{
+              maxHeight: "calc(100vh - 180px)",
+              overflow: "hidden",
+            }}
           >
             {pdfBlobUrl ? (
-              <div className="w-full overflow-y-auto flex justify-center">
+              <div ref={viewerRef} className="w-full flex justify-center overflow-y-auto scrollbar-thin">
                 <Worker workerUrl={workerUrl}>
                   <Viewer
                     fileUrl={pdfBlobUrl}
                     plugins={[zoomPluginInstance]}
+                    defaultScale={fitToPage ? "page-fit" : undefined}
                     onDocumentLoad={(e) => setTotalPages(e.doc.numPages)}
                     onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
                   />
