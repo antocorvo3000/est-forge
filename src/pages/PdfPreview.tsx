@@ -7,7 +7,7 @@ import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
 
-import { Worker, Viewer } from "@react-pdf-viewer/core";
+import { Worker, Viewer, SpecialZoomLevel } from "@react-pdf-viewer/core";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/zoom/lib/styles/index.css";
@@ -56,6 +56,7 @@ const PdfPreview = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [scale, setScale] = useState(1);
 
   const zoomPluginInstance = zoomPlugin();
   const { zoomTo } = zoomPluginInstance;
@@ -118,8 +119,17 @@ const PdfPreview = () => {
     toast.success("Invio alla stampante...");
   };
 
-  const handleZoomIn = () => zoomTo((s) => s + 0.25);
-  const handleZoomOut = () => zoomTo((s) => Math.max(0.5, s - 0.25));
+  const handleZoomIn = () => {
+    const newScale = scale + 0.25;
+    setScale(newScale);
+    zoomTo(newScale);
+  };
+
+  const handleZoomOut = () => {
+    const newScale = Math.max(0.5, scale - 0.25);
+    setScale(newScale);
+    zoomTo(newScale);
+  };
 
   const handleGoBack = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -138,13 +148,13 @@ const PdfPreview = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
+    <div className="min-h-screen bg-background flex flex-col">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 w-full flex-1 flex flex-col">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass rounded-2xl p-3 sm:p-4 flex items-center gap-3 mb-6"
+          className="glass rounded-2xl p-3 sm:p-4 flex items-center gap-3 mb-6 flex-shrink-0"
         >
           <Button variant="ghost" size="icon" onClick={handleGoBack} className="h-10 w-10">
             <ArrowLeft className="w-5 h-5" />
@@ -152,27 +162,28 @@ const PdfPreview = () => {
           <h1 className="text-3xl font-extrabold tracking-tight">Genera PDF Preventivo</h1>
         </motion.div>
 
-        <div className="flex gap-6">
-          {/* 📄 Widget viewer — altezza fissa, scroll interno */}
+        <div className="flex gap-6 flex-1 min-h-0">
+          {/* 📄 Widget viewer */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex-1 glass rounded-2xl p-4 overflow-hidden flex flex-col"
-            style={{ maxHeight: "calc(100vh - 180px)" }}
+            className="flex-1 glass rounded-2xl p-4 flex flex-col min-h-0"
           >
-            <div className="flex justify-center overflow-y-auto scrollbar-thin pr-2 flex-1 min-h-0">
+            <div className="flex-1 min-h-0 w-full">
               {pdfBlobUrl ? (
                 <Worker workerUrl={workerUrl}>
                   <Viewer
                     fileUrl={pdfBlobUrl}
                     plugins={[zoomPluginInstance]}
-                    defaultScale="page-fit"
+                    defaultScale={SpecialZoomLevel.PageFit}
                     onDocumentLoad={(e) => setTotalPages(e.doc.numPages)}
                     onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
                   />
                 </Worker>
               ) : (
-                <div className="text-gray-500 text-sm">⚠️ PDF non disponibile</div>
+                <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                  ⚠️ PDF non disponibile
+                </div>
               )}
             </div>
           </motion.div>
@@ -181,7 +192,7 @@ const PdfPreview = () => {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="w-20 flex flex-col gap-3 sticky top-4"
+            className="w-20 flex flex-col gap-3"
           >
             <Button
               onClick={handleSave}
@@ -229,15 +240,6 @@ const PdfPreview = () => {
               <span>
                 {currentPage} / {totalPages}
               </span>
-            </Button>
-
-            <Button
-              variant="outline"
-              className="h-14 w-full flex items-center justify-center text-xs cursor-default pointer-events-none"
-            >
-              <ChevronLeft className="w-0 h-0 opacity-0" />
-              <span className="text-center leading-tight"> </span>
-              <ChevronRight className="w-0 h-0 opacity-0" />
             </Button>
           </motion.div>
         </div>
