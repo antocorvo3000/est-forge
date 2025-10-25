@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Download, Printer, ZoomIn, ZoomOut } from "lucide-react";
@@ -19,13 +19,6 @@ interface QuoteData {
   oggetto: string;
   cliente: {
     nome: string;
-    taxCode?: string;
-    address?: string;
-    city?: string;
-    province?: string;
-    zip?: string;
-    phone?: string;
-    email?: string;
   };
   ubicazione: {
     via: string;
@@ -59,12 +52,9 @@ const PdfPreview = () => {
   const [returnPath, setReturnPath] = useState<string>("/");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [fitToPage, setFitToPage] = useState(true);
 
   const zoomPluginInstance = zoomPlugin();
   const { zoomTo } = zoomPluginInstance;
-
-  const viewerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const data = location.state?.quoteData as QuoteData;
@@ -88,7 +78,6 @@ const PdfPreview = () => {
         const blob = pdf.output("blob");
         const pdfBlob = new Blob([blob], { type: "application/pdf" });
         const url = URL.createObjectURL(pdfBlob);
-        console.log("📄 PDF URL generato:", url);
         setPdfBlobUrl(url);
         setLoading(false);
       } catch (error) {
@@ -129,16 +118,8 @@ const PdfPreview = () => {
     toast.success("Invio alla stampante...");
   };
 
-  const handleZoomIn = () => {
-    setFitToPage(false);
-    zoomTo((scale) => scale + 0.25);
-  };
-
-  const handleZoomOut = () => {
-    setFitToPage(false);
-    zoomTo((scale) => Math.max(scale - 0.25, 0.5));
-  };
-
+  const handleZoomIn = () => zoomTo((scale) => scale + 0.25);
+  const handleZoomOut = () => zoomTo((scale) => Math.max(scale - 0.25, 0.5));
   const handleGoBack = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -174,23 +155,28 @@ const PdfPreview = () => {
 
         {/* Main */}
         <div className="flex gap-6">
-          {/* PDF Viewer Widget */}
+          {/* 📄 PDF Viewer Widget */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex-1 glass rounded-2xl p-4 flex flex-col items-center justify-start"
             style={{
-              maxHeight: "calc(100vh - 180px)",
+              maxHeight: "calc(100vh - 180px)", // 👈 altezza fissa widget
               overflow: "hidden",
             }}
           >
             {pdfBlobUrl ? (
-              <div ref={viewerRef} className="w-full flex justify-center overflow-y-auto scrollbar-thin">
+              <div
+                className="w-full flex justify-center overflow-y-auto"
+                style={{
+                  maxHeight: "100%",
+                }}
+              >
                 <Worker workerUrl={workerUrl}>
                   <Viewer
                     fileUrl={pdfBlobUrl}
                     plugins={[zoomPluginInstance]}
-                    defaultScale={fitToPage ? "page-fit" : undefined}
+                    defaultScale="page-fit" // 👈 Mostra la prima pagina intera
                     onDocumentLoad={(e) => setTotalPages(e.doc.numPages)}
                     onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
                   />
@@ -201,7 +187,7 @@ const PdfPreview = () => {
             )}
           </motion.div>
 
-          {/* Control Panel */}
+          {/* 🎛 Control Panel */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -232,7 +218,7 @@ const PdfPreview = () => {
               title="Zoom In"
             >
               <ZoomIn className="w-5 h-5" />
-              <span className="text-center leading-tight whitespace-normal">Zoom avanti</span>
+              <span>Zoom avanti</span>
             </Button>
 
             <Button
@@ -242,7 +228,7 @@ const PdfPreview = () => {
               title="Zoom Out"
             >
               <ZoomOut className="w-5 h-5" />
-              <span className="text-center leading-tight whitespace-normal">Zoom indietro</span>
+              <span>Zoom indietro</span>
             </Button>
 
             <Button

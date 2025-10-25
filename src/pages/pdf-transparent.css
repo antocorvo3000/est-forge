@@ -1,4 +1,4 @@
-/* Sfondo PDF trasparente */
+/* ✅ Sfondo trasparente PDF */
 .rpv-core__inner-page,
 .rpv-core__viewer,
 .rpv-core__canvas-layer,
@@ -7,13 +7,17 @@
   box-shadow: none !important;
 }
 
-/* Mantiene centrato il contenuto */
 .rpv-core__page-layer {
   margin: 0 auto !important;
 }
 
-/* Elimina bordo bianco */
 .rpv-core__viewer {
   padding: 0 !important;
   border: none !important;
+  height: auto !important;
+}
+
+/* ✅ Importante per impedire che il PDF allarghi il container */
+.rpv-core__inner-pages {
+  height: auto !important;
 }
