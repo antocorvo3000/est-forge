@@ -7,7 +7,7 @@ import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
 
-// ✅ PDF Viewer base
+// ✅ PDF Viewer
 import { Worker, Viewer } from "@react-pdf-viewer/core";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 
@@ -78,13 +78,17 @@ const PdfPreview = () => {
     const initPdf = async () => {
       try {
         const pdf = await generateQuotePDF(data, companySettings);
+
         try {
           const n = pdf.getNumberOfPages?.();
           if (typeof n === "number") setTotalPages(n);
         } catch {}
+
         const blob = pdf.output("blob");
         const pdfBlob = new Blob([blob], { type: "application/pdf" });
         const url = URL.createObjectURL(pdfBlob);
+
+        console.log("📄 PDF URL generato:", url); // DEBUG: controlla in console
         setPdfBlobUrl(url);
         setLoading(false);
       } catch (error) {
@@ -171,12 +175,26 @@ const PdfPreview = () => {
             className="flex-1 glass rounded-2xl p-4 overflow-hidden flex flex-col"
             style={{ maxHeight: "calc(100vh - 180px)" }}
           >
-            <div className="flex justify-center overflow-y-auto scrollbar-thin pr-2 flex-1">
-              <div className="flex flex-col items-center w-full">
-                <Worker workerUrl={workerUrl}>
-                  <Viewer fileUrl={pdfBlobUrl} defaultScale={zoom / 100} />
-                </Worker>
-              </div>
+            <div
+              className="flex justify-center overflow-y-auto scrollbar-thin pr-2 flex-1"
+              style={{ minHeight: "600px" }}
+            >
+              {pdfBlobUrl ? (
+                <div className="flex flex-col items-center w-full">
+                  <Worker workerUrl={workerUrl}>
+                    <Viewer
+                      fileUrl={pdfBlobUrl}
+                      defaultScale={zoom / 100}
+                      style={{
+                        width: "100%",
+                        minHeight: "100%",
+                      }}
+                    />
+                  </Worker>
+                </div>
+              ) : (
+                <div className="text-gray-500 text-sm">⚠️ PDF non disponibile</div>
+              )}
             </div>
           </motion.div>
 
