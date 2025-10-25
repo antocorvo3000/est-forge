@@ -21,7 +21,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useQuotes } from "@/hooks/useQuotes";
-import { salvaCliente, aggiornaPreventivo, salvaRighePreventivo, eliminaCachePreventivo } from "@/lib/database";
+import {
+  salvaCliente,
+  salvaPreventivo,
+  aggiornaPreventivo,
+  salvaRighePreventivo,
+  eliminaCachePreventivo,
+} from "@/lib/database";
 import { toast } from "@/lib/toast";
 import type { ClientData } from "./ClientDetails";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -163,7 +169,13 @@ const ModifyQuote = () => {
   useEffect(() => {
     if (fromCache && cacheData) {
       loadCacheData();
-      setPageTitle("Recupera Lavoro Interrotto");
+      if (cacheData.tipo_operazione === "creazione") {
+        setPageTitle("Recupera Nuovo Preventivo");
+      } else if (cacheData.tipo_operazione === "clonazione") {
+        setPageTitle("Recupera Clonazione Preventivo");
+      } else {
+        setPageTitle("Recupera Modifica Preventivo");
+      }
     } else if (id && !location.state?.clientData) {
       loadQuoteData();
       setPageTitle(isCloning ? "Clona Preventivo" : "Modifica Preventivo");
@@ -491,7 +503,8 @@ const ModifyQuote = () => {
       note: notesEnabled ? notes : undefined,
       modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
       stato: "bozza",
-      tipo_operazione: isCloning ? "clonazione" : "modifica",
+      tipo_operazione:
+        fromCache && cacheData?.tipo_operazione === "creazione" ? "creazione" : isCloning ? "clonazione" : "modifica",
       preventivo_originale_id: id,
       righe: lines.map((line) => ({
         descrizione: line.description,
@@ -517,15 +530,9 @@ const ModifyQuote = () => {
     }
 
     // Se è un recupero di una modifica, chiedi conferma di sovrascrittura
-    if (fromCache && cacheData?.tipo_operazione === "modifica" && id) {
+    if (fromCache && cacheData?.tipo_operazione === "modifica" && id && id !== "new") {
       setShowOverwriteDialog(true);
       return;
-    }
-
-    // Se è un recupero di una clonazione, verifica se esiste già un preventivo con lo stesso numero/anno
-    if (fromCache && cacheData?.tipo_operazione === "clonazione" && cacheData?.numero && cacheData?.anno) {
-      // TODO: Verifica se esiste già un preventivo con questo numero/anno
-      // Per ora procediamo direttamente
     }
 
     saveQuote();
@@ -533,8 +540,6 @@ const ModifyQuote = () => {
 
   const saveQuote = async () => {
     try {
-      if (!id) return;
-
       let cliente_id = null;
       if (clientData && clientData.name) {
         const cliente = await salvaCliente({
@@ -562,18 +567,25 @@ const ModifyQuote = () => {
       const cloneYear =
         location.state?.cloneYear || (fromCache && cacheData?.tipo_operazione === "clonazione" ? cacheData.anno : null);
 
-      if (isCloning && cloneNumber && cloneYear) {
-        const { salvaPreventivo } = await import("@/lib/database");
+      // Determina se è una creazione dalla cache
+      const isCreationFromCache = fromCache && cacheData?.tipo_operazione === "creazione";
+      const creationNumber = isCreationFromCache ? cacheData.numero : null;
+      const creationYear = isCreationFromCache ? cacheData.anno : null;
+
+      // Se è una clonazione O una creazione dalla cache, crea un nuovo preventivo
+      if ((isCloning && cloneNumber && cloneYear) || (isCreationFromCache && creationNumber && creationYear)) {
+        const numero = isCreationFromCache ? creationNumber : cloneNumber;
+        const anno = isCreationFromCache ? creationYear : cloneYear;
 
         const nuovoPreventivo = await salvaPreventivo({
-          numero: cloneNumber,
-          anno: cloneYear,
+          numero: numero!,
+          anno: anno!,
           cliente_id,
           oggetto: subject,
-          ubicazione_via: workAddress,
-          ubicazione_citta: workCity,
-          ubicazione_provincia: workProvince,
-          ubicazione_cap: workZip,
+          ubicazione_via: workAddress || null,
+          ubicazione_citta: workCity || null,
+          ubicazione_provincia: workProvince || null,
+          ubicazione_cap: workZip || null,
           subtotale,
           sconto_percentuale,
           sconto_valore,
@@ -602,15 +614,21 @@ const ModifyQuote = () => {
         }
 
         setIsSaved(true);
-        toast.success("Preventivo clonato con successo");
+        toast.success(isCreationFromCache ? "Preventivo creato con successo" : "Preventivo clonato con successo");
       } else {
+        // È una modifica di un preventivo esistente
+        if (!id || id === "new") {
+          toast.error("Errore: impossibile modificare un preventivo inesistente");
+          return;
+        }
+
         await aggiornaPreventivo(id, {
           cliente_id,
           oggetto: subject,
-          ubicazione_via: workAddress,
-          ubicazione_citta: workCity,
-          ubicazione_provincia: workProvince,
-          ubicazione_cap: workZip,
+          ubicazione_via: workAddress || null,
+          ubicazione_citta: workCity || null,
+          ubicazione_provincia: workProvince || null,
+          ubicazione_cap: workZip || null,
           subtotale,
           sconto_percentuale,
           sconto_valore,
@@ -655,7 +673,7 @@ const ModifyQuote = () => {
 
   const handleDelete = async () => {
     try {
-      if (!id) return;
+      if (!id || id === "new") return;
       await deleteQuote(id);
       toast.success("Preventivo eliminato");
       navigate("/");
@@ -719,7 +737,7 @@ const ModifyQuote = () => {
       let numero = 1;
       let anno = new Date().getFullYear();
 
-      if (id) {
+      if (id && id !== "new") {
         const data = await getQuoteById(id);
         if (data) {
           numero = data.numero;
@@ -737,6 +755,13 @@ const ModifyQuote = () => {
       if (isCloning && cloneNumber && cloneYear) {
         numero = cloneNumber;
         anno = cloneYear;
+      }
+
+      // Per le creazioni dalla cache
+      const isCreationFromCache = fromCache && cacheData?.tipo_operazione === "creazione";
+      if (isCreationFromCache && cacheData?.numero && cacheData?.anno) {
+        numero = cacheData.numero;
+        anno = cacheData.anno;
       }
 
       const pdfData = {
@@ -1405,7 +1430,7 @@ const ModifyQuote = () => {
               Genera PDF
             </Button>
           </div>
-          {!isCloning && (
+          {!isCloning && !(fromCache && cacheData?.tipo_operazione === "creazione") && (
             <Button
               onClick={() => setShowDeleteDialog(true)}
               variant="destructive"
