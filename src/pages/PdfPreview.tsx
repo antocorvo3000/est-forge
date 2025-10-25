@@ -7,8 +7,8 @@ import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
 
-// PDF viewer (installato con: npm i @react-pdf-viewer/core pdfjs-dist)
-import { Worker, Viewer, SpecialZoomLevel } from "@react-pdf-viewer/core";
+// ✅ PDF Viewer base
+import { Worker, Viewer } from "@react-pdf-viewer/core";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 
 interface QuoteData {
@@ -50,18 +50,14 @@ interface QuoteData {
 const PdfPreview = () => {
   const navigate = useNavigate();
   const location = useLocation();
-
-  // Stato UI
-  const [zoom, setZoom] = useState(100); // 50..200
+  const [zoom, setZoom] = useState(100);
   const [loading, setLoading] = useState(true);
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
   const [settings, setSettings] = useState<CompanySettings | null>(null);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string>("");
   const [returnPath, setReturnPath] = useState<string>("/");
-
-  // Per mostrare le pagine (solo info, lo scroll rimane unico e continuo)
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     const data = location.state?.quoteData as QuoteData;
@@ -81,17 +77,11 @@ const PdfPreview = () => {
 
     const initPdf = async () => {
       try {
-        // Genera PDF (jsPDF o similare) e ottieni Blob
         const pdf = await generateQuotePDF(data, companySettings);
-
-        // numero pagine (se disponibile dall’oggetto pdf)
         try {
           const n = pdf.getNumberOfPages?.();
           if (typeof n === "number") setTotalPages(n);
-        } catch {
-          // in caso non sia disponibile, rimane 1 e il viewer calcolerà da sé
-        }
-
+        } catch {}
         const blob = pdf.output("blob");
         const pdfBlob = new Blob([blob], { type: "application/pdf" });
         const url = URL.createObjectURL(pdfBlob);
@@ -109,36 +99,30 @@ const PdfPreview = () => {
     return () => {
       if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state, navigate]);
 
   const handleSave = () => {
     if (!pdfBlobUrl || !quoteData) return;
-
     const link = document.createElement("a");
     link.href = pdfBlobUrl;
     link.download = `Preventivo_${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}.pdf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
     toast.success("PDF salvato con successo");
   };
 
   const handlePrint = () => {
     if (!pdfBlobUrl) return;
-
     const printWindow = window.open(pdfBlobUrl, "_blank");
     if (!printWindow) {
       toast.error("Sblocca i popup per stampare");
       return;
     }
-
     printWindow.addEventListener("load", () => {
       printWindow.focus();
       printWindow.print();
     });
-
     toast.success("Invio alla stampante...");
   };
 
@@ -149,11 +133,6 @@ const PdfPreview = () => {
     e.preventDefault();
     e.stopPropagation();
     navigate(returnPath, { replace: true });
-  };
-
-  // Aggancia eventi di pagina dal viewer
-  const handlePageChange = (e: { currentPage: number; doc?: unknown }) => {
-    setCurrentPage(e.currentPage + 1); // l’evento è 0-based
   };
 
   const workerUrl = "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
@@ -185,64 +164,17 @@ const PdfPreview = () => {
 
         {/* Main */}
         <div className="flex gap-6">
-          {/* PDF Viewer container */}
+          {/* PDF Viewer */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex-1 glass rounded-2xl p-4 overflow-hidden flex flex-col"
             style={{ maxHeight: "calc(100vh - 180px)" }}
           >
-            {/* Scroll UNICO sul contenitore principale */}
             <div className="flex justify-center overflow-y-auto scrollbar-thin pr-2 flex-1">
               <div className="flex flex-col items-center w-full">
-                {/* Nessuna cornice: niente iframe, niente embed */}
                 <Worker workerUrl={workerUrl}>
-                  <Viewer
-                    fileUrl={pdfBlobUrl}
-                    // Zoom vettoriale (non sgrana)
-                    defaultScale={SpecialZoomLevel.ActualSize}
-                    // Applichiamo la nostra percentuale
-                    renderPage={(props) => {
-                      // Imposta scala dinamica in base allo stato zoom
-                      const scale = zoom / 100;
-                      return (
-                        <div
-                          style={{
-                            // rimuove margini/cornici
-                            background: "transparent",
-                            // centra la pagina
-                            display: "flex",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <props.canvasLayer.render
-                            {...props.canvasLayerProps}
-                            // forziamo la scala sul layer canvas
-                            transform={`scale(${scale})`}
-                            // manteniamo l'origine in alto
-                            transformOrigin="top center"
-                          />
-                          {/* testo selezionabile sopra il canvas */}
-                          <props.textLayer.render
-                            {...props.textLayerProps}
-                            transform={`scale(${scale})`}
-                            transformOrigin="top center"
-                          />
-                          {/* annotation layer (link cliccabili, ecc) */}
-                          <props.annotationLayer.render
-                            {...props.annotationLayerProps}
-                            transform={`scale(${scale})`}
-                            transformOrigin="top center"
-                          />
-                        </div>
-                      );
-                    }}
-                    onPageChange={handlePageChange}
-                    // rimuove bordi/ombre di default
-                    theme={{
-                      theme: "light",
-                    }}
-                  />
+                  <Viewer fileUrl={pdfBlobUrl} defaultScale={zoom / 100} />
                 </Worker>
               </div>
             </div>
@@ -302,7 +234,6 @@ const PdfPreview = () => {
               <span>{zoom}%</span>
             </Button>
 
-            {/* Indicatore pagina (lo scroll è unico, qui mostri solo info) */}
             <div className="mt-4 space-y-2">
               <Button
                 variant="outline"
