@@ -162,23 +162,25 @@ const PdfPreview = () => {
           <h1 className="text-3xl font-extrabold tracking-tight">Genera PDF Preventivo</h1>
         </motion.div>
 
-        <div className="flex gap-6 flex-1 min-h-0">
+        <div className="flex gap-6 flex-1 min-h-0 overflow-hidden">
           {/* 📄 Widget viewer */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex-1 glass rounded-2xl p-4 flex flex-col min-h-0"
+            className="flex-1 glass rounded-2xl p-4 flex flex-col min-h-0 overflow-hidden"
           >
-            <div className="flex-1 min-h-0 w-full">
+            <div className="flex-1 min-h-0 w-full overflow-hidden">
               {pdfBlobUrl ? (
                 <Worker workerUrl={workerUrl}>
-                  <Viewer
-                    fileUrl={pdfBlobUrl}
-                    plugins={[zoomPluginInstance]}
-                    defaultScale={SpecialZoomLevel.PageFit}
-                    onDocumentLoad={(e) => setTotalPages(e.doc.numPages)}
-                    onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
-                  />
+                  <div className="h-full w-full">
+                    <Viewer
+                      fileUrl={pdfBlobUrl}
+                      plugins={[zoomPluginInstance]}
+                      defaultScale={SpecialZoomLevel.PageFit}
+                      onDocumentLoad={(e) => setTotalPages(e.doc.numPages)}
+                      onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
+                    />
+                  </div>
                 </Worker>
               ) : (
                 <div className="flex items-center justify-center h-full text-muted-foreground text-sm">

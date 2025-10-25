@@ -14,4 +14,10 @@
 .rpv-core__viewer {
   border: none !important;
   padding: 0 !important;
+  height: 100% !important;
+  overflow: auto !important;
+}
+
+.rpv-core__inner-pages {
+  overflow: visible !important;
 }
