@@ -7,12 +7,12 @@ import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
 
-// ✅ PDF Viewer
+// 📄 PDF Viewer
 import { Worker, Viewer } from "@react-pdf-viewer/core";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/zoom/lib/styles/index.css";
-import "./pdf-transparent.css"; // 👉 aggiungiamo il CSS per sfondo trasparente
+import "./pdf-transparent.css"; // 👈 CSS per sfondo trasparente
 
 interface QuoteData {
   numero: number;
@@ -61,7 +61,6 @@ const PdfPreview = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Zoom plugin
   const zoomPluginInstance = zoomPlugin();
   const { zoomTo } = zoomPluginInstance;
 
@@ -103,6 +102,7 @@ const PdfPreview = () => {
     };
 
     initPdf();
+
     return () => {
       if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
     };
@@ -135,7 +135,6 @@ const PdfPreview = () => {
 
   const handleZoomIn = () => zoomTo((scale) => scale + 0.25);
   const handleZoomOut = () => zoomTo((scale) => Math.max(scale - 0.25, 0.5));
-
   const handleGoBack = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -155,7 +154,7 @@ const PdfPreview = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background overflow-y-auto">
+    <div className="min-h-screen bg-background">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
         {/* Header */}
         <motion.div
@@ -169,23 +168,25 @@ const PdfPreview = () => {
           <h1 className="text-3xl font-extrabold tracking-tight">Genera PDF Preventivo</h1>
         </motion.div>
 
-        {/* Main */}
         <div className="flex gap-6">
           {/* PDF Viewer */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex-1 glass rounded-2xl p-4 flex flex-col items-center"
+            className="flex-1 glass rounded-2xl p-4 flex flex-col items-center justify-start"
+            style={{ overflow: "hidden" }} // 👈 rimuove scroll dal contenitore
           >
             {pdfBlobUrl ? (
-              <Worker workerUrl={workerUrl}>
-                <Viewer
-                  fileUrl={pdfBlobUrl}
-                  plugins={[zoomPluginInstance]}
-                  onDocumentLoad={(e) => setTotalPages(e.doc.numPages)}
-                  onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
-                />
-              </Worker>
+              <div className="w-full overflow-y-auto flex justify-center">
+                <Worker workerUrl={workerUrl}>
+                  <Viewer
+                    fileUrl={pdfBlobUrl}
+                    plugins={[zoomPluginInstance]}
+                    onDocumentLoad={(e) => setTotalPages(e.doc.numPages)}
+                    onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
+                  />
+                </Worker>
+              </div>
             ) : (
               <div className="text-gray-500 text-sm">⚠️ PDF non disponibile</div>
             )}

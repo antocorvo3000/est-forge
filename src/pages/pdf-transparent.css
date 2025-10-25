@@ -1,14 +1,21 @@
-/* Rende trasparente lo sfondo del PDF */
+/* Sfondo pagina PDF trasparente */
 .rpv-core__inner-page {
   background-color: transparent !important;
 }
 
-/* Rimuove eventuali margini aggiuntivi */
+/* Sfondo viewer trasparente */
 .rpv-core__viewer {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Nessun bordo bianco */
+.rpv-core__page-layer {
+  margin: 0 auto;
   background-color: transparent !important;
 }
 
-/* Mantiene la pagina centrata */
-.rpv-core__page-layer {
-  margin: 0 auto;
+/* Rimuove il padding bianco attorno */
+.rpv-core__canvas-layer {
+  background-color: transparent !important;
 }
