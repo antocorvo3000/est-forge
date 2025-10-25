@@ -215,39 +215,52 @@ const CreateQuote = () => {
   // Numero e anno del preventivo (calcolati all'inizio o custom)
   const [quoteNumber, setQuoteNumber] = useState<number | null>(null);
   const [quoteYear, setQuoteYear] = useState<number | null>(null);
+  const [isQuoteNumberReady, setIsQuoteNumberReady] = useState(false);
 
   // Calcola numero e anno all'inizio
   useEffect(() => {
     const calculateQuoteNumber = async () => {
-      if (location.state?.customNumber && location.state?.customYear) {
-        // Numero personalizzato
-        setQuoteNumber(location.state.customNumber);
-        setQuoteYear(location.state.customYear);
-      } else {
-        // Numero progressivo
-        const year = new Date().getFullYear();
-        setQuoteYear(year);
+      try {
+        if (location.state?.customNumber && location.state?.customYear) {
+          // Numero personalizzato
+          setQuoteNumber(location.state.customNumber);
+          setQuoteYear(location.state.customYear);
+          setIsQuoteNumberReady(true);
+          console.log(
+            "Numero preventivo personalizzato impostato:",
+            location.state.customNumber,
+            location.state.customYear,
+          );
+        } else {
+          // Numero progressivo
+          const year = new Date().getFullYear();
+          setQuoteYear(year);
 
-        const { data: existingQuotes } = await supabase
-          .from("preventivi")
-          .select("numero")
-          .eq("anno", year)
-          .order("numero", { ascending: true });
+          const { data: existingQuotes } = await supabase
+            .from("preventivi")
+            .select("numero")
+            .eq("anno", year)
+            .order("numero", { ascending: true });
 
-        const usedNumbers = existingQuotes?.map((q) => q.numero) || [];
-        const baseNumber = settings.customNumberingEnabled ? settings.startingQuoteNumber : 1;
+          const usedNumbers = existingQuotes?.map((q) => q.numero) || [];
+          const baseNumber = settings.customNumberingEnabled ? settings.startingQuoteNumber : 1;
 
-        let newNum = baseNumber;
-        for (const num of usedNumbers) {
-          if (num >= baseNumber) {
-            if (num === newNum) {
-              newNum++;
-            } else if (num > newNum) {
-              break;
+          let newNum = baseNumber;
+          for (const num of usedNumbers) {
+            if (num >= baseNumber) {
+              if (num === newNum) {
+                newNum++;
+              } else if (num > newNum) {
+                break;
+              }
             }
           }
+          setQuoteNumber(newNum);
+          setIsQuoteNumberReady(true);
+          console.log("Numero preventivo progressivo calcolato:", newNum, year);
         }
-        setQuoteNumber(newNum);
+      } catch (error) {
+        console.error("Errore calcolo numero preventivo:", error);
       }
     };
 
@@ -349,7 +362,7 @@ const CreateQuote = () => {
     return subtotal - discount;
   };
 
-  // Auto-save per recupero lavoro interrotto (solo se numero e anno sono disponibili)
+  // Auto-save per recupero lavoro interrotto - ATTIVATO SUBITO con saveImmediately
   const { cacheId } = useAutoSave({
     data: {
       numero: quoteNumber || undefined,
@@ -377,8 +390,9 @@ const CreateQuote = () => {
       })),
       dati_cliente: clientData || undefined,
     },
-    enabled: !isSaved && quoteNumber !== null && quoteYear !== null,
+    enabled: !isSaved && isQuoteNumberReady,
     delay: 2000,
+    saveImmediately: true, // NUOVO: forza salvataggio immediato
   });
 
   const handleSave = () => {
@@ -470,6 +484,7 @@ const CreateQuote = () => {
       // Elimina la cache dopo il salvataggio
       if (cacheId) {
         await eliminaCachePreventivo(cacheId);
+        console.log("Cache eliminata dopo salvataggio:", cacheId);
       }
 
       setIsSaved(true);
@@ -574,6 +589,7 @@ const CreateQuote = () => {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-3xl font-extrabold tracking-tight">Nuovo Preventivo</h1>
+          {cacheId && <span className="text-xs text-muted-foreground ml-auto">Auto-save attivo</span>}
         </motion.div>
 
         <div className="grid md:grid-cols-2 gap-6 mb-6">

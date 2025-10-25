@@ -130,6 +130,7 @@ const ModifyQuote = () => {
   // Numero e anno del preventivo (salvati all'inizio)
   const [quoteNumber, setQuoteNumber] = useState<number | null>(null);
   const [quoteYear, setQuoteYear] = useState<number | null>(null);
+  const [isQuoteNumberReady, setIsQuoteNumberReady] = useState(false);
 
   const [workAddress, setWorkAddress] = useState("");
   const [workCity, setWorkCity] = useState("");
@@ -279,8 +280,17 @@ const ModifyQuote = () => {
       setLoading(true);
 
       // Salva numero e anno dalla cache
-      if (cacheData.numero) setQuoteNumber(cacheData.numero);
-      if (cacheData.anno) setQuoteYear(cacheData.anno);
+      if (cacheData.numero) {
+        setQuoteNumber(cacheData.numero);
+        console.log("Numero da cache:", cacheData.numero);
+      }
+      if (cacheData.anno) {
+        setQuoteYear(cacheData.anno);
+        console.log("Anno da cache:", cacheData.anno);
+      }
+
+      // Marca come pronto
+      setIsQuoteNumberReady(true);
 
       if (cacheData.dati_cliente) {
         setClientData(cacheData.dati_cliente);
@@ -315,6 +325,8 @@ const ModifyQuote = () => {
       setNotes(cacheData.note || "");
 
       setPaymentMethod(cacheData.modalita_pagamento || "da-concordare");
+
+      console.log("Dati cache caricati, numero e anno pronti per auto-save");
     } catch (error) {
       console.error("Errore caricamento cache:", error);
       toast.error("Errore nel caricamento dei dati dalla cache");
@@ -330,8 +342,14 @@ const ModifyQuote = () => {
 
       if (data) {
         // Salva numero e anno
-        setQuoteNumber(isCloning ? location.state?.cloneNumber : data.numero);
-        setQuoteYear(isCloning ? location.state?.cloneYear : data.anno);
+        const numero = isCloning ? location.state?.cloneNumber : data.numero;
+        const anno = isCloning ? location.state?.cloneYear : data.anno;
+
+        setQuoteNumber(numero);
+        setQuoteYear(anno);
+        setIsQuoteNumberReady(true);
+
+        console.log("Numero e anno impostati:", numero, anno, isCloning ? "(clonazione)" : "(modifica)");
 
         if (data.clienti && !location.state?.clientData) {
           setClientData({
@@ -377,6 +395,8 @@ const ModifyQuote = () => {
         setNotes(data.note || "");
 
         setPaymentMethod(data.modalita_pagamento || "da-concordare");
+
+        console.log("Dati preventivo caricati, numero e anno pronti per auto-save");
       }
     } catch (error) {
       console.error("Errore caricamento preventivo:", error);
@@ -485,7 +505,18 @@ const ModifyQuote = () => {
     return subtotal - discount;
   };
 
-  // Auto-save per recupero lavoro interrotto
+  // Determina il tipo di operazione per l'auto-save
+  const getTipoOperazione = (): "creazione" | "modifica" | "clonazione" => {
+    if (fromCache && cacheData?.tipo_operazione === "creazione") {
+      return "creazione";
+    }
+    if (isCloning) {
+      return "clonazione";
+    }
+    return "modifica";
+  };
+
+  // Auto-save per recupero lavoro interrotto - ATTIVATO SUBITO con saveImmediately
   const { cacheId: autoSaveCacheId } = useAutoSave({
     data: {
       numero: quoteNumber || undefined,
@@ -503,8 +534,7 @@ const ModifyQuote = () => {
       note: notesEnabled ? notes : undefined,
       modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
       stato: "bozza",
-      tipo_operazione:
-        fromCache && cacheData?.tipo_operazione === "creazione" ? "creazione" : isCloning ? "clonazione" : "modifica",
+      tipo_operazione: getTipoOperazione(),
       preventivo_originale_id: id,
       righe: lines.map((line) => ({
         descrizione: line.description,
@@ -515,9 +545,10 @@ const ModifyQuote = () => {
       })),
       dati_cliente: clientData || undefined,
     },
-    enabled: !isSaved && !loading && quoteNumber !== null && quoteYear !== null,
+    enabled: !isSaved && !loading && isQuoteNumberReady,
     delay: 2000,
     cacheId: existingCacheId,
+    saveImmediately: true, // NUOVO: forza salvataggio immediato
   });
 
   const handleSave = () => {
@@ -609,8 +640,10 @@ const ModifyQuote = () => {
         }
 
         // Elimina la cache dopo il salvataggio
-        if (autoSaveCacheId || existingCacheId) {
-          await eliminaCachePreventivo(autoSaveCacheId || existingCacheId);
+        const cacheIdToDelete = autoSaveCacheId || existingCacheId;
+        if (cacheIdToDelete) {
+          await eliminaCachePreventivo(cacheIdToDelete);
+          console.log("Cache eliminata dopo salvataggio:", cacheIdToDelete);
         }
 
         setIsSaved(true);
@@ -652,8 +685,10 @@ const ModifyQuote = () => {
         }
 
         // Elimina la cache dopo il salvataggio
-        if (autoSaveCacheId || existingCacheId) {
-          await eliminaCachePreventivo(autoSaveCacheId || existingCacheId);
+        const cacheIdToDelete = autoSaveCacheId || existingCacheId;
+        if (cacheIdToDelete) {
+          await eliminaCachePreventivo(cacheIdToDelete);
+          console.log("Cache eliminata dopo salvataggio:", cacheIdToDelete);
         }
 
         if (isCloning) {
@@ -844,6 +879,9 @@ const ModifyQuote = () => {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-3xl font-extrabold tracking-tight">{pageTitle}</h1>
+          {(autoSaveCacheId || existingCacheId) && (
+            <span className="text-xs text-muted-foreground ml-auto">Auto-save attivo</span>
+          )}
         </motion.div>
 
         <div className="grid md:grid-cols-2 gap-6 mb-6">
