@@ -30,11 +30,9 @@ export async function salvaDatiAzienda(dati: {
   numero_progressivo_iniziale?: number;
   numerazione_progressiva_attiva?: boolean;
 }) {
-  // Prima controlla se esiste già un record
   const { data: existing } = await supabase.from("azienda").select("id").single();
 
   if (existing) {
-    // Aggiorna
     const { error } = await supabase.from("azienda").update(dati).eq("id", existing.id);
 
     if (error) {
@@ -42,7 +40,6 @@ export async function salvaDatiAzienda(dati: {
       throw error;
     }
   } else {
-    // Inserisci
     const { error } = await supabase.from("azienda").insert(dati);
 
     if (error) {
@@ -54,14 +51,12 @@ export async function salvaDatiAzienda(dati: {
 
 // Carica il logo dallo storage
 export async function caricaLogo(file: File): Promise<string> {
-  // Elimina il vecchio logo se esiste
   const { data: oldFiles } = await supabase.storage.from("loghi").list();
 
   if (oldFiles && oldFiles.length > 0) {
     await supabase.storage.from("loghi").remove(oldFiles.map((f) => f.name));
   }
 
-  // Carica il nuovo logo
   const fileName = `logo-${Date.now()}.${file.name.split(".").pop()}`;
   const { error } = await supabase.storage.from("loghi").upload(fileName, file);
 
@@ -70,7 +65,6 @@ export async function caricaLogo(file: File): Promise<string> {
     throw error;
   }
 
-  // Ottieni l'URL pubblico
   const { data } = supabase.storage.from("loghi").getPublicUrl(fileName);
 
   return data.publicUrl;
@@ -157,10 +151,8 @@ export async function salvaCliente(cliente: any) {
 
 // Salva le righe di un preventivo
 export async function salvaRighePreventivo(preventivo_id: string, righe: any[]) {
-  // Prima elimina le righe esistenti
   await supabase.from("righe_preventivo").delete().eq("preventivo_id", preventivo_id);
 
-  // Poi inserisci le nuove righe
   const { error } = await supabase.from("righe_preventivo").insert(
     righe.map((r, i) => ({
       ...r,
@@ -177,7 +169,7 @@ export async function salvaRighePreventivo(preventivo_id: string, righe: any[]) 
 
 // ===== GESTIONE CACHE PREVENTIVI =====
 
-// Salva o aggiorna nella cache
+// Salva o aggiorna nella cache - LOGICA RISCRITTA
 export async function salvaCachePreventivo(dati: {
   id?: string;
   numero?: number;
@@ -222,8 +214,11 @@ export async function salvaCachePreventivo(dati: {
     dati_cliente: dati.dati_cliente ? JSON.stringify(dati.dati_cliente) : null,
   };
 
-  // Se c'è un ID specifico, aggiorna quel record
+  console.log("[salvaCachePreventivo] Inizio con ID:", dati.id);
+
+  // CASO 1: Se è passato un ID specifico, aggiorna SOLO quel record
   if (dati.id) {
+    console.log("[salvaCachePreventivo] Aggiornamento record esistente:", dati.id);
     const { error } = await supabase.from("preventivi_cache").update(cacheData).eq("id", dati.id);
 
     if (error) {
@@ -233,80 +228,76 @@ export async function salvaCachePreventivo(dati: {
     return dati.id;
   }
 
-  // Per modifiche, cerca per preventivo_originale_id e tipo_operazione
+  // CASO 2: Nessun ID passato, cerca record esistente
+  let existingId: string | null = null;
+
   if (dati.tipo_operazione === "modifica" && dati.preventivo_originale_id) {
-    const { data: existingRecords, error: searchError } = await supabase
+    // Per MODIFICA: cerca per preventivo_originale_id
+    console.log("[salvaCachePreventivo] Ricerca modifica per preventivo_originale_id:", dati.preventivo_originale_id);
+
+    const { data: existing, error: searchError } = await supabase
       .from("preventivi_cache")
       .select("id")
       .eq("preventivo_originale_id", dati.preventivo_originale_id)
       .eq("tipo_operazione", "modifica")
-      .order("aggiornato_il", { ascending: false });
+      .maybeSingle();
 
     if (searchError) {
-      console.error("Errore ricerca cache esistente per modifica:", searchError);
+      console.error("Errore ricerca modifica:", searchError);
     }
 
-    if (existingRecords && existingRecords.length > 0) {
-      const firstRecord = existingRecords[0];
-
-      if (existingRecords.length > 1) {
-        const duplicateIds = existingRecords.slice(1).map((r) => r.id);
-        await supabase.from("preventivi_cache").delete().in("id", duplicateIds);
-        console.log(
-          `Eliminati ${duplicateIds.length} duplicati per modifica preventivo ${dati.preventivo_originale_id}`,
-        );
-      }
-
-      const { error } = await supabase.from("preventivi_cache").update(cacheData).eq("id", firstRecord.id);
-
-      if (error) {
-        console.error("Errore aggiornamento cache modifica esistente:", error);
-        throw error;
-      }
-      return firstRecord.id;
+    if (existing) {
+      existingId = existing.id;
+      console.log("[salvaCachePreventivo] Trovato record modifica esistente:", existingId);
     }
-  }
+  } else if (
+    (dati.tipo_operazione === "creazione" || dati.tipo_operazione === "clonazione") &&
+    dati.numero &&
+    dati.anno
+  ) {
+    // Per CREAZIONE e CLONAZIONE: cerca per numero + anno + tipo
+    console.log("[salvaCachePreventivo] Ricerca", dati.tipo_operazione, "per numero/anno:", dati.numero, dati.anno);
 
-  // Per creazioni e clonazioni, se numero e anno sono presenti cerca per quelli
-  if (dati.numero && dati.anno && (dati.tipo_operazione === "creazione" || dati.tipo_operazione === "clonazione")) {
-    const { data: existingRecords, error: searchError } = await supabase
+    const { data: existing, error: searchError } = await supabase
       .from("preventivi_cache")
       .select("id")
       .eq("numero", dati.numero)
       .eq("anno", dati.anno)
       .eq("tipo_operazione", dati.tipo_operazione)
-      .order("aggiornato_il", { ascending: false });
+      .maybeSingle();
 
     if (searchError) {
-      console.error("Errore ricerca cache esistente:", searchError);
+      console.error("Errore ricerca creazione/clonazione:", searchError);
     }
 
-    if (existingRecords && existingRecords.length > 0) {
-      const firstRecord = existingRecords[0];
-
-      if (existingRecords.length > 1) {
-        const duplicateIds = existingRecords.slice(1).map((r) => r.id);
-        await supabase.from("preventivi_cache").delete().in("id", duplicateIds);
-        console.log(`Eliminati ${duplicateIds.length} duplicati per preventivo ${dati.numero}-${dati.anno}`);
-      }
-
-      const { error } = await supabase.from("preventivi_cache").update(cacheData).eq("id", firstRecord.id);
-
-      if (error) {
-        console.error("Errore aggiornamento cache esistente:", error);
-        throw error;
-      }
-      return firstRecord.id;
+    if (existing) {
+      existingId = existing.id;
+      console.log("[salvaCachePreventivo] Trovato record", dati.tipo_operazione, "esistente:", existingId);
     }
   }
 
-  // Altrimenti inserisci un nuovo record
+  // CASO 3: Se esiste un record, aggiornalo
+  if (existingId) {
+    console.log("[salvaCachePreventivo] Aggiornamento record trovato:", existingId);
+    const { error } = await supabase.from("preventivi_cache").update(cacheData).eq("id", existingId);
+
+    if (error) {
+      console.error("Errore aggiornamento cache trovata:", error);
+      throw error;
+    }
+    return existingId;
+  }
+
+  // CASO 4: Nessun record esistente, creane uno nuovo
+  console.log("[salvaCachePreventivo] Creazione nuovo record");
   const { data, error } = await supabase.from("preventivi_cache").insert(cacheData).select("id").single();
 
   if (error) {
     console.error("Errore inserimento cache:", error);
     throw error;
   }
+
+  console.log("[salvaCachePreventivo] Nuovo record creato:", data.id);
   return data.id;
 }
 
@@ -355,7 +346,7 @@ export async function eliminaCachePreventivo(id: string) {
   }
 }
 
-// Elimina dalla cache per ID preventivo originale (quando si salva)
+// Elimina dalla cache per ID preventivo originale
 export async function eliminaCachePerPreventivoOriginale(preventivoId: string) {
   const { error } = await supabase.from("preventivi_cache").delete().eq("preventivo_originale_id", preventivoId);
 
@@ -365,7 +356,7 @@ export async function eliminaCachePerPreventivoOriginale(preventivoId: string) {
   }
 }
 
-// Pulisce i duplicati nella cache mantenendo solo il più recente per ogni combinazione
+// Pulisce duplicati (utile per riparare dati già esistenti)
 export async function pulisciDuplicatiCache() {
   try {
     const { data: allRecords, error } = await supabase

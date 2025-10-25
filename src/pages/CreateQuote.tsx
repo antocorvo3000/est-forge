@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, KeyboardEvent } from "react";
 import { motion } from "framer-motion";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, Trash2, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,6 @@ import {
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useQuotes } from "@/hooks/useQuotes";
 import { salvaCliente, salvaPreventivo, salvaRighePreventivo, eliminaCachePreventivo } from "@/lib/database";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/toast";
 import type { ClientData } from "./ClientDetails";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -58,12 +57,11 @@ const UNITS = [
 
 const CreateQuote = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { settings } = useCompanySettings();
-  const { addQuote } = useQuotes();
+  const { quotes } = useQuotes();
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [loading, setLoading] = useState(true);
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
-  const buttonContainerRef = useRef<HTMLDivElement>(null);
   const totalInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const formatItalianNumber = (value: number): string => {
@@ -85,17 +83,14 @@ const CreateQuote = () => {
       return;
     }
 
-    // Rimuove i separatori di migliaia e sostituisce la virgola con il punto per il parsing
     const cleaned = value.replace(/\./g, "").replace(",", ".");
     const num = parseFloat(cleaned);
 
     if (isNaN(num)) {
       updateLine(index, field, 0);
     } else {
-      // Salva il numero formattato correttamente
       updateLine(index, field, num);
 
-      // Forza l'aggiornamento dell'input con la formattazione italiana
       setTimeout(() => {
         const input = document.getElementById(
           field === "quantity" ? `qty-${index}` : `price-${index}`,
@@ -114,13 +109,11 @@ const CreateQuote = () => {
     return formatItalianNumber(num);
   };
 
-  const [clientData, setClientData] = useState<ClientData | null>(location.state?.clientData || null);
+  const [clientData, setClientData] = useState<ClientData | null>(null);
 
-  useEffect(() => {
-    if (location.state?.clientData) {
-      setClientData(location.state.clientData);
-    }
-  }, [location.state?.clientData]);
+  const [quoteNumber, setQuoteNumber] = useState<number | null>(null);
+  const [quoteYear, setQuoteYear] = useState<number | null>(null);
+  const [isQuoteNumberReady, setIsQuoteNumberReady] = useState(false);
 
   const [workAddress, setWorkAddress] = useState("");
   const [workCity, setWorkCity] = useState("");
@@ -132,17 +125,81 @@ const CreateQuote = () => {
     { id: "1", description: "", unit: "pz", quantity: 0, unitPrice: 0, total: 0 },
   ]);
 
-  useEffect(() => {
-    lines.forEach((_, index) => {
-      const textarea = document.querySelector(`#desc-${index}`) as HTMLTextAreaElement;
-      if (textarea) {
-        textarea.style.height = "auto";
-        textarea.style.height = textarea.scrollHeight + "px";
-      }
-    });
-  }, [lines]);
+  const [discountEnabled, setDiscountEnabled] = useState(false);
+  const [discountValue, setDiscountValue] = useState<number | "">(0);
+  const [showDiscountInTable, setShowDiscountInTable] = useState(false);
 
-  // Forza il resize anche dopo un breve delay per i dati caricati dal database
+  useEffect(() => {
+    if (discountEnabled && discountValue === 0 && !loading) {
+      setDiscountValue("");
+    }
+  }, [discountEnabled, loading]);
+
+  const [notesEnabled, setNotesEnabled] = useState(false);
+  const [notes, setNotes] = useState("");
+
+  const [paymentMethod, setPaymentMethod] = useState("da-concordare");
+  const [customPayment, setCustomPayment] = useState("");
+
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showPdfWarningDialog, setShowPdfWarningDialog] = useState(false);
+
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    const calculateQuoteNumber = () => {
+      const year = new Date().getFullYear();
+      const currentYearQuotes = quotes
+        .filter((q) => q.year === year)
+        .map((q) => q.number)
+        .sort((a, b) => a - b);
+
+      const baseNumber = settings.customNumberingEnabled ? settings.startingQuoteNumber : 1;
+
+      let newNum = baseNumber;
+      for (const num of currentYearQuotes) {
+        if (num >= baseNumber) {
+          if (num === newNum) {
+            newNum++;
+          } else if (num > newNum) {
+            break;
+          }
+        }
+      }
+
+      setQuoteNumber(newNum);
+      setQuoteYear(year);
+      setIsQuoteNumberReady(true);
+
+      console.log("[CreateQuote] Numero calcolato:", newNum, year);
+    };
+
+    calculateQuoteNumber();
+    setLoading(false);
+  }, [quotes, settings]);
+
+  useEffect(() => {
+    console.log("[CreateQuote] Inizializzazione", {
+      quoteNumber,
+      quoteYear,
+      isQuoteNumberReady,
+    });
+  }, [quoteNumber, quoteYear, isQuoteNumberReady]);
+
+  useEffect(() => {
+    if (!loading && lines.length > 0) {
+      setTimeout(() => {
+        lines.forEach((_, index) => {
+          const textarea = document.getElementById(`desc-${index}`) as HTMLTextAreaElement;
+          if (textarea) {
+            textarea.style.height = "auto";
+            textarea.style.height = textarea.scrollHeight + "px";
+          }
+        });
+      }, 0);
+    }
+  }, [loading, lines]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       lines.forEach((_, index) => {
@@ -179,7 +236,6 @@ const CreateQuote = () => {
       });
     };
 
-    // Aggiorna immediatamente e poi dopo un breve timeout
     updateButtonPositions();
     const timer = setTimeout(updateButtonPositions, 50);
 
@@ -190,87 +246,6 @@ const CreateQuote = () => {
       window.removeEventListener("resize", updateButtonPositions);
     };
   }, [lines]);
-
-  const [discountEnabled, setDiscountEnabled] = useState(false);
-  const [discountValue, setDiscountValue] = useState<number | "">(0);
-  const [showDiscountInTable, setShowDiscountInTable] = useState(false);
-
-  useEffect(() => {
-    if (discountEnabled && discountValue === 0) {
-      setDiscountValue("");
-    }
-  }, [discountEnabled]);
-
-  const [notesEnabled, setNotesEnabled] = useState(false);
-  const [notes, setNotes] = useState("");
-
-  const [paymentMethod, setPaymentMethod] = useState("da-concordare");
-  const [customPayment, setCustomPayment] = useState("");
-
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showPdfWarningDialog, setShowPdfWarningDialog] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-
-  // Numero e anno del preventivo (calcolati all'inizio o custom)
-  const [quoteNumber, setQuoteNumber] = useState<number | null>(null);
-  const [quoteYear, setQuoteYear] = useState<number | null>(null);
-  const [isQuoteNumberReady, setIsQuoteNumberReady] = useState(false);
-
-  // Calcola numero e anno all'inizio
-  useEffect(() => {
-    const calculateQuoteNumber = async () => {
-      try {
-        if (location.state?.customNumber && location.state?.customYear) {
-          // Numero personalizzato
-          setQuoteNumber(location.state.customNumber);
-          setQuoteYear(location.state.customYear);
-          setIsQuoteNumberReady(true);
-          console.log(
-            "Numero preventivo personalizzato impostato:",
-            location.state.customNumber,
-            location.state.customYear,
-          );
-        } else {
-          // Numero progressivo
-          const year = new Date().getFullYear();
-          setQuoteYear(year);
-
-          const { data: existingQuotes } = await supabase
-            .from("preventivi")
-            .select("numero")
-            .eq("anno", year)
-            .order("numero", { ascending: true });
-
-          const usedNumbers = existingQuotes?.map((q) => q.numero) || [];
-          const baseNumber = settings.customNumberingEnabled ? settings.startingQuoteNumber : 1;
-
-          let newNum = baseNumber;
-          for (const num of usedNumbers) {
-            if (num >= baseNumber) {
-              if (num === newNum) {
-                newNum++;
-              } else if (num > newNum) {
-                break;
-              }
-            }
-          }
-          setQuoteNumber(newNum);
-          setIsQuoteNumberReady(true);
-          console.log("Numero preventivo progressivo calcolato:", newNum, year);
-        }
-      } catch (error) {
-        console.error("Errore calcolo numero preventivo:", error);
-      }
-    };
-
-    calculateQuoteNumber();
-  }, [
-    location.state?.customNumber,
-    location.state?.customYear,
-    settings.customNumberingEnabled,
-    settings.startingQuoteNumber,
-  ]);
 
   const addLine = (afterIndex: number) => {
     const newLine: QuoteLine = {
@@ -297,7 +272,15 @@ const CreateQuote = () => {
     newLines[index] = { ...newLines[index], [field]: value };
 
     if (field === "quantity" || field === "unitPrice") {
-      newLines[index].total = newLines[index].quantity * newLines[index].unitPrice;
+      const qty =
+        typeof newLines[index].quantity === "number"
+          ? newLines[index].quantity
+          : parseFloat(newLines[index].quantity) || 0;
+      const price =
+        typeof newLines[index].unitPrice === "number"
+          ? newLines[index].unitPrice
+          : parseFloat(newLines[index].unitPrice) || 0;
+      newLines[index].total = qty * price;
     }
 
     setLines(newLines);
@@ -362,8 +345,7 @@ const CreateQuote = () => {
     return subtotal - discount;
   };
 
-  // Auto-save per recupero lavoro interrotto - ATTIVATO SUBITO con saveImmediately
-  const { cacheId } = useAutoSave({
+  const { cacheId: autoSaveCacheId } = useAutoSave({
     data: {
       numero: quoteNumber || undefined,
       anno: quoteYear || undefined,
@@ -390,9 +372,10 @@ const CreateQuote = () => {
       })),
       dati_cliente: clientData || undefined,
     },
-    enabled: !isSaved && isQuoteNumberReady,
+    enabled: !isSaved && !loading && isQuoteNumberReady,
     delay: 2000,
-    saveImmediately: true, // NUOVO: forza salvataggio immediato
+    cacheId: undefined,
+    saveImmediately: true,
   });
 
   const handleSave = () => {
@@ -429,36 +412,15 @@ const CreateQuote = () => {
       const sconto_valore = discountEnabled ? calculateDiscount() : 0;
       const totale = calculateTotal();
 
-      // Usa i numeri già calcolati
-      const newNum = quoteNumber!;
-      const year = quoteYear!;
-
-      // Verifica che il numero non sia già stato usato (nel caso di personalizzato)
-      if (location.state?.customNumber && location.state?.customYear) {
-        const { data: existingQuote } = await supabase
-          .from("preventivi")
-          .select("numero")
-          .eq("numero", newNum)
-          .eq("anno", year)
-          .single();
-
-        if (existingQuote) {
-          toast.error(
-            `Il preventivo ${newNum.toString().padStart(2, "0")}-${year} esiste già. Eliminare quello esistente per continuare o modificarlo.`,
-          );
-          return;
-        }
-      }
-
-      const preventivo = await salvaPreventivo({
-        numero: newNum,
-        anno: year,
+      const nuovoPreventivo = await salvaPreventivo({
+        numero: quoteNumber!,
+        anno: quoteYear!,
         cliente_id,
         oggetto: subject,
-        ubicazione_via: workAddress,
-        ubicazione_citta: workCity,
-        ubicazione_provincia: workProvince,
-        ubicazione_cap: workZip,
+        ubicazione_via: workAddress || null,
+        ubicazione_citta: workCity || null,
+        ubicazione_provincia: workProvince || null,
+        ubicazione_cap: workZip || null,
         subtotale,
         sconto_percentuale,
         sconto_valore,
@@ -472,23 +434,22 @@ const CreateQuote = () => {
         .map((line) => ({
           descrizione: line.description,
           unita_misura: line.unit,
-          quantita: line.quantity,
-          prezzo_unitario: line.unitPrice,
-          totale: line.total,
+          quantita: typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0,
+          prezzo_unitario: typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0,
+          totale: typeof line.total === "number" ? line.total : parseFloat(line.total) || 0,
         }));
 
       if (righe.length > 0) {
-        await salvaRighePreventivo(preventivo.id, righe);
+        await salvaRighePreventivo(nuovoPreventivo.id, righe);
       }
 
-      // Elimina la cache dopo il salvataggio
-      if (cacheId) {
-        await eliminaCachePreventivo(cacheId);
-        console.log("Cache eliminata dopo salvataggio:", cacheId);
+      if (autoSaveCacheId) {
+        await eliminaCachePreventivo(autoSaveCacheId);
+        console.log("[CreateQuote] Cache eliminata:", autoSaveCacheId);
       }
 
       setIsSaved(true);
-      toast.success("Preventivo salvato con successo");
+      toast.success("Preventivo creato con successo");
       navigate("/");
     } catch (error) {
       console.error("Errore salvataggio:", error);
@@ -496,21 +457,7 @@ const CreateQuote = () => {
     }
   };
 
-  const handleDelete = () => {
-    toast.success("Preventivo eliminato");
-    navigate("/");
-  };
-
   const handleViewPdf = async () => {
-    if (!isSaved) {
-      setShowPdfWarningDialog(true);
-      return;
-    }
-
-    await proceedToGeneratePdf();
-  };
-
-  const proceedToGeneratePdf = async () => {
     if (!clientData || !clientData.name.trim()) {
       toast.error("Inserire i dati del cliente prima di generare il PDF");
       return;
@@ -524,20 +471,24 @@ const CreateQuote = () => {
       return;
     }
 
+    setShowPdfWarningDialog(true);
+  };
+
+  const proceedToGeneratePdf = async () => {
     try {
       const pdfData = {
-        numero: location.state?.customNumber || 1,
-        anno: location.state?.customYear || new Date().getFullYear(),
+        numero: quoteNumber!,
+        anno: quoteYear!,
         oggetto: subject || "Preventivo",
         cliente: {
-          nome: clientData.name,
-          taxCode: clientData.taxCode,
-          address: clientData.address,
-          city: clientData.city,
-          province: clientData.province,
-          zip: clientData.zip,
-          phone: clientData.phone,
-          email: clientData.email,
+          nome: clientData!.name,
+          taxCode: clientData!.taxCode,
+          address: clientData!.address,
+          city: clientData!.city,
+          province: clientData!.province,
+          zip: clientData!.zip,
+          phone: clientData!.phone,
+          email: clientData!.email,
         },
         ubicazione: {
           via: workAddress,
@@ -550,9 +501,15 @@ const CreateQuote = () => {
           .map((line) => ({
             descrizione: line.description,
             unita_misura: line.unit,
-            quantita: line.quantity,
+            quantita: typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0,
             prezzo_unitario:
-              discountEnabled && !showDiscountInTable ? getEffectiveUnitPrice(line.unitPrice) : line.unitPrice,
+              discountEnabled && !showDiscountInTable
+                ? getEffectiveUnitPrice(
+                    typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0,
+                  )
+                : typeof line.unitPrice === "number"
+                  ? line.unitPrice
+                  : parseFloat(line.unitPrice) || 0,
             totale: getEffectiveLineTotal(line),
           })),
         subtotale: calculateSubtotal(),
@@ -568,7 +525,7 @@ const CreateQuote = () => {
         state: {
           quoteData: pdfData,
           settings: settings,
-          from: location.pathname,
+          from: "/create-quote",
         },
       });
     } catch (error) {
@@ -576,6 +533,16 @@ const CreateQuote = () => {
       toast.error("Errore durante la preparazione del PDF");
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg">Caricamento...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -589,7 +556,12 @@ const CreateQuote = () => {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-3xl font-extrabold tracking-tight">Nuovo Preventivo</h1>
-          {cacheId && <span className="text-xs text-muted-foreground ml-auto">Auto-save attivo</span>}
+          {autoSaveCacheId && (
+            <span className="text-xs text-green-600 font-semibold ml-auto flex items-center gap-2">
+              <span className="w-2 h-2 bg-green-600 rounded-full animate-pulse"></span>
+              Auto-save: {autoSaveCacheId}
+            </span>
+          )}
         </motion.div>
 
         <div className="grid md:grid-cols-2 gap-6 mb-6">
@@ -622,9 +594,6 @@ const CreateQuote = () => {
                     state: {
                       clientData,
                       returnTo: "/create-quote",
-                      // Preserva customNumber e customYear se presenti
-                      customNumber: location.state?.customNumber,
-                      customYear: location.state?.customYear,
                     },
                   })
                 }
@@ -632,7 +601,7 @@ const CreateQuote = () => {
                 className="gap-2"
               >
                 <Edit className="w-4 h-4" />
-                Modifica
+                {clientData ? "Modifica" : "Aggiungi"}
               </Button>
             </div>
             {clientData && clientData.name ? (
@@ -839,9 +808,7 @@ const CreateQuote = () => {
                           }
                           onChange={(e) => {
                             const value = e.target.value;
-                            // Permetti solo numeri, virgola e punto durante la digitazione
                             if (value === "" || /^[\d.,]*$/.test(value)) {
-                              // Salva il valore raw senza formattazione
                               const newLines = [...lines];
                               newLines[index] = { ...newLines[index], quantity: value as any };
                               setLines(newLines);
@@ -868,9 +835,7 @@ const CreateQuote = () => {
                             }
                             onChange={(e) => {
                               const value = e.target.value;
-                              // Permetti solo numeri, virgola e punto durante la digitazione
                               if (value === "" || /^[\d.,]*$/.test(value)) {
-                                // Salva il valore raw senza formattazione
                                 const newLines = [...lines];
                                 newLines[index] = { ...newLines[index], unitPrice: value as any };
                                 setLines(newLines);
@@ -1177,15 +1142,6 @@ const CreateQuote = () => {
               Genera PDF
             </Button>
           </div>
-          <Button
-            onClick={() => setShowDeleteDialog(true)}
-            variant="destructive"
-            size="lg"
-            className="h-14 text-lg font-bold w-full"
-            style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-          >
-            Elimina Preventivo
-          </Button>
         </motion.div>
 
         <AlertDialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
@@ -1223,27 +1179,10 @@ const CreateQuote = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent className="bg-white">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
-              <AlertDialogDescription>
-                Sei sicuro di voler eliminare questo preventivo? Questa azione non può essere annullata.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Annulla</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white">
-                Elimina
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
         <AlertDialog open={showPdfWarningDialog} onOpenChange={setShowPdfWarningDialog}>
           <AlertDialogContent className="bg-white border-2 border-border max-w-lg p-8">
             <AlertDialogHeader>
-              <AlertDialogTitle className="text-2xl font-bold">Preventivo non salvato</AlertDialogTitle>
+              <AlertDialogTitle className="text-2xl font-bold">Preventivo non ancora salvato</AlertDialogTitle>
               <AlertDialogDescription className="text-lg font-semibold text-black mt-4">
                 Il preventivo non è ancora stato salvato. Vuoi salvarlo prima di generare il PDF?
               </AlertDialogDescription>

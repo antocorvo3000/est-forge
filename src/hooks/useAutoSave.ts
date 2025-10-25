@@ -40,72 +40,67 @@ export function useAutoSave({
 }: UseAutoSaveOptions) {
   const timeoutRef = useRef<NodeJS.Timeout>();
   const currentCacheIdRef = useRef<string | undefined>(cacheId);
-  const isFirstRun = useRef(true);
   const lastSavedData = useRef<string>("");
-  const hasInitialSave = useRef(false);
+  const isSavingRef = useRef(false);
 
-  // Aggiorna il cacheId se viene passato dall'esterno
+  // Quando viene passato un cacheId dall'esterno, lo impostiamo subito
   useEffect(() => {
-    if (cacheId && cacheId !== currentCacheIdRef.current) {
+    if (cacheId && !currentCacheIdRef.current) {
       currentCacheIdRef.current = cacheId;
-      console.log("CacheId aggiornato dall'esterno:", cacheId);
+      console.log("[useAutoSave] CacheId impostato dall'esterno:", cacheId);
     }
   }, [cacheId]);
 
   const save = useCallback(async () => {
     if (!enabled) return;
+    if (isSavingRef.current) return;
 
     if (!data.numero || !data.anno) {
-      console.log("Auto-save: numero o anno mancanti, salvataggio rimandato");
+      console.log("[useAutoSave] Numero o anno mancanti, skip");
+      return;
+    }
+
+    const currentDataString = JSON.stringify(data);
+    if (currentDataString === lastSavedData.current) {
       return;
     }
 
     try {
-      const currentDataString = JSON.stringify(data);
+      isSavingRef.current = true;
 
-      if (currentDataString === lastSavedData.current) {
-        return;
-      }
+      console.log("[useAutoSave] Salvataggio con ID:", currentCacheIdRef.current || "nuovo");
 
-      console.log("Auto-save: usando cacheId:", currentCacheIdRef.current);
-
-      const id = await salvaCachePreventivo({
+      const returnedId = await salvaCachePreventivo({
         ...data,
         id: currentCacheIdRef.current,
       });
 
-      if (!currentCacheIdRef.current) {
-        currentCacheIdRef.current = id;
-        console.log("Auto-save: nuovo cacheId assegnato:", id);
+      // Se non avevamo un ID, lo salviamo
+      if (!currentCacheIdRef.current && returnedId) {
+        currentCacheIdRef.current = returnedId;
+        console.log("[useAutoSave] Nuovo ID assegnato:", returnedId);
       }
 
       lastSavedData.current = currentDataString;
-      hasInitialSave.current = true;
-
-      console.log("Auto-save completato:", id, new Date().toLocaleTimeString());
+      console.log("[useAutoSave] Completato:", currentCacheIdRef.current, new Date().toLocaleTimeString());
     } catch (error) {
-      console.error("Errore auto-save:", error);
+      console.error("[useAutoSave] Errore:", error);
+    } finally {
+      isSavingRef.current = false;
     }
   }, [data, enabled]);
 
+  // Salvataggio immediato se richiesto
   useEffect(() => {
-    if (saveImmediately && enabled && !hasInitialSave.current && data.numero && data.anno) {
-      console.log("Auto-save: salvataggio immediato iniziale");
+    if (saveImmediately && enabled && data.numero && data.anno) {
+      console.log("[useAutoSave] Salvataggio immediato");
       save();
     }
   }, [saveImmediately, enabled, data.numero, data.anno, save]);
 
+  // Auto-save con delay
   useEffect(() => {
-    if (isFirstRun.current && !saveImmediately) {
-      isFirstRun.current = false;
-      return;
-    }
-
-    if (!enabled) return;
-
-    if (!data.numero || !data.anno) {
-      return;
-    }
+    if (!enabled || !data.numero || !data.anno) return;
 
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -120,21 +115,23 @@ export function useAutoSave({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [save, delay, enabled, data, saveImmediately]);
+  }, [data, delay, enabled, save]);
 
+  // Salvataggio finale quando il componente si smonta
   useEffect(() => {
     return () => {
-      if (enabled && data.numero && data.anno && currentCacheIdRef.current && hasInitialSave.current) {
+      if (enabled && data.numero && data.anno && currentCacheIdRef.current) {
         const currentDataString = JSON.stringify(data);
         if (currentDataString !== lastSavedData.current) {
+          console.log("[useAutoSave] Salvataggio finale unmount");
           salvaCachePreventivo({
             ...data,
             id: currentCacheIdRef.current,
-          }).catch((err) => console.error("Errore salvataggio finale:", err));
+          }).catch((err) => console.error("[useAutoSave] Errore salvataggio finale:", err));
         }
       }
     };
-  }, [data, enabled]);
+  }, []);
 
   return {
     cacheId: currentCacheIdRef.current,

@@ -23,7 +23,7 @@ const CloneQuote = () => {
   const { settings } = useCompanySettings();
   const { quotes } = useQuotes();
   const quoteToClone = location.state?.quote;
-  
+
   const [step, setStep] = useState<"choice" | "custom" | "modify">("choice");
   const [cloneNumber, setCloneNumber] = useState<number | null>(null);
   const [cloneYear, setCloneYear] = useState<number | null>(null);
@@ -34,23 +34,22 @@ const CloneQuote = () => {
 
   useEffect(() => {
     if (!quoteToClone) {
+      console.log("[CloneQuote] Nessun preventivo da clonare, redirect");
       navigate("/");
+    } else {
+      console.log("[CloneQuote] Preventivo da clonare:", quoteToClone.id);
     }
   }, [quoteToClone, navigate]);
 
   const handleProgressiveChoice = () => {
-    // Calcola il prossimo numero progressivo
     const year = new Date().getFullYear();
     const currentYearQuotes = quotes
       .filter((q) => q.year === year)
       .map((q) => q.number)
       .sort((a, b) => a - b);
 
-    // Se la numerazione personalizzata è attiva, parte dal numero impostato
-    // Altrimenti parte da 1
     const baseNumber = settings.customNumberingEnabled ? settings.startingQuoteNumber : 1;
-    
-    // Trova il primo numero disponibile >= baseNumber
+
     let newNum = baseNumber;
     for (const num of currentYearQuotes) {
       if (num >= baseNumber) {
@@ -62,40 +61,43 @@ const CloneQuote = () => {
       }
     }
 
+    console.log("[CloneQuote] Numerazione progressiva:", newNum, year);
     setCloneNumber(newNum);
     setCloneYear(year);
     setStep("modify");
   };
 
   const handleCustomChoice = () => {
+    console.log("[CloneQuote] Utente sceglie numerazione personalizzata");
     setStep("custom");
   };
 
   const handleCustomConfirm = () => {
     const num = parseInt(quoteNumber);
     const year = parseInt(quoteYear);
-    
+
     if (isNaN(num) || num < 1) {
       setErrorMessage("Il numero del preventivo deve essere maggiore di 0");
       setShowErrorDialog(true);
       return;
     }
-    
+
     if (isNaN(year) || year < 2000 || year > 2100) {
       setErrorMessage("L'anno deve essere compreso tra 2000 e 2100");
       setShowErrorDialog(true);
       return;
     }
-    
+
     const exists = quotes.find((q) => q.number === num && q.year === year);
     if (exists) {
       setErrorMessage(
-        `Il preventivo ${num.toString().padStart(2, '0')}-${year} esiste già. Eliminare quello esistente per continuare o modificarlo.`
+        `Il preventivo ${num.toString().padStart(2, "0")}-${year} esiste già. Eliminare quello esistente per continuare o modificarlo.`,
       );
       setShowErrorDialog(true);
       return;
     }
-    
+
+    console.log("[CloneQuote] Numerazione personalizzata:", num, year);
     setCloneNumber(num);
     setCloneYear(year);
     setStep("modify");
@@ -105,15 +107,15 @@ const CloneQuote = () => {
     return null;
   }
 
-  // Se siamo nello step "modify", naviga alla pagina di modifica
   if (step === "modify" && cloneNumber !== null && cloneYear !== null) {
-    navigate(`/modify-quote/${quoteToClone.id}`, { 
-      state: { 
+    console.log("[CloneQuote] Navigazione a ModifyQuote con cloneNumber:", cloneNumber, "cloneYear:", cloneYear);
+    navigate(`/modify-quote/${quoteToClone.id}`, {
+      state: {
         quote: quoteToClone,
         isCloning: true,
         cloneNumber,
-        cloneYear
-      } 
+        cloneYear,
+      },
     });
     return null;
   }
@@ -126,12 +128,7 @@ const CloneQuote = () => {
           animate={{ opacity: 1, y: 0 }}
           className="glass rounded-2xl p-3 sm:p-4 flex items-center gap-3 mb-6"
         >
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/")}
-            className="h-10 w-10"
-          >
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="h-10 w-10">
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-3xl font-extrabold tracking-tight">Clonazione Preventivo</h1>
@@ -201,7 +198,7 @@ const CloneQuote = () => {
                     style={{ fontSize: `${settings.fontSizeClone}rem` }}
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="quote-year" style={{ fontSize: `${settings.fontSizeClone}rem` }}>
                     Anno
@@ -242,7 +239,6 @@ const CloneQuote = () => {
         </AnimatePresence>
       </div>
 
-      {/* Error Dialog */}
       <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
         <AlertDialogContent className="bg-white border-2 border-border max-w-lg p-8">
           <AlertDialogHeader>
@@ -252,10 +248,7 @@ const CloneQuote = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-6">
-            <AlertDialogAction 
-              onClick={() => setShowErrorDialog(false)}
-              className="text-lg font-bold px-8 py-6"
-            >
+            <AlertDialogAction onClick={() => setShowErrorDialog(false)} className="text-lg font-bold px-8 py-6">
               OK
             </AlertDialogAction>
           </AlertDialogFooter>

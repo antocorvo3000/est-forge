@@ -122,19 +122,21 @@ const ModifyQuote = () => {
   const isCloning = location.state?.isCloning || false;
   const fromCache = location.state?.fromCache || false;
   const cacheData = location.state?.cacheData;
-  const existingCacheId = location.state?.cacheId || (fromCache && cacheData?.id ? cacheData.id : undefined);
+  const existingCacheId = location.state?.cacheId || cacheData?.id || undefined;
 
-  // Log per debug
   useEffect(() => {
-    if (fromCache && existingCacheId) {
-      console.log("ModifyQuote: recuperando da cache con ID:", existingCacheId);
-    }
-  }, [fromCache, existingCacheId]);
+    console.log("[ModifyQuote] Parametri ricevuti:", {
+      fromCache,
+      existingCacheId,
+      hasCacheData: !!cacheData,
+      isCloning,
+      id,
+    });
+  }, []);
 
   const [clientData, setClientData] = useState<ClientData | null>(null);
   const [pageTitle, setPageTitle] = useState("Modifica Preventivo");
 
-  // Numero e anno del preventivo (salvati all'inizio)
   const [quoteNumber, setQuoteNumber] = useState<number | null>(null);
   const [quoteYear, setQuoteYear] = useState<number | null>(null);
   const [isQuoteNumberReady, setIsQuoteNumberReady] = useState(false);
@@ -286,17 +288,15 @@ const ModifyQuote = () => {
     try {
       setLoading(true);
 
-      // Salva numero e anno dalla cache
+      console.log("[ModifyQuote] Caricamento da cache, ID:", cacheData?.id);
+
       if (cacheData.numero) {
         setQuoteNumber(cacheData.numero);
-        console.log("Numero da cache:", cacheData.numero);
       }
       if (cacheData.anno) {
         setQuoteYear(cacheData.anno);
-        console.log("Anno da cache:", cacheData.anno);
       }
 
-      // Marca come pronto
       setIsQuoteNumberReady(true);
 
       if (cacheData.dati_cliente) {
@@ -333,7 +333,7 @@ const ModifyQuote = () => {
 
       setPaymentMethod(cacheData.modalita_pagamento || "da-concordare");
 
-      console.log("Dati cache caricati, cacheId esistente:", existingCacheId);
+      console.log("[ModifyQuote] Dati cache caricati, cacheId:", existingCacheId);
     } catch (error) {
       console.error("Errore caricamento cache:", error);
       toast.error("Errore nel caricamento dei dati dalla cache");
@@ -345,18 +345,18 @@ const ModifyQuote = () => {
   const loadQuoteData = async () => {
     try {
       setLoading(true);
+
+      console.log("[ModifyQuote] Caricamento preventivo, ID:", id, "isCloning:", isCloning);
+
       const data = await getQuoteById(id!);
 
       if (data) {
-        // Salva numero e anno
         const numero = isCloning ? location.state?.cloneNumber : data.numero;
         const anno = isCloning ? location.state?.cloneYear : data.anno;
 
         setQuoteNumber(numero);
         setQuoteYear(anno);
         setIsQuoteNumberReady(true);
-
-        console.log("Numero e anno impostati:", numero, anno, isCloning ? "(clonazione)" : "(modifica)");
 
         if (data.clienti && !location.state?.clientData) {
           setClientData({
@@ -402,8 +402,6 @@ const ModifyQuote = () => {
         setNotes(data.note || "");
 
         setPaymentMethod(data.modalita_pagamento || "da-concordare");
-
-        console.log("Dati preventivo caricati, numero e anno pronti per auto-save");
       }
     } catch (error) {
       console.error("Errore caricamento preventivo:", error);
@@ -512,7 +510,6 @@ const ModifyQuote = () => {
     return subtotal - discount;
   };
 
-  // Determina il tipo di operazione per l'auto-save
   const getTipoOperazione = (): "creazione" | "modifica" | "clonazione" => {
     if (fromCache && cacheData?.tipo_operazione === "creazione") {
       return "creazione";
@@ -523,7 +520,6 @@ const ModifyQuote = () => {
     return "modifica";
   };
 
-  // Auto-save per recupero lavoro interrotto - ATTIVATO SUBITO con saveImmediately
   const { cacheId: autoSaveCacheId } = useAutoSave({
     data: {
       numero: quoteNumber || undefined,
@@ -542,7 +538,7 @@ const ModifyQuote = () => {
       modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
       stato: "bozza",
       tipo_operazione: getTipoOperazione(),
-      preventivo_originale_id: id,
+      preventivo_originale_id: id && id !== "new" ? id : undefined,
       righe: lines.map((line) => ({
         descrizione: line.description,
         unita_misura: line.unit,
@@ -555,7 +551,7 @@ const ModifyQuote = () => {
     enabled: !isSaved && !loading && isQuoteNumberReady,
     delay: 2000,
     cacheId: existingCacheId,
-    saveImmediately: true, // NUOVO: forza salvataggio immediato
+    saveImmediately: true,
   });
 
   const handleSave = () => {
@@ -567,7 +563,6 @@ const ModifyQuote = () => {
       return;
     }
 
-    // Se è un recupero di una modifica, chiedi conferma di sovrascrittura
     if (fromCache && cacheData?.tipo_operazione === "modifica" && id && id !== "new") {
       setShowOverwriteDialog(true);
       return;
@@ -598,19 +593,16 @@ const ModifyQuote = () => {
       const sconto_valore = discountEnabled ? calculateDiscount() : 0;
       const totale = calculateTotal();
 
-      // Determina numero e anno per la clonazione
       const cloneNumber =
         location.state?.cloneNumber ||
         (fromCache && cacheData?.tipo_operazione === "clonazione" ? cacheData.numero : null);
       const cloneYear =
         location.state?.cloneYear || (fromCache && cacheData?.tipo_operazione === "clonazione" ? cacheData.anno : null);
 
-      // Determina se è una creazione dalla cache
       const isCreationFromCache = fromCache && cacheData?.tipo_operazione === "creazione";
       const creationNumber = isCreationFromCache ? cacheData.numero : null;
       const creationYear = isCreationFromCache ? cacheData.anno : null;
 
-      // Se è una clonazione O una creazione dalla cache, crea un nuovo preventivo
       if ((isCloning && cloneNumber && cloneYear) || (isCreationFromCache && creationNumber && creationYear)) {
         const numero = isCreationFromCache ? creationNumber : cloneNumber;
         const anno = isCreationFromCache ? creationYear : cloneYear;
@@ -646,17 +638,15 @@ const ModifyQuote = () => {
           await salvaRighePreventivo(nuovoPreventivo.id, righe);
         }
 
-        // Elimina la cache dopo il salvataggio
         const cacheIdToDelete = autoSaveCacheId || existingCacheId;
         if (cacheIdToDelete) {
           await eliminaCachePreventivo(cacheIdToDelete);
-          console.log("Cache eliminata dopo salvataggio:", cacheIdToDelete);
+          console.log("[ModifyQuote] Cache eliminata:", cacheIdToDelete);
         }
 
         setIsSaved(true);
         toast.success(isCreationFromCache ? "Preventivo creato con successo" : "Preventivo clonato con successo");
       } else {
-        // È una modifica di un preventivo esistente
         if (!id || id === "new") {
           toast.error("Errore: impossibile modificare un preventivo inesistente");
           return;
@@ -691,11 +681,10 @@ const ModifyQuote = () => {
           await salvaRighePreventivo(id, righe);
         }
 
-        // Elimina la cache dopo il salvataggio
         const cacheIdToDelete = autoSaveCacheId || existingCacheId;
         if (cacheIdToDelete) {
           await eliminaCachePreventivo(cacheIdToDelete);
-          console.log("Cache eliminata dopo salvataggio:", cacheIdToDelete);
+          console.log("[ModifyQuote] Cache eliminata:", cacheIdToDelete);
         }
 
         if (isCloning) {
@@ -787,7 +776,6 @@ const ModifyQuote = () => {
         }
       }
 
-      // Per le clonazioni, usa il numero e anno dalla cache o da location.state
       const cloneNumber =
         location.state?.cloneNumber ||
         (fromCache && cacheData?.tipo_operazione === "clonazione" ? cacheData.numero : null);
@@ -799,7 +787,6 @@ const ModifyQuote = () => {
         anno = cloneYear;
       }
 
-      // Per le creazioni dalla cache
       const isCreationFromCache = fromCache && cacheData?.tipo_operazione === "creazione";
       if (isCreationFromCache && cacheData?.numero && cacheData?.anno) {
         numero = cacheData.numero;
@@ -887,7 +874,10 @@ const ModifyQuote = () => {
           </Button>
           <h1 className="text-3xl font-extrabold tracking-tight">{pageTitle}</h1>
           {(autoSaveCacheId || existingCacheId) && (
-            <span className="text-xs text-muted-foreground ml-auto">Auto-save attivo</span>
+            <span className="text-xs text-green-600 font-semibold ml-auto flex items-center gap-2">
+              <span className="w-2 h-2 bg-green-600 rounded-full animate-pulse"></span>
+              Auto-save: {autoSaveCacheId || existingCacheId}
+            </span>
           )}
         </motion.div>
 
@@ -922,7 +912,6 @@ const ModifyQuote = () => {
                       clientData,
                       returnTo: `/modify-quote/${id}`,
                       quote: quoteData,
-                      // PRESERVA tutti gli state necessari per il recupero
                       fromCache,
                       cacheId: existingCacheId,
                       cacheData,
