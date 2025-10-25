@@ -111,6 +111,20 @@ export function useAutoSave({
     };
   }, [save, delay, enabled, data, saveImmediately]);
 
+  useEffect(() => {
+    return () => {
+      if (enabled && data.numero && data.anno && currentCacheIdRef.current && hasInitialSave.current) {
+        const currentDataString = JSON.stringify(data);
+        if (currentDataString !== lastSavedData.current) {
+          salvaCachePreventivo({
+            ...data,
+            id: currentCacheIdRef.current,
+          }).catch((err) => console.error("Errore salvataggio finale:", err));
+        }
+      }
+    };
+  }, [data, enabled]);
+
   return {
     cacheId: currentCacheIdRef.current,
     saveNow: save,
