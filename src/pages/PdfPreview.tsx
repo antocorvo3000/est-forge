@@ -1,17 +1,18 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Download, Printer, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Download, Printer, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
 
-// ✅ PDF Viewer + plugin zoom
+// ✅ PDF Viewer
 import { Worker, Viewer } from "@react-pdf-viewer/core";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/zoom/lib/styles/index.css";
+import "./pdf-transparent.css"; // 👉 aggiungiamo il CSS per sfondo trasparente
 
 interface QuoteData {
   numero: number;
@@ -83,7 +84,6 @@ const PdfPreview = () => {
     const initPdf = async () => {
       try {
         const pdf = await generateQuotePDF(data, companySettings);
-
         try {
           const n = pdf.getNumberOfPages?.();
           if (typeof n === "number") setTotalPages(n);
@@ -92,7 +92,6 @@ const PdfPreview = () => {
         const blob = pdf.output("blob");
         const pdfBlob = new Blob([blob], { type: "application/pdf" });
         const url = URL.createObjectURL(pdfBlob);
-
         console.log("📄 PDF URL generato:", url);
         setPdfBlobUrl(url);
         setLoading(false);
@@ -104,7 +103,6 @@ const PdfPreview = () => {
     };
 
     initPdf();
-
     return () => {
       if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
     };
@@ -157,7 +155,7 @@ const PdfPreview = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-y-auto">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
         {/* Header */}
         <motion.div
@@ -177,33 +175,27 @@ const PdfPreview = () => {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex-1 glass rounded-2xl p-4 overflow-hidden flex flex-col"
-            style={{ maxHeight: "calc(100vh - 180px)" }}
+            className="flex-1 glass rounded-2xl p-4 flex flex-col items-center"
           >
-            {/* Scroll unificato: rimosso overflow interno extra */}
-            <div className="flex justify-center flex-1 min-h-[600px]">
-              {pdfBlobUrl ? (
-                <div className="flex flex-col items-center w-full overflow-y-auto scrollbar-thin">
-                  <Worker workerUrl={workerUrl}>
-                    <Viewer
-                      fileUrl={pdfBlobUrl}
-                      plugins={[zoomPluginInstance]}
-                      onDocumentLoad={(e) => setTotalPages(e.doc.numPages)}
-                      onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
-                    />
-                  </Worker>
-                </div>
-              ) : (
-                <div className="text-gray-500 text-sm">⚠️ PDF non disponibile</div>
-              )}
-            </div>
+            {pdfBlobUrl ? (
+              <Worker workerUrl={workerUrl}>
+                <Viewer
+                  fileUrl={pdfBlobUrl}
+                  plugins={[zoomPluginInstance]}
+                  onDocumentLoad={(e) => setTotalPages(e.doc.numPages)}
+                  onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
+                />
+              </Worker>
+            ) : (
+              <div className="text-gray-500 text-sm">⚠️ PDF non disponibile</div>
+            )}
           </motion.div>
 
           {/* Control Panel */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="w-20 flex flex-col gap-3 sticky top-4"
+            className="w-20 flex flex-col gap-3 sticky top-4 h-fit"
           >
             <Button
               onClick={handleSave}
