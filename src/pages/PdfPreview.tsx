@@ -7,9 +7,11 @@ import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
 
-// ✅ PDF Viewer
+// ✅ PDF Viewer + plugin zoom
 import { Worker, Viewer } from "@react-pdf-viewer/core";
+import { zoomPlugin } from "@react-pdf-viewer/zoom";
 import "@react-pdf-viewer/core/lib/styles/index.css";
+import "@react-pdf-viewer/zoom/lib/styles/index.css";
 
 interface QuoteData {
   numero: number;
@@ -50,7 +52,6 @@ interface QuoteData {
 const PdfPreview = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [zoom, setZoom] = useState(100);
   const [loading, setLoading] = useState(true);
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
   const [settings, setSettings] = useState<CompanySettings | null>(null);
@@ -58,6 +59,10 @@ const PdfPreview = () => {
   const [returnPath, setReturnPath] = useState<string>("/");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Zoom plugin
+  const zoomPluginInstance = zoomPlugin();
+  const { zoomTo } = zoomPluginInstance;
 
   useEffect(() => {
     const data = location.state?.quoteData as QuoteData;
@@ -88,7 +93,7 @@ const PdfPreview = () => {
         const pdfBlob = new Blob([blob], { type: "application/pdf" });
         const url = URL.createObjectURL(pdfBlob);
 
-        console.log("📄 PDF URL generato:", url); // DEBUG: controlla in console
+        console.log("📄 PDF URL generato:", url);
         setPdfBlobUrl(url);
         setLoading(false);
       } catch (error) {
@@ -130,8 +135,8 @@ const PdfPreview = () => {
     toast.success("Invio alla stampante...");
   };
 
-  const handleZoomIn = () => setZoom((prev) => Math.min(prev + 25, 200));
-  const handleZoomOut = () => setZoom((prev) => Math.max(prev - 25, 50));
+  const handleZoomIn = () => zoomTo((scale) => scale + 0.25);
+  const handleZoomOut = () => zoomTo((scale) => Math.max(scale - 0.25, 0.5));
 
   const handleGoBack = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -175,20 +180,16 @@ const PdfPreview = () => {
             className="flex-1 glass rounded-2xl p-4 overflow-hidden flex flex-col"
             style={{ maxHeight: "calc(100vh - 180px)" }}
           >
-            <div
-              className="flex justify-center overflow-y-auto scrollbar-thin pr-2 flex-1"
-              style={{ minHeight: "600px" }}
-            >
+            {/* Scroll unificato: rimosso overflow interno extra */}
+            <div className="flex justify-center flex-1 min-h-[600px]">
               {pdfBlobUrl ? (
-                <div className="flex flex-col items-center w-full">
+                <div className="flex flex-col items-center w-full overflow-y-auto scrollbar-thin">
                   <Worker workerUrl={workerUrl}>
                     <Viewer
                       fileUrl={pdfBlobUrl}
-                      defaultScale={zoom / 100}
-                      style={{
-                        width: "100%",
-                        minHeight: "100%",
-                      }}
+                      plugins={[zoomPluginInstance]}
+                      onDocumentLoad={(e) => setTotalPages(e.doc.numPages)}
+                      onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
                     />
                   </Worker>
                 </div>
@@ -227,7 +228,6 @@ const PdfPreview = () => {
               variant="outline"
               className="h-24 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
               title="Zoom In"
-              disabled={zoom >= 200}
             >
               <ZoomIn className="w-5 h-5" />
               <span className="text-center leading-tight whitespace-normal">Zoom avanti</span>
@@ -238,7 +238,6 @@ const PdfPreview = () => {
               variant="outline"
               className="h-24 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
               title="Zoom Out"
-              disabled={zoom <= 50}
             >
               <ZoomOut className="w-5 h-5" />
               <span className="text-center leading-tight whitespace-normal">Zoom indietro</span>
@@ -248,23 +247,11 @@ const PdfPreview = () => {
               variant="outline"
               className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs cursor-default pointer-events-none"
             >
-              <span className="font-semibold">Zoom:</span>
-              <span>{zoom}%</span>
+              <span className="font-semibold">Pagina</span>
+              <span>
+                {currentPage} / {totalPages}
+              </span>
             </Button>
-
-            <div className="mt-4 space-y-2">
-              <Button
-                variant="outline"
-                className="h-14 w-full flex items-center justify-center text-xs cursor-default pointer-events-none"
-                title="Pagina corrente"
-              >
-                <ChevronLeft className="w-0 h-0 opacity-0" />
-                <span className="text-center leading-tight">
-                  Pagina {currentPage} / {totalPages}
-                </span>
-                <ChevronRight className="w-0 h-0 opacity-0" />
-              </Button>
-            </div>
           </motion.div>
         </div>
       </div>
