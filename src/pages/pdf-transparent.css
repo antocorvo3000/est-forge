@@ -1,0 +1,14 @@
+/* Rende trasparente lo sfondo del PDF */
+.rpv-core__inner-page {
+  background-color: transparent !important;
+}
+
+/* Rimuove eventuali margini aggiuntivi */
+.rpv-core__viewer {
+  background-color: transparent !important;
+}
+
+/* Mantiene la pagina centrata */
+.rpv-core__page-layer {
+  margin: 0 auto;
+}
