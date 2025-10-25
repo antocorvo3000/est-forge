@@ -56,7 +56,6 @@ export function useAutoSave({
       const currentDataString = JSON.stringify(data);
 
       if (currentDataString === lastSavedData.current) {
-        console.log("Auto-save: dati non modificati, skip");
         return;
       }
 
@@ -111,17 +110,6 @@ export function useAutoSave({
       }
     };
   }, [save, delay, enabled, data, saveImmediately]);
-
-  useEffect(() => {
-    return () => {
-      if (enabled && data.numero && data.anno && currentCacheIdRef.current) {
-        salvaCachePreventivo({
-          ...data,
-          id: currentCacheIdRef.current,
-        }).catch((err) => console.error("Errore salvataggio finale:", err));
-      }
-    };
-  }, []);
 
   return {
     cacheId: currentCacheIdRef.current,
