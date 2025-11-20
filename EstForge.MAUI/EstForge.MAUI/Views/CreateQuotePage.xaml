@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:EstForge.Core.ViewModels;assembly=EstForge.Core"
+             x:Class="EstForge.MAUI.Views.CreateQuotePage"
+             x:DataType="vm:CreateQuoteViewModel"
+             Title="{Binding Title}"
+             BackgroundColor="{StaticResource Gray100}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="15" Spacing="15">
+
+            <!-- Header Card -->
+            <Frame Style="{StaticResource CardFrame}">
+                <Grid RowDefinitions="Auto,Auto,Auto"
+                      ColumnDefinitions="*,*"
+                      RowSpacing="15"
+                      ColumnSpacing="10">
+
+                    <Label Grid.Row="0" Grid.ColumnSpan="2"
+                           Text="Dati Preventivo"
+                           Style="{StaticResource TitleLabel}"
+                           FontSize="18"/>
+
+                    <!-- Numero -->
+                    <VerticalStackLayout Grid.Row="1" Grid.Column="0">
+                        <Label Text="Numero" FontAttributes="Bold"/>
+                        <Entry Text="{Binding Numero}"
+                               Keyboard="Numeric"
+                               Placeholder="1"/>
+                    </VerticalStackLayout>
+
+                    <!-- Anno -->
+                    <VerticalStackLayout Grid.Row="1" Grid.Column="1">
+                        <Label Text="Anno" FontAttributes="Bold"/>
+                        <Entry Text="{Binding Anno}"
+                               Keyboard="Numeric"
+                               Placeholder="2025"/>
+                    </VerticalStackLayout>
+
+                    <!-- Cliente -->
+                    <VerticalStackLayout Grid.Row="2" Grid.ColumnSpan="2">
+                        <Label Text="Cliente" FontAttributes="Bold"/>
+                        <Picker ItemsSource="{Binding Clienti}"
+                                SelectedItem="{Binding SelectedCliente}"
+                                ItemDisplayBinding="{Binding NomeRagioneSociale}"
+                                Title="Seleziona cliente"/>
+                    </VerticalStackLayout>
+                </Grid>
+            </Frame>
+
+            <!-- Oggetto e Ubicazione -->
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="15">
+                    <Label Text="Dettagli Lavoro"
+                           Style="{StaticResource TitleLabel}"
+                           FontSize="18"/>
+
+                    <VerticalStackLayout>
+                        <Label Text="Oggetto" FontAttributes="Bold"/>
+                        <Entry Text="{Binding Oggetto}"
+                               Placeholder="Descrizione lavori"/>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout>
+                        <Label Text="Ubicazione Via" FontAttributes="Bold"/>
+                        <Entry Text="{Binding UbicazioneVia}"
+                               Placeholder="Via, numero civico"/>
+                    </VerticalStackLayout>
+
+                    <Grid ColumnDefinitions="2*,*,*"
+                          ColumnSpacing="10">
+                        <VerticalStackLayout Grid.Column="0">
+                            <Label Text="Città" FontAttributes="Bold"/>
+                            <Entry Text="{Binding UbicazioneCitta}"
+                                   Placeholder="Città"/>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1">
+                            <Label Text="Prov." FontAttributes="Bold"/>
+                            <Entry Text="{Binding UbicazioneProvincia}"
+                                   Placeholder="MI"
+                                   MaxLength="2"/>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="2">
+                            <Label Text="CAP" FontAttributes="Bold"/>
+                            <Entry Text="{Binding UbicazioneCap}"
+                                   Placeholder="20100"
+                                   Keyboard="Numeric"
+                                   MaxLength="5"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Righe Preventivo -->
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0"
+                               Text="Righe Preventivo"
+                               Style="{StaticResource TitleLabel}"
+                               FontSize="18"/>
+                        <Button Grid.Column="1"
+                                Text="+ Riga"
+                                Command="{Binding AddRigaCommand}"
+                                BackgroundColor="{StaticResource Primary}"
+                                TextColor="White"
+                                CornerRadius="8"
+                                Padding="15,5"/>
+                    </Grid>
+
+                    <CollectionView ItemsSource="{Binding Righe}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:RigaPreventivoViewModel">
+                                <Frame BackgroundColor="{StaticResource Gray100}"
+                                       CornerRadius="10"
+                                       Padding="10"
+                                       Margin="0,5">
+                                    <Grid RowDefinitions="Auto,Auto,Auto"
+                                          ColumnDefinitions="*,*,Auto"
+                                          RowSpacing="10"
+                                          ColumnSpacing="10">
+
+                                        <!-- Numero Riga -->
+                                        <Label Grid.Row="0" Grid.ColumnSpan="2"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource Primary}">
+                                            <Label.Text>
+                                                <Binding Path="NumeroRiga" StringFormat="Riga {0}" />
+                                            </Label.Text>
+                                        </Label>
+
+                                        <!-- Pulsante Elimina -->
+                                        <Button Grid.Row="0" Grid.Column="2"
+                                                Text="✕"
+                                                BackgroundColor="{StaticResource Error}"
+                                                TextColor="White"
+                                                CornerRadius="5"
+                                                Padding="10,5"
+                                                FontSize="16"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CreateQuoteViewModel}}, Path=RemoveRigaCommand}"
+                                                CommandParameter="{Binding .}"/>
+
+                                        <!-- Descrizione -->
+                                        <VerticalStackLayout Grid.Row="1" Grid.ColumnSpan="3">
+                                            <Label Text="Descrizione" FontSize="12" FontAttributes="Bold"/>
+                                            <Entry Text="{Binding Descrizione}"
+                                                   Placeholder="Descrizione lavorazione"/>
+                                        </VerticalStackLayout>
+
+                                        <!-- U.M., Quantità, Prezzo -->
+                                        <VerticalStackLayout Grid.Row="2" Grid.Column="0">
+                                            <Label Text="U.M." FontSize="12" FontAttributes="Bold"/>
+                                            <Entry Text="{Binding UnitaMisura}"
+                                                   Placeholder="pz"
+                                                   MaxLength="10"/>
+                                        </VerticalStackLayout>
+
+                                        <VerticalStackLayout Grid.Row="2" Grid.Column="1">
+                                            <Label Text="Quantità" FontSize="12" FontAttributes="Bold"/>
+                                            <Entry Text="{Binding Quantita}"
+                                                   Keyboard="Numeric"
+                                                   Placeholder="1"/>
+                                        </VerticalStackLayout>
+
+                                        <VerticalStackLayout Grid.Row="2" Grid.Column="2">
+                                            <Label Text="Prezzo €" FontSize="12" FontAttributes="Bold"/>
+                                            <Entry Text="{Binding PrezzoUnitario}"
+                                                   Keyboard="Numeric"
+                                                   Placeholder="0,00"
+                                                   WidthRequest="100"/>
+                                        </VerticalStackLayout>
+
+                                        <!-- Totale Riga -->
+                                        <Label Grid.Row="3" Grid.ColumnSpan="3"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource Primary}"
+                                               HorizontalOptions="End"
+                                               Margin="0,5,0,0">
+                                            <Label.Text>
+                                                <Binding Path="Totale" StringFormat="Totale: € {0:N2}" />
+                                            </Label.Text>
+                                        </Label>
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Totali -->
+            <Frame Style="{StaticResource CardFrame}"
+                   BackgroundColor="{StaticResource PrimaryLight}"
+                   Opacity="0.2">
+                <VerticalStackLayout Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0"
+                               Text="Subtotale"
+                               FontSize="16"
+                               FontAttributes="Bold"/>
+                        <Label Grid.Column="1"
+                               Text="{Binding Subtotale, StringFormat='€ {0:N2}'}"
+                               FontSize="16"
+                               FontAttributes="Bold"/>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="2*,*,Auto"
+                          ColumnSpacing="10">
+                        <VerticalStackLayout Grid.Column="0">
+                            <Label Text="Sconto %" FontSize="12" FontAttributes="Bold"/>
+                            <Entry Text="{Binding ScontoPercentuale}"
+                                   Keyboard="Numeric"
+                                   Placeholder="0"/>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1">
+                            <Label Text="Sconto €" FontSize="12" FontAttributes="Bold"/>
+                            <Entry Text="{Binding ScontoValore}"
+                                   Keyboard="Numeric"
+                                   Placeholder="0,00"/>
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <BoxView HeightRequest="2"
+                             Color="{StaticResource Primary}"
+                             Margin="0,5"/>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0"
+                               Text="TOTALE"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource Primary}"/>
+                        <Label Grid.Column="1"
+                               Text="{Binding Totale, StringFormat='€ {0:N2}'}"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource Primary}"/>
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Note e Pagamento -->
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="15">
+                    <VerticalStackLayout>
+                        <Label Text="Modalità di Pagamento" FontAttributes="Bold"/>
+                        <Entry Text="{Binding ModalitaPagamento}"
+                               Placeholder="Es: Bonifico bancario"/>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout>
+                        <Label Text="Note" FontAttributes="Bold"/>
+                        <Editor Text="{Binding Note}"
+                                Placeholder="Note aggiuntive..."
+                                HeightRequest="100"
+                                AutoSize="TextChanges"
+                                BackgroundColor="{StaticResource Gray100}"/>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Pulsanti Azione -->
+            <Grid ColumnDefinitions="*,*"
+                  ColumnSpacing="10"
+                  Margin="0,10">
+                <Button Grid.Column="0"
+                        Text="Annulla"
+                        Style="{StaticResource OutlineButton}"
+                        Command="{Binding CancelCommand}"/>
+                <Button Grid.Column="1"
+                        Text="Salva Preventivo"
+                        Command="{Binding SaveCommand}"
+                        IsEnabled="{Binding IsNotBusy}"/>
+            </Grid>
+
+            <!-- Auto-save indicator -->
+            <Label Text="💾 Auto-salvataggio attivo"
+                   FontSize="12"
+                   TextColor="{StaticResource Gray500}"
+                   IsVisible="{Binding IsAutoSaving}"
+                   HorizontalOptions="Center"
+                   Margin="0,5"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+    <!-- Loading Overlay -->
+    <Grid IsVisible="{Binding IsBusy}"
+          BackgroundColor="#80000000"
+          InputTransparent="False">
+        <VerticalStackLayout VerticalOptions="Center"
+                            HorizontalOptions="Center">
+            <ActivityIndicator IsRunning="True"
+                             Color="White"
+                             WidthRequest="50"
+                             HeightRequest="50"/>
+            <Label Text="Salvataggio in corso..."
+                   TextColor="White"
+                   FontSize="16"
+                   Margin="0,10,0,0"/>
+        </VerticalStackLayout>
+    </Grid>
+
+</ContentPage>
