@@ -135,10 +135,15 @@
 
                                 <!-- CHECKBOX (SELECTION MODE) -->
                                 <CheckBox Grid.Column="0"
-                                         Command="{Binding Path=BindingContext.ToggleQuoteSelectionCommand, Source={x:Reference mainPage}}"
-                                         CommandParameter="{Binding Id}"
                                          IsVisible="{Binding Path=BindingContext.IsSelectionMode, Source={x:Reference mainPage}}"
-                                         VerticalOptions="Center"/>
+                                         VerticalOptions="Center">
+                                    <CheckBox.Behaviors>
+                                        <toolkit:EventToCommandBehavior
+                                            EventName="CheckedChanged"
+                                            Command="{Binding Path=BindingContext.ToggleQuoteSelectionCommand, Source={x:Reference mainPage}}"
+                                            CommandParameter="{Binding Id}" />
+                                    </CheckBox.Behaviors>
+                                </CheckBox>
 
                                 <!-- ICONA DOCUMENTO -->
                                 <Frame Grid.Column="1"
