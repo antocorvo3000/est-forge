@@ -42,13 +42,13 @@
             <OnPlatform x:Key="RegularFont" x:TypeArguments="x:String">
                 <On Platform="Android" Value="OpenSans-Regular.ttf" />
                 <On Platform="iOS" Value="OpenSans-Regular" />
-                <On Platform="WinUI" Value="Segoe UI" />
+                <On Platform="WinUI" Value="OpenSans-Regular.ttf" />
             </OnPlatform>
 
             <OnPlatform x:Key="BoldFont" x:TypeArguments="x:String">
                 <On Platform="Android" Value="OpenSans-Semibold.ttf" />
                 <On Platform="iOS" Value="OpenSans-Semibold" />
-                <On Platform="WinUI" Value="Segoe UI Semibold" />
+                <On Platform="WinUI" Value="OpenSans-Semibold.ttf" />
             </OnPlatform>
 
             <!-- Styles -->
