@@ -20,119 +20,31 @@ public class DatabaseSeedService : IDatabaseSeedService
     {
         using var context = await _contextFactory.CreateDbContextAsync();
 
-        // Controlla se esiste almeno un'azienda
-        var hasAzienda = await context.Azienda.AnyAsync();
-        return hasAzienda;
+        // Controlla se esistono già preventivi (Azienda e Clienti sono già seed nel DbContext)
+        var hasPreventivi = await context.Preventivi.AnyAsync();
+        return hasPreventivi;
     }
 
     public async Task SeedDatabaseAsync()
     {
         using var context = await _contextFactory.CreateDbContextAsync();
 
-        // Se già popolato, non fare nulla
-        if (await context.Azienda.AnyAsync())
+        // Se già popolato con preventivi, non fare nulla
+        if (await context.Preventivi.AnyAsync())
         {
             return;
         }
 
-        // 1. Crea l'azienda di esempio
-        var azienda = new Azienda
+        // Usa i clienti già presenti dal seed del DbContext
+        var clienti = await context.Clienti.OrderBy(c => c.CreatoIl).Take(5).ToListAsync();
+
+        if (clienti.Count < 5)
         {
-            RagioneSociale = "ZetaForge S.r.l.",
-            PartitaIva = "IT12345678901",
-            SedeLegale = "Via Roma 123, 00100 Roma RM",
-            Telefono = "+39 06 1234567",
-            Email = "info@zetaforge.it",
-            LogoUrl = null,
-            NumeroProgressivoIniziale = 1,
-            NumerazioneProgressivaAttiva = true,
-            FontSizeList = 14,
-            FontSizeQuote = 12,
-            FontSizeClient = 12,
-            FontSizeSettings = 14,
-            FontSizeCustomQuote = 12,
-            FontSizeClone = 12,
-            FontSizeEditNumber = 14,
-            CreatoIl = DateTime.UtcNow,
-            AggiornatoIl = DateTime.UtcNow
-        };
+            // Se non ci sono abbastanza clienti, non fare nulla (il seed del DbContext deve essere già applicato)
+            return;
+        }
 
-        context.Azienda.Add(azienda);
-
-        // 2. Crea clienti di esempio
-        var clienti = new List<Cliente>
-        {
-            new Cliente
-            {
-                NomeRagioneSociale = "Acme Corporation S.p.A.",
-                CodiceFiscalePIva = "IT98765432109",
-                Via = "Via Milano 45",
-                Citta = "Milano",
-                Provincia = "MI",
-                Cap = "20100",
-                Telefono = "+39 02 9876543",
-                Email = "contatti@acme.it",
-                CreatoIl = DateTime.UtcNow,
-                AggiornatoIl = DateTime.UtcNow
-            },
-            new Cliente
-            {
-                NomeRagioneSociale = "Tech Solutions S.r.l.",
-                CodiceFiscalePIva = "IT11223344556",
-                Via = "Corso Italia 78",
-                Citta = "Torino",
-                Provincia = "TO",
-                Cap = "10100",
-                Telefono = "+39 011 5556677",
-                Email = "info@techsolutions.it",
-                CreatoIl = DateTime.UtcNow,
-                AggiornatoIl = DateTime.UtcNow
-            },
-            new Cliente
-            {
-                NomeRagioneSociale = "Innovatech Industries",
-                CodiceFiscalePIva = "IT55667788990",
-                Via = "Viale Europa 200",
-                Citta = "Bologna",
-                Provincia = "BO",
-                Cap = "40100",
-                Telefono = "+39 051 2223344",
-                Email = "contact@innovatech.com",
-                CreatoIl = DateTime.UtcNow,
-                AggiornatoIl = DateTime.UtcNow
-            },
-            new Cliente
-            {
-                NomeRagioneSociale = "Green Energy S.p.A.",
-                CodiceFiscalePIva = "IT99887766554",
-                Via = "Via Nazionale 15",
-                Citta = "Firenze",
-                Provincia = "FI",
-                Cap = "50100",
-                Telefono = "+39 055 1112233",
-                Email = "info@greenenergy.it",
-                CreatoIl = DateTime.UtcNow,
-                AggiornatoIl = DateTime.UtcNow
-            },
-            new Cliente
-            {
-                NomeRagioneSociale = "Digital Marketing Pro",
-                CodiceFiscalePIva = "IT33445566778",
-                Via = "Piazza Garibaldi 8",
-                Citta = "Napoli",
-                Provincia = "NA",
-                Cap = "80100",
-                Telefono = "+39 081 9998877",
-                Email = "hello@digitalmarketingpro.it",
-                CreatoIl = DateTime.UtcNow,
-                AggiornatoIl = DateTime.UtcNow
-            }
-        };
-
-        context.Clienti.AddRange(clienti);
-        await context.SaveChangesAsync();
-
-        // 3. Crea preventivi di esempio
+        // Crea preventivi di esempio usando i clienti esistenti
         var anno = DateTime.Now.Year;
         var preventivi = new List<Preventivo>
         {
