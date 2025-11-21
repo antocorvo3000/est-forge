@@ -1,0 +1,2 @@
+<!-- Placeholder for images -->
+<!-- Add home.png, add.png, settings.png icons here -->

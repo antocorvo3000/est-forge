@@ -1,0 +1,9 @@
+# Font Placeholder
+# Scarica i font OpenSans da Google Fonts:
+# https://fonts.google.com/specimen/Open+Sans
+#
+# Inserisci qui:
+# - OpenSans-Regular.ttf
+# - OpenSans-Semibold.ttf
+#
+# Oppure il progetto userà i font di sistema se non presenti.
