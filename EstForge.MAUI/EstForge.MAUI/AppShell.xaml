@@ -5,88 +5,10 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:EstForge.MAUI"
     xmlns:views="clr-namespace:EstForge.MAUI.Views"
-    Title="EST-FORGE"
-    FlyoutBackgroundColor="{StaticResource Primary}">
+    Shell.FlyoutBehavior="Disabled"
+    Shell.NavBarIsVisible="False">
 
-    <Shell.FlyoutHeaderTemplate>
-        <DataTemplate>
-            <Grid BackgroundColor="{StaticResource PrimaryDark}"
-                  HeightRequest="150"
-                  Padding="20">
-                <VerticalStackLayout VerticalOptions="Center">
-                    <Label Text="EST-FORGE"
-                           TextColor="White"
-                           FontSize="28"
-                           FontAttributes="Bold"
-                           HorizontalOptions="Start"/>
-                    <Label Text="Gestione Preventivi"
-                           TextColor="White"
-                           FontSize="14"
-                           Opacity="0.8"
-                           HorizontalOptions="Start"
-                           Margin="0,5,0,0"/>
-                </VerticalStackLayout>
-            </Grid>
-        </DataTemplate>
-    </Shell.FlyoutHeaderTemplate>
-
-    <!-- Main Pages -->
-    <FlyoutItem Title="Preventivi"
-                Icon="home.png"
-                Route="main">
-        <ShellContent ContentTemplate="{DataTemplate local:MainPage}" />
-    </FlyoutItem>
-
-    <FlyoutItem Title="Nuovo Preventivo"
-                Icon="add.png"
-                Route="createquote">
-        <ShellContent ContentTemplate="{DataTemplate views:CreateQuotePage}" />
-    </FlyoutItem>
-
-    <FlyoutItem Title="Impostazioni"
-                Icon="settings.png"
-                Route="settings">
-        <ShellContent ContentTemplate="{DataTemplate views:SettingsPage}" />
-    </FlyoutItem>
-
-    <!-- Styling -->
-    <Shell.ItemTemplate>
-        <DataTemplate>
-            <Grid Padding="15,10"
-                  HeightRequest="60">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="50"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <Image Source="{Binding FlyoutIcon}"
-                       Grid.Column="0"
-                       HeightRequest="30"
-                       WidthRequest="30"
-                       VerticalOptions="Center"
-                       HorizontalOptions="Center"/>
-
-                <Label Text="{Binding Title}"
-                       Grid.Column="1"
-                       TextColor="White"
-                       FontSize="18"
-                       VerticalOptions="Center"
-                       Margin="10,0,0,0"/>
-            </Grid>
-        </DataTemplate>
-    </Shell.ItemTemplate>
-
-    <Shell.FlyoutFooterTemplate>
-        <DataTemplate>
-            <Grid Padding="20"
-                  BackgroundColor="{StaticResource PrimaryDark}">
-                <Label Text="© 2025 ZetaForge S.r.l."
-                       TextColor="White"
-                       FontSize="12"
-                       Opacity="0.7"
-                       HorizontalOptions="Center"/>
-            </Grid>
-        </DataTemplate>
-    </Shell.FlyoutFooterTemplate>
+    <!-- Main Page -->
+    <ShellContent ContentTemplate="{DataTemplate local:MainPage}" Route="main" />
 
 </Shell>
