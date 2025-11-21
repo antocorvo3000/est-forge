@@ -152,11 +152,12 @@
 
                             <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="16">
 
-                                <!-- CHECKBOX (visibile quando isSelectionMode) -->
+                                <!-- CHECKBOX (animata in C#) -->
                                 <CheckBox Grid.Column="0"
                                          VerticalOptions="Center"
-                                         Opacity="1"
-                                         IsVisible="{Binding Path=BindingContext.IsSelectionMode, Source={x:Reference mainPage}}">
+                                         Opacity="0"
+                                         Scale="0.5"
+                                         IsVisible="False">
                                     <CheckBox.Behaviors>
                                         <toolkit:EventToCommandBehavior
                                             EventName="CheckedChanged"
