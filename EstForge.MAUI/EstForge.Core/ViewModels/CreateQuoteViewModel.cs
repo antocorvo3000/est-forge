@@ -247,9 +247,9 @@ public partial class CreateQuoteViewModel : BaseViewModel
         }
     }
 
-    private async Task AutoSaveAsync()
+    private Task AutoSaveAsync()
     {
-        if (IsBusy || IsAutoSaving) return;
+        if (IsBusy || IsAutoSaving) return Task.CompletedTask;
 
         try
         {
@@ -267,6 +267,8 @@ public partial class CreateQuoteViewModel : BaseViewModel
         {
             IsAutoSaving = false;
         }
+
+        return Task.CompletedTask;
     }
 
     public void StartAutoSave()
