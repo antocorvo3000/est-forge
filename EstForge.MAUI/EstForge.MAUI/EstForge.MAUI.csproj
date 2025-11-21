@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<!-- Solo Windows e Android - iOS/macOS/Tizen rimossi -->
-		<TargetFrameworks>net8.0-android;net8.0-windows10.0.19041.0</TargetFrameworks>
+		<!-- SOLO Windows - Android/iOS/macOS/Tizen rimossi -->
+		<TargetFrameworks>net8.0-windows10.0.19041.0</TargetFrameworks>
 
 		<OutputType>Exe</OutputType>
 		<RootNamespace>EstForge.MAUI</RootNamespace>
@@ -21,7 +21,6 @@
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
 
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 	</PropertyGroup>
