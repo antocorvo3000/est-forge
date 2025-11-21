@@ -3,6 +3,7 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using QuestContainer = QuestPDF.Infrastructure.IContainer;
+using QuestColors = QuestPDF.Helpers.Colors;
 
 namespace EstForge.Core.Services;
 
@@ -25,7 +26,7 @@ public class PdfGeneratorService : IPdfGeneratorService
                 {
                     page.Size(PageSizes.A4);
                     page.Margin(40);
-                    page.PageColor(Colors.White);
+                    page.PageColor(QuestColors.White);
                     page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Arial"));
 
                     page.Header().Element(c => ComposeHeader(c, preventivo, azienda));
@@ -61,12 +62,12 @@ public class PdfGeneratorService : IPdfGeneratorService
                         logoColumn.Item()
                             .Height(60)
                             .Border(1)
-                            .BorderColor(Colors.Grey.Lighten2)
+                            .BorderColor(QuestColors.Grey.Lighten2)
                             .AlignCenter()
                             .AlignMiddle()
                             .Text("LOGO")
                             .FontSize(8)
-                            .FontColor(Colors.Grey.Medium);
+                            .FontColor(QuestColors.Grey.Medium);
                     });
 
                     row.RelativeItem().PaddingLeft(10);
@@ -78,7 +79,7 @@ public class PdfGeneratorService : IPdfGeneratorService
                     companyColumn.Item().Text(azienda.RagioneSociale)
                         .FontSize(14)
                         .Bold()
-                        .FontColor(Colors.Blue.Darken2);
+                        .FontColor(QuestColors.Blue.Darken2);
 
                     companyColumn.Item().PaddingTop(5).Text(text =>
                     {
@@ -96,13 +97,13 @@ public class PdfGeneratorService : IPdfGeneratorService
                 });
             });
 
-            column.Item().PaddingTop(15).LineHorizontal(2).LineColor(Colors.Blue.Darken2);
+            column.Item().PaddingTop(15).LineHorizontal(2).LineColor(QuestColors.Blue.Darken2);
 
             // Titolo documento
             column.Item().PaddingTop(15).AlignCenter().Text($"PREVENTIVO N. {preventivo.Numero}/{preventivo.Anno}")
                 .FontSize(16)
                 .Bold()
-                .FontColor(Colors.Blue.Darken2);
+                .FontColor(QuestColors.Blue.Darken2);
 
             // Dati cliente
             if (preventivo.Cliente != null)
@@ -163,7 +164,7 @@ public class PdfGeneratorService : IPdfGeneratorService
                 }
             });
 
-            column.Item().PaddingTop(10).LineHorizontal(1).LineColor(Colors.Grey.Medium);
+            column.Item().PaddingTop(10).LineHorizontal(1).LineColor(QuestColors.Grey.Medium);
         });
     }
 
@@ -195,12 +196,12 @@ public class PdfGeneratorService : IPdfGeneratorService
                     header.Cell().Element(CellStyle).AlignRight().Text("Prezzo €").Bold();
                     header.Cell().Element(CellStyle).AlignRight().Text("Totale €").Bold();
 
-                    static IContainer CellStyle(IContainer container)
+                    static QuestContainer CellStyle(QuestContainer container)
                     {
                         return container
-                            .Background(Colors.Blue.Darken2)
+                            .Background(QuestColors.Blue.Darken2)
                             .Padding(5)
-                            .DefaultTextStyle(x => x.FontColor(Colors.White).FontSize(9));
+                            .DefaultTextStyle(x => x.FontColor(QuestColors.White).FontSize(9));
                     }
                 });
 
@@ -215,11 +216,11 @@ public class PdfGeneratorService : IPdfGeneratorService
                     table.Cell().Element(CellDataStyle).AlignRight().Text(FormatCurrency(riga.Totale)).Bold();
                 }
 
-                static IContainer CellDataStyle(IContainer container)
+                static QuestContainer CellDataStyle(QuestContainer container)
                 {
                     return container
                         .BorderBottom(1)
-                        .BorderColor(Colors.Grey.Lighten2)
+                        .BorderColor(QuestColors.Grey.Lighten2)
                         .Padding(5)
                         .DefaultTextStyle(x => x.FontSize(9));
                 }
@@ -246,13 +247,13 @@ public class PdfGeneratorService : IPdfGeneratorService
                     });
                 }
 
-                totalsColumn.Item().PaddingTop(5).LineHorizontal(1).LineColor(Colors.Grey.Medium);
+                totalsColumn.Item().PaddingTop(5).LineHorizontal(1).LineColor(QuestColors.Grey.Medium);
 
                 totalsColumn.Item().PaddingTop(5).Row(row =>
                 {
-                    row.ConstantItem(150).Text("TOTALE:").Bold().FontSize(12).FontColor(Colors.Blue.Darken2);
+                    row.ConstantItem(150).Text("TOTALE:").Bold().FontSize(12).FontColor(QuestColors.Blue.Darken2);
                     row.ConstantItem(100).AlignRight().Text(FormatCurrency(preventivo.Totale))
-                        .Bold().FontSize(12).FontColor(Colors.Blue.Darken2);
+                        .Bold().FontSize(12).FontColor(QuestColors.Blue.Darken2);
                 });
             });
 
@@ -284,17 +285,17 @@ public class PdfGeneratorService : IPdfGeneratorService
     {
         container.AlignCenter().Column(column =>
         {
-            column.Item().PaddingTop(5).LineHorizontal(1).LineColor(Colors.Grey.Medium);
+            column.Item().PaddingTop(5).LineHorizontal(1).LineColor(QuestColors.Grey.Medium);
             column.Item().PaddingTop(5).Text(text =>
             {
-                text.Span($"{azienda.RagioneSociale} | ").FontSize(8).FontColor(Colors.Grey.Darken1);
-                text.Span($"P.IVA {azienda.PartitaIva} | ").FontSize(8).FontColor(Colors.Grey.Darken1);
-                text.Span($"{azienda.Email}").FontSize(8).FontColor(Colors.Grey.Darken1);
+                text.Span($"{azienda.RagioneSociale} | ").FontSize(8).FontColor(QuestColors.Grey.Darken1);
+                text.Span($"P.IVA {azienda.PartitaIva} | ").FontSize(8).FontColor(QuestColors.Grey.Darken1);
+                text.Span($"{azienda.Email}").FontSize(8).FontColor(QuestColors.Grey.Darken1);
             });
 
             column.Item().Text(text =>
             {
-                text.DefaultTextStyle(TextStyle.Default.FontSize(8).FontColor(Colors.Grey.Darken1));
+                text.DefaultTextStyle(TextStyle.Default.FontSize(8).FontColor(QuestColors.Grey.Darken1));
                 text.CurrentPageNumber();
                 text.Span(" / ");
                 text.TotalPages();
