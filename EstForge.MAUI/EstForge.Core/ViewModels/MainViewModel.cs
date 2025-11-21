@@ -36,6 +36,21 @@ public partial class MainViewModel : BaseViewModel
     [ObservableProperty]
     private string _companyName = "EST-FORGE";
 
+    [ObservableProperty]
+    private string _companyVatNumber = "01234567890";
+
+    [ObservableProperty]
+    private string _companyAddress = "Via Roma 1, Milano (MI)";
+
+    [ObservableProperty]
+    private string _companyPhone = "+39 02 123456";
+
+    [ObservableProperty]
+    private string _companyEmail = "info@zetaforge.it";
+
+    [ObservableProperty]
+    private string? _companyLogoUrl;
+
     // Modalità selezione multipla
     [ObservableProperty]
     private bool _isSelectionMode;
@@ -315,6 +330,11 @@ public partial class MainViewModel : BaseViewModel
         if (azienda != null)
         {
             CompanyName = azienda.RagioneSociale;
+            CompanyVatNumber = azienda.PartitaIva;
+            CompanyAddress = azienda.SedeLegale;
+            CompanyPhone = azienda.Telefono;
+            CompanyEmail = azienda.Email;
+            CompanyLogoUrl = azienda.LogoUrl;
         }
     }
 

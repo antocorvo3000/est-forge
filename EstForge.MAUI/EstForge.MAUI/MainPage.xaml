@@ -49,9 +49,21 @@
                    HorizontalOptions="Center"
                    WidthRequest="180"
                    HeightRequest="130">
-                <Label Text="📄" FontSize="80"
-                       HorizontalOptions="Center"
-                       VerticalOptions="Center"/>
+                <Grid>
+                    <!-- Logo image se disponibile -->
+                    <Image Source="{Binding CompanyLogoUrl}"
+                           Aspect="AspectFit"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           IsVisible="{Binding CompanyLogoUrl, Converter={StaticResource StringNotNullOrEmptyConverter}}"/>
+
+                    <!-- Icona documento di default -->
+                    <Label Text="📄"
+                           FontSize="80"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           IsVisible="{Binding CompanyLogoUrl, Converter={StaticResource StringIsNullOrEmptyConverter}}"/>
+                </Grid>
             </Frame>
 
             <Frame Style="{StaticResource GlassCard}" Padding="16">
@@ -67,18 +79,26 @@
                                         Spacing="4"
                                         VerticalOptions="Center"
                                         HorizontalOptions="End">
-                        <Label Text="P.IVA 01234567890"
+                        <Label Text="{Binding CompanyVatNumber, StringFormat='P.IVA {0}'}"
                                FontSize="12"
                                TextColor="#6B7280"
                                HorizontalTextAlignment="End"/>
-                        <Label Text="Sede legale: Via Roma 1, Milano (MI)"
+                        <Label Text="{Binding CompanyAddress, StringFormat='Sede legale: {0}'}"
                                FontSize="12"
                                TextColor="#6B7280"
                                HorizontalTextAlignment="End"/>
-                        <Label Text="Tel. +39 02 123456 • email: info@zetaforge.it"
-                               FontSize="12"
+                        <Label FontSize="12"
                                TextColor="#6B7280"
-                               HorizontalTextAlignment="End"/>
+                               HorizontalTextAlignment="End">
+                            <Label.FormattedText>
+                                <FormattedString>
+                                    <Span Text="Tel. " />
+                                    <Span Text="{Binding CompanyPhone}" />
+                                    <Span Text=" • email: " />
+                                    <Span Text="{Binding CompanyEmail}" />
+                                </FormattedString>
+                            </Label.FormattedText>
+                        </Label>
                     </VerticalStackLayout>
                 </Grid>
             </Frame>
