@@ -2,6 +2,7 @@ using EstForge.Data.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using QuestContainer = QuestPDF.Infrastructure.IContainer;
 
 namespace EstForge.Core.Services;
 
@@ -44,7 +45,7 @@ public class PdfGeneratorService : IPdfGeneratorService
         return outputPath;
     }
 
-    private void ComposeHeader(IContainer container, Preventivo preventivo, Azienda azienda)
+    private void ComposeHeader(QuestContainer container, Preventivo preventivo, Azienda azienda)
     {
         container.Column(column =>
         {
@@ -166,7 +167,7 @@ public class PdfGeneratorService : IPdfGeneratorService
         });
     }
 
-    private void ComposeContent(IContainer container, Preventivo preventivo, List<RigaPreventivo> righe, Azienda azienda)
+    private void ComposeContent(QuestContainer container, Preventivo preventivo, List<RigaPreventivo> righe, Azienda azienda)
     {
         container.PaddingTop(10).Column(column =>
         {
@@ -279,7 +280,7 @@ public class PdfGeneratorService : IPdfGeneratorService
         });
     }
 
-    private void ComposeFooter(IContainer container, Azienda azienda)
+    private void ComposeFooter(QuestContainer container, Azienda azienda)
     {
         container.AlignCenter().Column(column =>
         {
