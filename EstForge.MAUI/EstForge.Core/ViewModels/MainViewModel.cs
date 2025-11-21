@@ -257,63 +257,55 @@ public partial class MainViewModel : BaseViewModel
         InfoQuoteId = null;
     }
 
-    // Navigazione (da implementare con Shell navigation)
+    // Eventi di navigazione (gestiti dalla View)
+    public event EventHandler? NavigateToCreateRequested;
+    public event EventHandler? NavigateToCustomQuoteRequested;
+    public event EventHandler<Preventivo>? NavigateToEditQuoteRequested;
+    public event EventHandler<Preventivo>? NavigateToCloneQuoteRequested;
+    public event EventHandler<Preventivo>? NavigateToEditQuoteNumberRequested;
+    public event EventHandler? NavigateToRecoverWorkRequested;
+    public event EventHandler? NavigateToSettingsRequested;
+
     [RelayCommand]
-    private async Task NavigateToCreateAsync()
+    private void NavigateToCreate()
     {
-        // TODO: Implementare navigazione
-        await Shell.Current.GoToAsync("CreateQuotePage");
+        NavigateToCreateRequested?.Invoke(this, EventArgs.Empty);
     }
 
     [RelayCommand]
-    private async Task NavigateToCustomQuoteAsync()
+    private void NavigateToCustomQuote()
     {
-        // TODO: Implementare navigazione
-        await Shell.Current.GoToAsync("CustomQuoteNumberPage");
+        NavigateToCustomQuoteRequested?.Invoke(this, EventArgs.Empty);
     }
 
     [RelayCommand]
-    private async Task NavigateToEditQuoteAsync(Preventivo quote)
+    private void NavigateToEditQuote(Preventivo quote)
     {
-        // TODO: Implementare navigazione
-        await Shell.Current.GoToAsync("ModifyQuotePage", new Dictionary<string, object>
-        {
-            { "QuoteId", quote.Id }
-        });
+        NavigateToEditQuoteRequested?.Invoke(this, quote);
     }
 
     [RelayCommand]
-    private async Task NavigateToCloneQuoteAsync(Preventivo quote)
+    private void NavigateToCloneQuote(Preventivo quote)
     {
-        // TODO: Implementare navigazione
-        await Shell.Current.GoToAsync("CloneQuotePage", new Dictionary<string, object>
-        {
-            { "QuoteId", quote.Id }
-        });
+        NavigateToCloneQuoteRequested?.Invoke(this, quote);
     }
 
     [RelayCommand]
-    private async Task NavigateToEditQuoteNumberAsync(Preventivo quote)
+    private void NavigateToEditQuoteNumber(Preventivo quote)
     {
-        // TODO: Implementare navigazione
-        await Shell.Current.GoToAsync("EditQuoteNumberPage", new Dictionary<string, object>
-        {
-            { "QuoteId", quote.Id }
-        });
+        NavigateToEditQuoteNumberRequested?.Invoke(this, quote);
     }
 
     [RelayCommand]
-    private async Task NavigateToRecoverWorkAsync()
+    private void NavigateToRecoverWork()
     {
-        // TODO: Implementare navigazione
-        await Shell.Current.GoToAsync("RecoverWorkPage");
+        NavigateToRecoverWorkRequested?.Invoke(this, EventArgs.Empty);
     }
 
     [RelayCommand]
-    private async Task NavigateToSettingsAsync()
+    private void NavigateToSettings()
     {
-        // TODO: Implementare navigazione
-        await Shell.Current.GoToAsync("SettingsPage");
+        NavigateToSettingsRequested?.Invoke(this, EventArgs.Empty);
     }
 
     [RelayCommand]
