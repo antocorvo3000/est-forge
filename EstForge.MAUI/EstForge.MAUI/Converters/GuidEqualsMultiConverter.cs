@@ -9,9 +9,13 @@ public class GuidEqualsMultiConverter : IMultiValueConverter
         if (values == null || values.Length != 2)
             return false;
 
-        if (values[0] is Guid? nullableGuid && values[1] is Guid guid)
+        // Check if first value is null or Guid
+        if (values[0] == null)
+            return false;
+
+        if (values[0] is Guid infoQuoteId && values[1] is Guid quoteId)
         {
-            return nullableGuid.HasValue && nullableGuid.Value == guid;
+            return infoQuoteId == quoteId;
         }
 
         return false;

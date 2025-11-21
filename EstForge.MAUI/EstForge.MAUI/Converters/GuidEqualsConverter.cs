@@ -6,9 +6,9 @@ public class GuidEqualsConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is Guid? nullableGuid && parameter is Guid paramGuid)
+        if (value is Guid valueGuid && parameter is Guid paramGuid)
         {
-            return nullableGuid.HasValue && nullableGuid.Value == paramGuid;
+            return valueGuid == paramGuid;
         }
         return false;
     }
