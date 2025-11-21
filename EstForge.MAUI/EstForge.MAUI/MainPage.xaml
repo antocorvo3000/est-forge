@@ -4,6 +4,7 @@
              xmlns:vm="clr-namespace:EstForge.Core.ViewModels;assembly=EstForge.Core"
              xmlns:models="clr-namespace:EstForge.Data.Models;assembly=EstForge.Data"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:converters="clr-namespace:EstForge.MAUI.Converters"
              x:Class="EstForge.MAUI.MainPage"
              x:Name="mainPage"
              x:DataType="vm:MainViewModel"
@@ -14,6 +15,11 @@
         <ResourceDictionary>
             <!-- Converter per visibilità -->
             <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+
+            <!-- Custom Converters -->
+            <converters:GuidEqualsConverter x:Key="GuidEqualsConverter" />
+            <converters:GuidEqualsMultiConverter x:Key="GuidEqualsMultiConverter" />
+            <converters:IsGreaterThanZeroConverter x:Key="IsGreaterThanZeroConverter" />
 
             <!-- Stile Glass Card -->
             <Style x:Key="GlassCard" TargetType="Frame">
@@ -223,12 +229,18 @@
 
                             </Grid>
 
-                            <!-- INFO PANEL (OGGETTO E TOTALE) - TODO: implementare visibilità -->
-                            <!--<Frame BackgroundColor="#F9FAFB"
+                            <!-- INFO PANEL (OGGETTO E TOTALE) -->
+                            <Frame BackgroundColor="#F9FAFB"
                                    CornerRadius="0,0,16,16"
                                    Padding="16,12"
                                    HasShadow="False"
                                    Margin="0,0,0,-16">
+                                <Frame.IsVisible>
+                                    <MultiBinding Converter="{StaticResource GuidEqualsMultiConverter}">
+                                        <Binding Path="BindingContext.InfoQuoteId" Source="{x:Reference mainPage}" />
+                                        <Binding Path="Id" />
+                                    </MultiBinding>
+                                </Frame.IsVisible>
                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                                     <Label Grid.Column="0"
                                            Text="{Binding Oggetto, StringFormat='Oggetto: {0}'}"
@@ -242,7 +254,7 @@
                                            TextColor="#1F2937"
                                            FontAttributes="Bold"/>
                                 </Grid>
-                            </Frame>-->
+                            </Frame>
                         </Frame>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
@@ -257,14 +269,21 @@
               RowSpacing="12"
               Padding="24,0,24,20">
 
-            <!-- Prima riga -->
+            <!-- Bottoni normali (visibili quando NON in modalità selezione o nessun elemento selezionato) -->
             <Button Grid.Row="0" Grid.Column="0"
                     Text="Nuovo Preventivo Personalizzato"
                     Command="{Binding NavigateToCustomQuoteCommand}"
                     BackgroundColor="#2563EB"
                     Style="{StaticResource ActionButton}"
                     HeightRequest="48"
-                    FontSize="14"/>
+                    FontSize="14">
+                <Button.IsVisible>
+                    <MultiBinding Converter="{toolkit:VariableMultiValueConverter ConditionType=None}">
+                        <Binding Path="IsSelectionMode" />
+                        <Binding Path="SelectedCount" Converter="{StaticResource IsGreaterThanZeroConverter}" />
+                    </MultiBinding>
+                </Button.IsVisible>
+            </Button>
 
             <Button Grid.Row="0" Grid.Column="1"
                     Text="Seleziona preventivi"
@@ -272,16 +291,29 @@
                     BackgroundColor="#2563EB"
                     Style="{StaticResource ActionButton}"
                     HeightRequest="48"
-                    FontSize="14"/>
+                    FontSize="14">
+                <Button.IsVisible>
+                    <MultiBinding Converter="{toolkit:VariableMultiValueConverter ConditionType=None}">
+                        <Binding Path="IsSelectionMode" />
+                        <Binding Path="SelectedCount" Converter="{StaticResource IsGreaterThanZeroConverter}" />
+                    </MultiBinding>
+                </Button.IsVisible>
+            </Button>
 
-            <!-- Seconda riga -->
             <Button Grid.Row="1" Grid.Column="0"
                     Text="Recupera Lavoro"
                     Command="{Binding NavigateToRecoverWorkCommand}"
                     BackgroundColor="#10B981"
                     Style="{StaticResource ActionButton}"
                     HeightRequest="48"
-                    FontSize="14"/>
+                    FontSize="14">
+                <Button.IsVisible>
+                    <MultiBinding Converter="{toolkit:VariableMultiValueConverter ConditionType=None}">
+                        <Binding Path="IsSelectionMode" />
+                        <Binding Path="SelectedCount" Converter="{StaticResource IsGreaterThanZeroConverter}" />
+                    </MultiBinding>
+                </Button.IsVisible>
+            </Button>
 
             <Button Grid.Row="1" Grid.Column="1"
                     Text="Impostazioni"
@@ -289,12 +321,25 @@
                     BackgroundColor="#8B5CF6"
                     Style="{StaticResource ActionButton}"
                     HeightRequest="48"
-                    FontSize="14"/>
+                    FontSize="14">
+                <Button.IsVisible>
+                    <MultiBinding Converter="{toolkit:VariableMultiValueConverter ConditionType=None}">
+                        <Binding Path="IsSelectionMode" />
+                        <Binding Path="SelectedCount" Converter="{StaticResource IsGreaterThanZeroConverter}" />
+                    </MultiBinding>
+                </Button.IsVisible>
+            </Button>
 
-            <!-- Bottoni selezione multipla (quando IsSelectionMode = true e ci sono elementi selezionati) - TODO -->
-            <!--<HorizontalStackLayout Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+            <!-- Bottoni selezione multipla (visibili quando IsSelectionMode = true E ci sono elementi selezionati) -->
+            <HorizontalStackLayout Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
                                   Spacing="12"
                                   HorizontalOptions="Fill">
+                <HorizontalStackLayout.IsVisible>
+                    <MultiBinding Converter="{toolkit:VariableMultiValueConverter ConditionType=All}">
+                        <Binding Path="IsSelectionMode" />
+                        <Binding Path="SelectedCount" Converter="{StaticResource IsGreaterThanZeroConverter}" />
+                    </MultiBinding>
+                </HorizontalStackLayout.IsVisible>
                 <Button Text="Deseleziona tutti"
                         Command="{Binding DeselectAllCommand}"
                         BackgroundColor="#6B7280"
@@ -308,7 +353,7 @@
                         Style="{StaticResource ActionButton}"
                         HeightRequest="48"
                         HorizontalOptions="FillAndExpand"/>
-            </HorizontalStackLayout>-->
+            </HorizontalStackLayout>
         </Grid>
 
         <!-- LOADING OVERLAY -->
