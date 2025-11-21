@@ -28,6 +28,7 @@ public static class MauiProgram
 
         // Services
         builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
+        builder.Services.AddSingleton<IDatabaseSeedService, DatabaseSeedService>();
         builder.Services.AddSingleton<IPdfGeneratorService, PdfGeneratorService>();
 
         // ViewModels

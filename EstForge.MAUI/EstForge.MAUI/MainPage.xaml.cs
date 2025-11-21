@@ -7,13 +7,15 @@ public partial class MainPage : ContentPage
 {
     private readonly MainViewModel _viewModel;
     private readonly IDatabaseService _databaseService;
+    private readonly IDatabaseSeedService _seedService;
     private bool _databaseInitialized = false;
 
-    public MainPage(MainViewModel viewModel, IDatabaseService databaseService)
+    public MainPage(MainViewModel viewModel, IDatabaseService databaseService, IDatabaseSeedService seedService)
     {
         InitializeComponent();
         _viewModel = viewModel;
         _databaseService = databaseService;
+        _seedService = seedService;
         BindingContext = _viewModel;
     }
 
@@ -28,6 +30,12 @@ public partial class MainPage : ContentPage
                 // Tenta di inizializzare il database
                 await _databaseService.InitializeDatabaseAsync();
                 _databaseInitialized = true;
+
+                // Popola con dati di esempio se il database è vuoto
+                if (!await _seedService.IsDatabaseSeededAsync())
+                {
+                    await _seedService.SeedDatabaseAsync();
+                }
 
                 // Carica i dati solo se il database è stato inizializzato
                 await _viewModel.InitializeAsync();
