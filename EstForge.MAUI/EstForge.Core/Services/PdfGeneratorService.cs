@@ -136,9 +136,8 @@ public class PdfGeneratorService : IPdfGeneratorService
                 {
                     infoColumn.Item().Text(text =>
                     {
-                        text.FontSize(10);
-                        text.Span("Oggetto: ").Bold();
-                        text.Span(preventivo.Oggetto);
+                        text.Span("Oggetto: ").Bold().FontSize(10);
+                        text.Span(preventivo.Oggetto).FontSize(10);
                     });
                 }
 
@@ -157,9 +156,8 @@ public class PdfGeneratorService : IPdfGeneratorService
 
                     infoColumn.Item().Text(text =>
                     {
-                        text.FontSize(10);
-                        text.Span("Ubicazione lavori: ").Bold();
-                        text.Span(ubicazione);
+                        text.Span("Ubicazione lavori: ").Bold().FontSize(10);
+                        text.Span(ubicazione).FontSize(10);
                     });
                 }
             });
@@ -264,9 +262,8 @@ public class PdfGeneratorService : IPdfGeneratorService
                 {
                     notesColumn.Item().Text(text =>
                     {
-                        text.FontSize(9);
-                        text.Span("Modalità di pagamento: ").Bold();
-                        text.Span(preventivo.ModalitaPagamento);
+                        text.Span("Modalità di pagamento: ").Bold().FontSize(9);
+                        text.Span(preventivo.ModalitaPagamento).FontSize(9);
                     });
                 }
 
@@ -289,17 +286,14 @@ public class PdfGeneratorService : IPdfGeneratorService
             column.Item().PaddingTop(5).LineHorizontal(1).LineColor(Colors.Grey.Medium);
             column.Item().PaddingTop(5).Text(text =>
             {
-                text.FontSize(8);
-                text.FontColor(Colors.Grey.Darken1);
-                text.Span($"{azienda.RagioneSociale} | ");
-                text.Span($"P.IVA {azienda.PartitaIva} | ");
-                text.Span($"{azienda.Email}");
+                text.Span($"{azienda.RagioneSociale} | ").FontSize(8).FontColor(Colors.Grey.Darken1);
+                text.Span($"P.IVA {azienda.PartitaIva} | ").FontSize(8).FontColor(Colors.Grey.Darken1);
+                text.Span($"{azienda.Email}").FontSize(8).FontColor(Colors.Grey.Darken1);
             });
 
             column.Item().Text(text =>
             {
-                text.FontSize(8);
-                text.FontColor(Colors.Grey.Darken1);
+                text.DefaultTextStyle(TextStyle.Default.FontSize(8).FontColor(Colors.Grey.Darken1));
                 text.CurrentPageNumber();
                 text.Span(" / ");
                 text.TotalPages();
