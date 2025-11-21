@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:EstForge.Core.ViewModels;assembly=EstForge.Core"
+             xmlns:models="clr-namespace:EstForge.Data.Models;assembly=EstForge.Data"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="EstForge.MAUI.MainPage"
              x:DataType="vm:MainViewModel"
@@ -83,7 +84,7 @@
                 </CollectionView.EmptyView>
 
                 <CollectionView.ItemTemplate>
-                    <DataTemplate>
+                    <DataTemplate x:DataType="models:Preventivo">
                         <SwipeView>
                             <SwipeView.RightItems>
                                 <SwipeItems>
