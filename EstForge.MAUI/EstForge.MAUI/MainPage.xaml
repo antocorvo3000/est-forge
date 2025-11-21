@@ -23,7 +23,6 @@
             <converters:AllTrueMultiConverter x:Key="AllTrueMultiConverter" />
             <converters:NoneMultiConverter x:Key="NoneMultiConverter" />
 
-            <!-- Stile Glass Card (grigio chiaro semi-trasparente) -->
             <Style x:Key="GlassCard" TargetType="Frame">
                 <Setter Property="BackgroundColor" Value="#E8EEF2" />
                 <Setter Property="HasShadow" Value="True" />
@@ -33,14 +32,10 @@
         </ResourceDictionary>
     </ContentPage.Resources>
 
-    <!-- LAYOUT PRINCIPALE: Grid con righe fisse e centrale scrollabile -->
-    <Grid RowDefinitions="Auto,Auto,*,Auto"
-          RowSpacing="12"
-          Padding="16">
+    <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="12" Padding="16">
 
-        <!-- HEADERS FISSI (Row 0) -->
+        <!-- HEADERS FISSI -->
         <VerticalStackLayout Grid.Row="0" Spacing="12">
-            <!-- Header 1: Gestione Preventivi -->
             <Frame Style="{StaticResource GlassCard}" Padding="16">
                 <Label Text="Gestione Preventivi"
                        FontSize="36"
@@ -49,19 +44,16 @@
                        HorizontalOptions="Center"/>
             </Frame>
 
-            <!-- Header 2: Logo -->
             <Frame Style="{StaticResource GlassCard}"
                    Padding="8"
                    HorizontalOptions="Center"
                    WidthRequest="180"
                    HeightRequest="130">
-                <Image Source="logo.png"
-                       Aspect="AspectFit"
+                <Label Text="📄" FontSize="80"
                        HorizontalOptions="Center"
                        VerticalOptions="Center"/>
             </Frame>
 
-            <!-- Header 3: Info Azienda -->
             <Frame Style="{StaticResource GlassCard}" Padding="16">
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="20">
                     <Label Grid.Column="0"
@@ -92,10 +84,9 @@
             </Frame>
         </VerticalStackLayout>
 
-        <!-- SEARCH BAR FISSA (Row 1) -->
+        <!-- SEARCH BAR FISSA -->
         <Frame Grid.Row="1" Style="{StaticResource GlassCard}" Padding="12">
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                <!-- Search Box con bordo bianco -->
                 <Frame Grid.Column="0"
                        BackgroundColor="White"
                        CornerRadius="8"
@@ -117,18 +108,12 @@
                         Padding="20,0"
                         HeightRequest="48"
                         FontAttributes="Bold"
-                        FontSize="14">
-                    <Button.Shadow>
-                        <Shadow Brush="Black" Opacity="0.3" Radius="8" Offset="0,2"/>
-                    </Button.Shadow>
-                </Button>
+                        FontSize="14"/>
             </Grid>
         </Frame>
 
-        <!-- LISTA PREVENTIVI SCROLLABILE (Row 2 - flex-1) -->
-        <Frame Grid.Row="2"
-               Style="{StaticResource GlassCard}"
-               Padding="12">
+        <!-- LISTA PREVENTIVI SCROLLABILE -->
+        <Frame Grid.Row="2" Style="{StaticResource GlassCard}" Padding="12">
             <CollectionView ItemsSource="{Binding FilteredPreventivi}"
                            SelectionMode="None">
 
@@ -152,21 +137,49 @@
 
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:Preventivo">
-                        <!-- RIGA BIANCA con hover e pointer events -->
-                        <Frame BackgroundColor="White"
+                        <Frame x:Name="quoteFrame"
+                               BackgroundColor="White"
                                CornerRadius="12"
                                Padding="16"
                                Margin="0,0,0,8"
                                HasShadow="True"
                                BorderColor="#E5E7EB">
                             <Frame.GestureRecognizers>
-                                <PointerGestureRecognizer PointerExited="OnQuoteItemPointerExited"/>
+                                <PointerGestureRecognizer
+                                    PointerEntered="OnQuoteItemPointerEntered"
+                                    PointerExited="OnQuoteItemPointerExited"/>
                             </Frame.GestureRecognizers>
 
-                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+                            <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="16">
+
+                                <!-- CHECKBOX (animata quando isSelectionMode) -->
+                                <CheckBox Grid.Column="0"
+                                         VerticalOptions="Center"
+                                         IsVisible="{Binding Path=BindingContext.IsSelectionMode, Source={x:Reference mainPage}}">
+                                    <CheckBox.Behaviors>
+                                        <toolkit:EventToCommandBehavior
+                                            EventName="CheckedChanged"
+                                            Command="{Binding Path=BindingContext.ToggleQuoteSelectionCommand, Source={x:Reference mainPage}}"
+                                            CommandParameter="{Binding Id}" />
+                                    </CheckBox.Behaviors>
+                                    <CheckBox.Triggers>
+                                        <DataTrigger TargetType="CheckBox"
+                                                    Binding="{Binding Path=BindingContext.IsSelectionMode, Source={x:Reference mainPage}}"
+                                                    Value="True">
+                                            <DataTrigger.EnterActions>
+                                                <toolkit:FadeInAnimation Duration="300"/>
+                                                <toolkit:ScaleToAnimation Duration="300" Scale="1"/>
+                                            </DataTrigger.EnterActions>
+                                            <DataTrigger.ExitActions>
+                                                <toolkit:FadeOutAnimation Duration="300"/>
+                                                <toolkit:ScaleToAnimation Duration="300" Scale="0.5"/>
+                                            </DataTrigger.ExitActions>
+                                        </DataTrigger>
+                                    </CheckBox.Triggers>
+                                </CheckBox>
 
                                 <!-- ICONA -->
-                                <Frame Grid.Column="0"
+                                <Frame Grid.Column="1"
                                        BackgroundColor="#EFF6FF"
                                        BorderColor="#BFDBFE"
                                        CornerRadius="12"
@@ -180,7 +193,7 @@
                                 </Frame>
 
                                 <!-- INFO -->
-                                <VerticalStackLayout Grid.Column="1"
+                                <VerticalStackLayout Grid.Column="2"
                                                     Spacing="4"
                                                     VerticalOptions="Center">
                                     <Label FontSize="18" FontAttributes="Bold" TextColor="#1F2937">
@@ -200,8 +213,8 @@
                                            LineBreakMode="TailTruncation"/>
                                 </VerticalStackLayout>
 
-                                <!-- BOTTONI AZIONI -->
-                                <HorizontalStackLayout Grid.Column="2"
+                                <!-- BOTTONI AZIONI (visibili quando !isSelectionMode && !showInfo) -->
+                                <HorizontalStackLayout Grid.Column="3"
                                                       Spacing="8"
                                                       VerticalOptions="Center"
                                                       HorizontalOptions="End">
@@ -223,24 +236,7 @@
                                             CornerRadius="8"
                                             Padding="12,8"
                                             FontSize="12"
-                                            FontAttributes="Bold">
-                                        <VisualStateManager.VisualStateGroups>
-                                            <VisualStateGroup x:Name="CommonStates">
-                                                <VisualState x:Name="PointerOver">
-                                                    <VisualState.Setters>
-                                                        <Setter Property="BackgroundColor" Value="#2563EB"/>
-                                                        <Setter Property="Scale" Value="1.05"/>
-                                                    </VisualState.Setters>
-                                                </VisualState>
-                                                <VisualState x:Name="Pressed">
-                                                    <VisualState.Setters>
-                                                        <Setter Property="BackgroundColor" Value="#1E40AF"/>
-                                                        <Setter Property="Scale" Value="0.95"/>
-                                                    </VisualState.Setters>
-                                                </VisualState>
-                                            </VisualStateGroup>
-                                        </VisualStateManager.VisualStateGroups>
-                                    </Button>
+                                            FontAttributes="Bold"/>
 
                                     <Button Text="📋 Clona"
                                             Command="{Binding Path=BindingContext.NavigateToCloneQuoteCommand, Source={x:Reference mainPage}}"
@@ -250,24 +246,7 @@
                                             CornerRadius="8"
                                             Padding="12,8"
                                             FontSize="12"
-                                            FontAttributes="Bold">
-                                        <VisualStateManager.VisualStateGroups>
-                                            <VisualStateGroup x:Name="CommonStates">
-                                                <VisualState x:Name="PointerOver">
-                                                    <VisualState.Setters>
-                                                        <Setter Property="BackgroundColor" Value="#059669"/>
-                                                        <Setter Property="Scale" Value="1.05"/>
-                                                    </VisualState.Setters>
-                                                </VisualState>
-                                                <VisualState x:Name="Pressed">
-                                                    <VisualState.Setters>
-                                                        <Setter Property="BackgroundColor" Value="#047857"/>
-                                                        <Setter Property="Scale" Value="0.95"/>
-                                                    </VisualState.Setters>
-                                                </VisualState>
-                                            </VisualStateGroup>
-                                        </VisualStateManager.VisualStateGroups>
-                                    </Button>
+                                            FontAttributes="Bold"/>
 
                                     <Button Text="✏️ Modifica N°/Anno"
                                             Command="{Binding Path=BindingContext.NavigateToEditQuoteNumberCommand, Source={x:Reference mainPage}}"
@@ -277,24 +256,7 @@
                                             CornerRadius="8"
                                             Padding="12,8"
                                             FontSize="12"
-                                            FontAttributes="Bold">
-                                        <VisualStateManager.VisualStateGroups>
-                                            <VisualStateGroup x:Name="CommonStates">
-                                                <VisualState x:Name="PointerOver">
-                                                    <VisualState.Setters>
-                                                        <Setter Property="BackgroundColor" Value="#9333EA"/>
-                                                        <Setter Property="Scale" Value="1.05"/>
-                                                    </VisualState.Setters>
-                                                </VisualState>
-                                                <VisualState x:Name="Pressed">
-                                                    <VisualState.Setters>
-                                                        <Setter Property="BackgroundColor" Value="#7E22CE"/>
-                                                        <Setter Property="Scale" Value="0.95"/>
-                                                    </VisualState.Setters>
-                                                </VisualState>
-                                            </VisualStateGroup>
-                                        </VisualStateManager.VisualStateGroups>
-                                    </Button>
+                                            FontAttributes="Bold"/>
 
                                     <Button Text="🖊️ Modifica"
                                             Command="{Binding Path=BindingContext.NavigateToEditQuoteCommand, Source={x:Reference mainPage}}"
@@ -304,24 +266,7 @@
                                             CornerRadius="8"
                                             Padding="12,8"
                                             FontSize="12"
-                                            FontAttributes="Bold">
-                                        <VisualStateManager.VisualStateGroups>
-                                            <VisualStateGroup x:Name="CommonStates">
-                                                <VisualState x:Name="PointerOver">
-                                                    <VisualState.Setters>
-                                                        <Setter Property="BackgroundColor" Value="#2563EB"/>
-                                                        <Setter Property="Scale" Value="1.05"/>
-                                                    </VisualState.Setters>
-                                                </VisualState>
-                                                <VisualState x:Name="Pressed">
-                                                    <VisualState.Setters>
-                                                        <Setter Property="BackgroundColor" Value="#1E40AF"/>
-                                                        <Setter Property="Scale" Value="0.95"/>
-                                                    </VisualState.Setters>
-                                                </VisualState>
-                                            </VisualStateGroup>
-                                        </VisualStateManager.VisualStateGroups>
-                                    </Button>
+                                            FontAttributes="Bold"/>
 
                                     <Button Text="🗑️ Elimina"
                                             Command="{Binding Path=BindingContext.DeletePreventivoCommand, Source={x:Reference mainPage}}"
@@ -331,28 +276,11 @@
                                             CornerRadius="8"
                                             Padding="12,8"
                                             FontSize="12"
-                                            FontAttributes="Bold">
-                                        <VisualStateManager.VisualStateGroups>
-                                            <VisualStateGroup x:Name="CommonStates">
-                                                <VisualState x:Name="PointerOver">
-                                                    <VisualState.Setters>
-                                                        <Setter Property="BackgroundColor" Value="#DC2626"/>
-                                                        <Setter Property="Scale" Value="1.05"/>
-                                                    </VisualState.Setters>
-                                                </VisualState>
-                                                <VisualState x:Name="Pressed">
-                                                    <VisualState.Setters>
-                                                        <Setter Property="BackgroundColor" Value="#B91C1C"/>
-                                                        <Setter Property="Scale" Value="0.95"/>
-                                                    </VisualState.Setters>
-                                                </VisualState>
-                                            </VisualStateGroup>
-                                        </VisualStateManager.VisualStateGroups>
-                                    </Button>
+                                            FontAttributes="Bold"/>
                                 </HorizontalStackLayout>
 
-                                <!-- INFO PANEL -->
-                                <Grid Grid.Column="2"
+                                <!-- INFO PANEL (visibile quando !isSelectionMode && showInfo) -->
+                                <Grid Grid.Column="3"
                                       ColumnDefinitions="*,Auto"
                                       ColumnSpacing="16"
                                       VerticalOptions="Center"
@@ -389,21 +317,55 @@
             </CollectionView>
         </Frame>
 
-        <!-- BOTTOM BUTTONS FISSI (Row 3) -->
-        <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto,Auto" RowSpacing="12">
-            <Button Grid.Row="0" Grid.Column="0"
-                    Text="📝 Nuovo Preventivo Personalizzato"
-                    Command="{Binding NavigateToCustomQuoteCommand}"
-                    BackgroundColor="#3B82F6"
-                    TextColor="White"
-                    CornerRadius="12"
-                    Padding="16"
-                    HeightRequest="52"
-                    FontAttributes="Bold"
-                    FontSize="14"
-                    IsVisible="{Binding SelectedCount, Converter={StaticResource NotGreaterThanZeroConverter}}"/>
+        <!-- BOTTOM BUTTONS FISSI -->
+        <Grid Grid.Row="3" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-            <Button Grid.Row="0" Grid.Column="1"
+            <!-- LEFT GROUP: Cambia in base a selectedCount -->
+            <HorizontalStackLayout Grid.Column="0" Spacing="12">
+                <!-- Nuovo Preventivo Personalizzato (visibile quando selectedCount = 0) -->
+                <Button Text="📝 Nuovo Preventivo Personalizzato"
+                        Command="{Binding NavigateToCustomQuoteCommand}"
+                        BackgroundColor="#3B82F6"
+                        TextColor="White"
+                        CornerRadius="12"
+                        Padding="16"
+                        HeightRequest="52"
+                        FontAttributes="Bold"
+                        FontSize="14"
+                        HorizontalOptions="Start"
+                        IsVisible="{Binding SelectedCount, Converter={StaticResource NotGreaterThanZeroConverter}}"/>
+
+                <!-- Deseleziona + Elimina (visibili quando selectedCount > 0) -->
+                <Button Text="Deseleziona tutti"
+                        Command="{Binding DeselectAllCommand}"
+                        BackgroundColor="#6B7280"
+                        TextColor="White"
+                        CornerRadius="12"
+                        Padding="16"
+                        HeightRequest="52"
+                        FontAttributes="Bold"
+                        FontSize="14"
+                        IsVisible="{Binding SelectedCount, Converter={StaticResource IsGreaterThanZeroConverter}}"/>
+
+                <Button Text="{Binding SelectedCount, StringFormat='🗑️ Elimina selezionati ({0})'}"
+                        Command="{Binding DeleteSelectedCommand}"
+                        BackgroundColor="#EF4444"
+                        TextColor="White"
+                        CornerRadius="12"
+                        Padding="16"
+                        HeightRequest="52"
+                        FontAttributes="Bold"
+                        FontSize="14"
+                        IsVisible="{Binding SelectedCount, Converter={StaticResource IsGreaterThanZeroConverter}}"/>
+            </HorizontalStackLayout>
+
+            <!-- Seleziona preventivi (centro/sinistra - visibile quando selectedCount = 0) -->
+            <Button Grid.Column="0"
+                    Grid.ColumnSpan="1"
                     Text="☑️ Seleziona preventivi"
                     Command="{Binding ToggleSelectionModeCommand}"
                     BackgroundColor="#3B82F6"
@@ -413,29 +375,32 @@
                     HeightRequest="52"
                     FontAttributes="Bold"
                     FontSize="14"
+                    HorizontalOptions="End"
+                    Margin="0,0,6,0"
                     IsVisible="{Binding SelectedCount, Converter={StaticResource NotGreaterThanZeroConverter}}"/>
 
-            <Button Grid.Row="1" Grid.Column="0"
-                    Text="🔄 Recupera Lavoro"
-                    Command="{Binding NavigateToRecoverWorkCommand}"
-                    BackgroundColor="#3B82F6"
-                    TextColor="White"
-                    CornerRadius="12"
-                    Padding="16"
-                    HeightRequest="52"
-                    FontAttributes="Bold"
-                    FontSize="14"/>
+            <!-- RIGHT GROUP -->
+            <HorizontalStackLayout Grid.Column="1" Spacing="12" HorizontalOptions="End">
+                <Button Text="🔄 Recupera Lavoro"
+                        Command="{Binding NavigateToRecoverWorkCommand}"
+                        BackgroundColor="#3B82F6"
+                        TextColor="White"
+                        CornerRadius="12"
+                        Padding="16"
+                        HeightRequest="52"
+                        FontAttributes="Bold"
+                        FontSize="14"/>
 
-            <Button Grid.Row="1" Grid.Column="1"
-                    Text="⚙️ Impostazioni"
-                    Command="{Binding NavigateToSettingsCommand}"
-                    BackgroundColor="#3B82F6"
-                    TextColor="White"
-                    CornerRadius="12"
-                    Padding="16"
-                    HeightRequest="52"
-                    FontAttributes="Bold"
-                    FontSize="14"/>
+                <Button Text="⚙️ Impostazioni"
+                        Command="{Binding NavigateToSettingsCommand}"
+                        BackgroundColor="#3B82F6"
+                        TextColor="White"
+                        CornerRadius="12"
+                        Padding="16"
+                        HeightRequest="52"
+                        FontAttributes="Bold"
+                        FontSize="14"/>
+            </HorizontalStackLayout>
         </Grid>
 
     </Grid>

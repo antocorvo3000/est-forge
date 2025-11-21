@@ -58,9 +58,26 @@ public partial class MainPage : ContentPage
         }
     }
 
+    // Handler per effetto hover sul Frame
+    private void OnQuoteItemPointerEntered(object? sender, PointerEventArgs e)
+    {
+        if (sender is Frame frame)
+        {
+            // Cambia background con gradiente (simulato con grigio chiaro)
+            frame.BackgroundColor = Color.FromArgb("#E8EEF2");
+        }
+    }
+
     // Handler per chiudere info panel quando il mouse esce dalla riga
     private void OnQuoteItemPointerExited(object? sender, PointerEventArgs e)
     {
+        if (sender is Frame frame)
+        {
+            // Ritorna a bianco
+            frame.BackgroundColor = Colors.White;
+        }
+
+        // Chiudi info panel
         _viewModel.InfoQuoteId = null;
     }
 }
