@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<?xaml-comp compile="true" ?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- iOS-inspired Color Palette -->
+    <Color x:Key="Primary">#007AFF</Color>
+    <Color x:Key="PrimaryDark">#0051D5</Color>
+    <Color x:Key="PrimaryLight">#5AC8FA</Color>
+    <Color x:Key="Secondary">#5856D6</Color>
+    <Color x:Key="Accent">#FF9500</Color>
+
+    <!-- Grayscale -->
+    <Color x:Key="Gray100">#F2F2F7</Color>
+    <Color x:Key="Gray200">#E5E5EA</Color>
+    <Color x:Key="Gray300">#D1D1D6</Color>
+    <Color x:Key="Gray400">#C7C7CC</Color>
+    <Color x:Key="Gray500">#AEAEB2</Color>
+    <Color x:Key="Gray600">#8E8E93</Color>
+    <Color x:Key="Gray700">#636366</Color>
+    <Color x:Key="Gray800">#48484A</Color>
+    <Color x:Key="Gray900">#3A3A3C</Color>
+
+    <!-- Base Colors -->
+    <Color x:Key="White">#FFFFFF</Color>
+    <Color x:Key="Black">#000000</Color>
+
+    <!-- Semantic Colors -->
+    <Color x:Key="Success">#34C759</Color>
+    <Color x:Key="Warning">#FF9500</Color>
+    <Color x:Key="Error">#FF3B30</Color>
+    <Color x:Key="Info">#5AC8FA</Color>
+
+    <!-- Background Colors -->
+    <Color x:Key="PageBackgroundColor">#F2F2F7</Color>
+    <Color x:Key="CardBackgroundColor">#FFFFFF</Color>
+
+</ResourceDictionary>

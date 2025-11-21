@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:EstForge.Core.ViewModels;assembly=EstForge.Core"
+             x:Class="EstForge.MAUI.Views.SettingsPage"
+             x:DataType="vm:SettingsViewModel"
+             Title="{Binding Title}"
+             BackgroundColor="{StaticResource Gray100}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="15" Spacing="15">
+
+            <!-- Dati Aziendali -->
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="15">
+                    <Label Text="Dati Aziendali"
+                           Style="{StaticResource TitleLabel}"
+                           FontSize="18"/>
+
+                    <VerticalStackLayout>
+                        <Label Text="Ragione Sociale *" FontAttributes="Bold"/>
+                        <Entry Text="{Binding RagioneSociale}"
+                               Placeholder="Nome azienda"/>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout>
+                        <Label Text="Partita IVA *" FontAttributes="Bold"/>
+                        <Entry Text="{Binding PartitaIva}"
+                               Placeholder="01234567890"
+                               Keyboard="Numeric"
+                               MaxLength="11"/>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout>
+                        <Label Text="Sede Legale *" FontAttributes="Bold"/>
+                        <Entry Text="{Binding SedeLegale}"
+                               Placeholder="Via, Città (Prov.)"/>
+                    </VerticalStackLayout>
+
+                    <Grid ColumnDefinitions="*,*"
+                          ColumnSpacing="10">
+                        <VerticalStackLayout Grid.Column="0">
+                            <Label Text="Telefono *" FontAttributes="Bold"/>
+                            <Entry Text="{Binding Telefono}"
+                                   Placeholder="+39 02 123456"
+                                   Keyboard="Telephone"/>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1">
+                            <Label Text="Email *" FontAttributes="Bold"/>
+                            <Entry Text="{Binding Email}"
+                                   Placeholder="info@azienda.it"
+                                   Keyboard="Email"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Logo Aziendale -->
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="15">
+                    <Label Text="Logo Aziendale"
+                           Style="{StaticResource TitleLabel}"
+                           FontSize="18"/>
+
+                    <Grid RowDefinitions="Auto,Auto"
+                          ColumnDefinitions="*,Auto"
+                          RowSpacing="10"
+                          ColumnSpacing="10">
+
+                        <!-- Anteprima Logo -->
+                        <Frame Grid.Row="0" Grid.ColumnSpan="2"
+                               BackgroundColor="{StaticResource Gray100}"
+                               CornerRadius="10"
+                               Padding="20"
+                               HasShadow="False"
+                               HeightRequest="150">
+                            <Grid>
+                                <Image Source="{Binding LogoUrl}"
+                                       Aspect="AspectFit"
+                                       IsVisible="{Binding LogoUrl, Converter={StaticResource IsNotNullConverter}}"/>
+                                <Label Text="Nessun logo caricato"
+                                       TextColor="{StaticResource Gray500}"
+                                       VerticalOptions="Center"
+                                       HorizontalOptions="Center"
+                                       IsVisible="{Binding LogoUrl, Converter={StaticResource IsNullConverter}}"/>
+                            </Grid>
+                        </Frame>
+
+                        <Button Grid.Row="1" Grid.Column="0"
+                                Text="Seleziona Logo"
+                                Command="{Binding SelectLogoCommand}"
+                                Style="{StaticResource OutlineButton}"/>
+
+                        <Button Grid.Row="1" Grid.Column="1"
+                                Text="Rimuovi"
+                                Command="{Binding RemoveLogoCommand}"
+                                BackgroundColor="{StaticResource Error}"
+                                IsVisible="{Binding LogoUrl, Converter={StaticResource IsNotNullConverter}}"/>
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Numerazione Preventivi -->
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="15">
+                    <Label Text="Numerazione Preventivi"
+                           Style="{StaticResource TitleLabel}"
+                           FontSize="18"/>
+
+                    <HorizontalStackLayout Spacing="10">
+                        <Switch IsToggled="{Binding NumerazioneProgressivaAttiva}"
+                                OnColor="{StaticResource Primary}"/>
+                        <Label Text="Usa numerazione personalizzata"
+                               VerticalOptions="Center"/>
+                    </HorizontalStackLayout>
+
+                    <VerticalStackLayout IsVisible="{Binding NumerazioneProgressivaAttiva}">
+                        <Label Text="Numero iniziale" FontAttributes="Bold"/>
+                        <Entry Text="{Binding NumeroProgressivoIniziale}"
+                               Keyboard="Numeric"
+                               Placeholder="1"/>
+                        <Label Text="Il prossimo preventivo partirà da questo numero"
+                               FontSize="12"
+                               TextColor="{StaticResource Gray500}"
+                               Margin="0,5,0,0"/>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Dimensioni Font -->
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="15">
+                    <Label Text="Dimensioni Font per Pagina"
+                           Style="{StaticResource TitleLabel}"
+                           FontSize="18"/>
+
+                    <Label Text="Regola la dimensione del testo per ogni pagina (1.00 = normale)"
+                           FontSize="12"
+                           TextColor="{StaticResource Gray500}"/>
+
+                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                          ColumnDefinitions="2*,*"
+                          RowSpacing="15"
+                          ColumnSpacing="10">
+
+                        <Label Grid.Row="0" Grid.Column="0"
+                               Text="Lista Preventivi"
+                               VerticalOptions="Center"/>
+                        <Entry Grid.Row="0" Grid.Column="1"
+                               Text="{Binding FontSizeList}"
+                               Keyboard="Numeric"
+                               Placeholder="1.00"/>
+
+                        <Label Grid.Row="1" Grid.Column="0"
+                               Text="Creazione Preventivo"
+                               VerticalOptions="Center"/>
+                        <Entry Grid.Row="1" Grid.Column="1"
+                               Text="{Binding FontSizeQuote}"
+                               Keyboard="Numeric"
+                               Placeholder="1.00"/>
+
+                        <Label Grid.Row="2" Grid.Column="0"
+                               Text="Dettagli Cliente"
+                               VerticalOptions="Center"/>
+                        <Entry Grid.Row="2" Grid.Column="1"
+                               Text="{Binding FontSizeClient}"
+                               Keyboard="Numeric"
+                               Placeholder="1.00"/>
+
+                        <Label Grid.Row="3" Grid.Column="0"
+                               Text="Impostazioni"
+                               VerticalOptions="Center"/>
+                        <Entry Grid.Row="3" Grid.Column="1"
+                               Text="{Binding FontSizeSettings}"
+                               Keyboard="Numeric"
+                               Placeholder="1.00"/>
+
+                        <Label Grid.Row="4" Grid.Column="0"
+                               Text="Numero Personalizzato"
+                               VerticalOptions="Center"/>
+                        <Entry Grid.Row="4" Grid.Column="1"
+                               Text="{Binding FontSizeCustomQuote}"
+                               Keyboard="Numeric"
+                               Placeholder="1.00"/>
+
+                        <Label Grid.Row="5" Grid.Column="0"
+                               Text="Clona Preventivo"
+                               VerticalOptions="Center"/>
+                        <Entry Grid.Row="5" Grid.Column="1"
+                               Text="{Binding FontSizeClone}"
+                               Keyboard="Numeric"
+                               Placeholder="1.00"/>
+
+                        <Label Grid.Row="6" Grid.Column="0"
+                               Text="Modifica Numero"
+                               VerticalOptions="Center"/>
+                        <Entry Grid.Row="6" Grid.Column="1"
+                               Text="{Binding FontSizeEditNumber}"
+                               Keyboard="Numeric"
+                               Placeholder="1.00"/>
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Messaggio di Errore -->
+            <Frame IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullConverter}}"
+                   BackgroundColor="{StaticResource Error}"
+                   CornerRadius="10"
+                   Padding="15"
+                   HasShadow="False">
+                <Label Text="{Binding ErrorMessage}"
+                       TextColor="White"
+                       FontSize="14"/>
+            </Frame>
+
+            <!-- Messaggio di Successo -->
+            <Frame IsVisible="{Binding IsSaved}"
+                   BackgroundColor="{StaticResource Success}"
+                   CornerRadius="10"
+                   Padding="15"
+                   HasShadow="False">
+                <Label Text="✓ Impostazioni salvate con successo"
+                       TextColor="White"
+                       FontSize="14"
+                       FontAttributes="Bold"/>
+            </Frame>
+
+            <!-- Pulsante Salva -->
+            <Button Text="Salva Impostazioni"
+                    Command="{Binding SaveCommand}"
+                    IsEnabled="{Binding IsNotBusy}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    FontSize="18"
+                    FontAttributes="Bold"
+                    HeightRequest="55"
+                    CornerRadius="15"
+                    Margin="0,10"/>
+
+            <Label Text="* Campi obbligatori"
+                   FontSize="12"
+                   TextColor="{StaticResource Gray500}"
+                   HorizontalOptions="Center"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+    <!-- Loading Overlay -->
+    <Grid IsVisible="{Binding IsBusy}"
+          BackgroundColor="#80000000"
+          InputTransparent="False">
+        <VerticalStackLayout VerticalOptions="Center"
+                            HorizontalOptions="Center">
+            <ActivityIndicator IsRunning="True"
+                             Color="White"
+                             WidthRequest="50"
+                             HeightRequest="50"/>
+            <Label Text="Salvataggio..."
+                   TextColor="White"
+                   FontSize="16"
+                   Margin="0,10,0,0"/>
+        </VerticalStackLayout>
+    </Grid>
+
+</ContentPage>
