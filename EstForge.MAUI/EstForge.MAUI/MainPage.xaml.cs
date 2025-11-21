@@ -97,38 +97,60 @@ public partial class MainPage : ContentPage
 
     private async Task AnimateBottomButtons()
     {
-        // Trova i bottoni bottom che stanno per diventare invisibili
-        var allBottomButtons = this.GetVisualTreeDescendants()
-            .OfType<Button>()
-            .Where(b => b.IsVisible && (b.Text?.Contains("Nuovo Preventivo") == true ||
-                                        b.Text?.Contains("Seleziona preventivi") == true ||
-                                        b.Text?.Contains("Deseleziona") == true ||
-                                        b.Text?.Contains("Elimina selezionati") == true));
+        // ONLY animate the selection-related buttons: btnSeleziona, btnDeseleziona, btnElimina
+        // NEVER animate: btnNuovo, btnRecupera, btnImpostazioni
 
-        // Fade out i bottoni che stanno per scomparire
-        var fadeOutTasks = allBottomButtons.Select(async b =>
+        var buttonsToFadeOut = new List<Button>();
+
+        // Find currently visible selection buttons
+        if (btnSeleziona.IsVisible)
         {
-            await Task.WhenAll(
-                b.FadeTo(0, 200, Easing.CubicIn),
-                b.ScaleTo(0.9, 200, Easing.CubicIn)
-            );
-        });
+            buttonsToFadeOut.Add(btnSeleziona);
+        }
+        if (btnDeseleziona.IsVisible)
+        {
+            buttonsToFadeOut.Add(btnDeseleziona);
+        }
+        if (btnElimina.IsVisible)
+        {
+            buttonsToFadeOut.Add(btnElimina);
+        }
 
-        await Task.WhenAll(fadeOutTasks);
+        // Fade out currently visible selection buttons
+        if (buttonsToFadeOut.Count > 0)
+        {
+            var fadeOutTasks = buttonsToFadeOut.Select(async b =>
+            {
+                await Task.WhenAll(
+                    b.FadeTo(0, 200, Easing.CubicIn),
+                    b.ScaleTo(0.9, 200, Easing.CubicIn)
+                );
+            });
+
+            await Task.WhenAll(fadeOutTasks);
+        }
 
         // Aspetta che la visibilità cambi (IsVisible binding si aggiorna)
         await Task.Delay(50);
 
-        // Trova i nuovi bottoni visibili
-        var newVisibleButtons = this.GetVisualTreeDescendants()
-            .OfType<Button>()
-            .Where(b => b.IsVisible && (b.Text?.Contains("Nuovo Preventivo") == true ||
-                                        b.Text?.Contains("Seleziona preventivi") == true ||
-                                        b.Text?.Contains("Deseleziona") == true ||
-                                        b.Text?.Contains("Elimina selezionati") == true));
+        // Find newly visible selection buttons
+        var buttonsToFadeIn = new List<Button>();
 
-        // Fade in i nuovi bottoni
-        foreach (var button in newVisibleButtons)
+        if (btnSeleziona.IsVisible)
+        {
+            buttonsToFadeIn.Add(btnSeleziona);
+        }
+        if (btnDeseleziona.IsVisible)
+        {
+            buttonsToFadeIn.Add(btnDeseleziona);
+        }
+        if (btnElimina.IsVisible)
+        {
+            buttonsToFadeIn.Add(btnElimina);
+        }
+
+        // Fade in newly visible selection buttons
+        foreach (var button in buttonsToFadeIn)
         {
             button.Opacity = 0;
             button.Scale = 0.9;

@@ -305,17 +305,14 @@
             </CollectionView>
         </Frame>
 
-        <!-- BOTTOM BUTTONS FISSI -->
-        <Grid Grid.Row="3" ColumnSpacing="12">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+        <!-- BOTTOM BUTTONS -->
+        <Grid Grid.Row="3" ColumnDefinitions="*,Auto" ColumnSpacing="12">
 
-            <!-- LEFT GROUP: Cambia in base a selectedCount -->
+            <!-- LEFT GROUP -->
             <HorizontalStackLayout Grid.Column="0" Spacing="12">
-                <!-- Nuovo Preventivo Personalizzato (visibile quando selectedCount = 0) -->
-                <Button Text="📝 Nuovo Preventivo Personalizzato"
+                <!-- SEMPRE VISIBILE: Nuovo Preventivo Personalizzato -->
+                <Button x:Name="btnNuovo"
+                        Text="📝 Nuovo Preventivo Personalizzato"
                         Command="{Binding NavigateToCustomQuoteCommand}"
                         BackgroundColor="#3B82F6"
                         TextColor="White"
@@ -323,12 +320,24 @@
                         Padding="16"
                         HeightRequest="52"
                         FontAttributes="Bold"
+                        FontSize="14"/>
+
+                <!-- ANIMATO: Seleziona preventivi (quando selectedCount = 0) -->
+                <Button x:Name="btnSeleziona"
+                        Text="☑️ Seleziona preventivi"
+                        Command="{Binding ToggleSelectionModeCommand}"
+                        BackgroundColor="#3B82F6"
+                        TextColor="White"
+                        CornerRadius="12"
+                        Padding="16"
+                        HeightRequest="52"
+                        FontAttributes="Bold"
                         FontSize="14"
-                        HorizontalOptions="Start"
                         IsVisible="{Binding SelectedCount, Converter={StaticResource NotGreaterThanZeroConverter}}"/>
 
-                <!-- Deseleziona + Elimina (visibili quando selectedCount > 0) -->
-                <Button Text="Deseleziona tutti"
+                <!-- ANIMATI: Deseleziona + Elimina (quando selectedCount > 0) -->
+                <Button x:Name="btnDeseleziona"
+                        Text="Deseleziona tutti"
                         Command="{Binding DeselectAllCommand}"
                         BackgroundColor="#6B7280"
                         TextColor="White"
@@ -339,7 +348,8 @@
                         FontSize="14"
                         IsVisible="{Binding SelectedCount, Converter={StaticResource IsGreaterThanZeroConverter}}"/>
 
-                <Button Text="{Binding SelectedCount, StringFormat='🗑️ Elimina selezionati ({0})'}"
+                <Button x:Name="btnElimina"
+                        Text="{Binding SelectedCount, StringFormat='🗑️ Elimina selezionati ({0})'}"
                         Command="{Binding DeleteSelectedCommand}"
                         BackgroundColor="#EF4444"
                         TextColor="White"
@@ -351,25 +361,10 @@
                         IsVisible="{Binding SelectedCount, Converter={StaticResource IsGreaterThanZeroConverter}}"/>
             </HorizontalStackLayout>
 
-            <!-- Seleziona preventivi (centro/sinistra - visibile quando selectedCount = 0) -->
-            <Button Grid.Column="0"
-                    Grid.ColumnSpan="1"
-                    Text="☑️ Seleziona preventivi"
-                    Command="{Binding ToggleSelectionModeCommand}"
-                    BackgroundColor="#3B82F6"
-                    TextColor="White"
-                    CornerRadius="12"
-                    Padding="16"
-                    HeightRequest="52"
-                    FontAttributes="Bold"
-                    FontSize="14"
-                    HorizontalOptions="End"
-                    Margin="0,0,6,0"
-                    IsVisible="{Binding SelectedCount, Converter={StaticResource NotGreaterThanZeroConverter}}"/>
-
-            <!-- RIGHT GROUP -->
-            <HorizontalStackLayout Grid.Column="1" Spacing="12" HorizontalOptions="End">
-                <Button Text="🔄 Recupera Lavoro"
+            <!-- RIGHT GROUP - SEMPRE VISIBILI -->
+            <HorizontalStackLayout Grid.Column="1" Spacing="12">
+                <Button x:Name="btnRecupera"
+                        Text="🔄 Recupera Lavoro"
                         Command="{Binding NavigateToRecoverWorkCommand}"
                         BackgroundColor="#3B82F6"
                         TextColor="White"
@@ -379,7 +374,8 @@
                         FontAttributes="Bold"
                         FontSize="14"/>
 
-                <Button Text="⚙️ Impostazioni"
+                <Button x:Name="btnImpostazioni"
+                        Text="⚙️ Impostazioni"
                         Command="{Binding NavigateToSettingsCommand}"
                         BackgroundColor="#3B82F6"
                         TextColor="White"
