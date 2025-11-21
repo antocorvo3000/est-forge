@@ -37,16 +37,10 @@ public partial class MainPage : ContentPage
                 // Mostra un messaggio di errore chiaro all'utente
                 await DisplayAlert(
                     "Errore Database",
-                    $"Impossibile connettersi al database SQL Server LocalDB.\n\n" +
+                    $"Impossibile inizializzare il database SQLite.\n\n" +
                     $"Dettagli: {ex.Message}\n\n" +
-                    $"SOLUZIONE:\n" +
-                    $"1. Apri Visual Studio Installer\n" +
-                    $"2. Clicca 'Modifica' su Visual Studio 2022\n" +
-                    $"3. Vai alla scheda 'Singoli componenti'\n" +
-                    $"4. Cerca 'SQL Server Express LocalDB'\n" +
-                    $"5. Spunta la casella e clicca 'Modifica'\n\n" +
-                    $"Oppure scarica SQL Server Express da:\n" +
-                    $"https://go.microsoft.com/fwlink/?linkid=866658",
+                    $"Il database verrà creato al percorso:\n" +
+                    $"{Path.Combine(FileSystem.AppDataDirectory, "estforge.db")}",
                     "OK");
             }
         }

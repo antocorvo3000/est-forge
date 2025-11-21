@@ -24,7 +24,7 @@ public static class MauiProgram
         // Database Configuration
         var connectionString = GetConnectionString();
         builder.Services.AddDbContextFactory<EstForgeDbContext>(options =>
-            options.UseSqlServer(connectionString));
+            options.UseSqlite(connectionString));
 
         // Services
         builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
@@ -49,14 +49,7 @@ public static class MauiProgram
 
     private static string GetConnectionString()
     {
-        // Per Windows: SQL Server LocalDB
-        if (DeviceInfo.Platform == DevicePlatform.WinUI)
-        {
-            return @"Server=(localdb)\mssqllocaldb;Database=EstForgeDb;Trusted_Connection=True;MultipleActiveResultSets=true";
-        }
-
-        // Per Android/iOS: SQLite come fallback (richiede conversione)
-        // Oppure connessione remota a SQL Server
+        // SQLite funziona su tutte le piattaforme senza installazioni
         var dbPath = Path.Combine(FileSystem.AppDataDirectory, "estforge.db");
         return $"Data Source={dbPath}";
     }
