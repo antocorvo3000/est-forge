@@ -4,6 +4,9 @@ using EstForge.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using CommunityToolkit.Maui;
+#if WINDOWS
+using EstForge.MAUI.WinUI;
+#endif
 
 namespace EstForge.MAUI;
 
@@ -15,6 +18,9 @@ public static class MauiProgram
         builder
             .UseMauiApp<App>()
             .UseMauiCommunityToolkit()
+#if WINDOWS
+            .ConfigureWindows()
+#endif
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
