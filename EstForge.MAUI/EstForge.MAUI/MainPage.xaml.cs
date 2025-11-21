@@ -243,7 +243,7 @@ public partial class MainPage : ContentPage
     }
 
     // Handler per effetto hover sul Frame con transizione smooth
-    private async void OnQuoteItemPointerEntered(object? sender, PointerEventArgs e)
+    private void OnQuoteItemPointerEntered(object? sender, PointerEventArgs e)
     {
         if (sender is Frame frame)
         {
@@ -264,7 +264,7 @@ public partial class MainPage : ContentPage
     }
 
     // Handler per chiudere info panel quando il mouse esce dalla riga
-    private async void OnQuoteItemPointerExited(object? sender, PointerEventArgs e)
+    private void OnQuoteItemPointerExited(object? sender, PointerEventArgs e)
     {
         if (sender is Frame frame)
         {
