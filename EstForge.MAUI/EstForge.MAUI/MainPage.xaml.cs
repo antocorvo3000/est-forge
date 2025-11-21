@@ -43,9 +43,9 @@ public partial class MainPage : ContentPage
 
         pointerGesture.PointerEntered += async (s, e) =>
         {
-            // Hover: brightness 110% (più chiaro)
+            // Hover: brightness 110% (identico al React)
             await button.ScaleTo(1.05, 150, Easing.CubicOut);
-            button.BackgroundColor = LightenColor(originalColor, 0.1);
+            button.BackgroundColor = ApplyBrightness(originalColor, 1.1);
         };
 
         pointerGesture.PointerExited += async (s, e) =>
@@ -70,14 +70,15 @@ public partial class MainPage : ContentPage
         button.GestureRecognizers.Add(pointerGesture);
     }
 
-    private Color LightenColor(Color color, double amount)
+    private Color ApplyBrightness(Color color, double brightness)
     {
-        // Aumenta la luminosità del colore
+        // Applica brightness filter (come CSS brightness(110%))
+        // brightness > 1.0 rende più luminoso, < 1.0 più scuro
         return Color.FromRgba(
-            Math.Min(255, color.Red * 255 * (1 + amount)),
-            Math.Min(255, color.Green * 255 * (1 + amount)),
-            Math.Min(255, color.Blue * 255 * (1 + amount)),
-            color.Alpha * 255
+            Math.Min(1.0, color.Red * brightness),
+            Math.Min(1.0, color.Green * brightness),
+            Math.Min(1.0, color.Blue * brightness),
+            color.Alpha
         );
     }
 
@@ -247,14 +248,16 @@ public partial class MainPage : ContentPage
     {
         if (sender is Frame frame)
         {
-            // ANIMAZIONE HOVER: background white → grigio chiaro (300ms)
+            // ANIMAZIONE HOVER: background white → grigio-bluastro (300ms)
+            // React usa: linear-gradient(135deg, hsl(210 15% 88%), hsl(210 12% 85%))
+            // Colore medio: #D7DCE1 (215, 220, 225)
             var animation = new Animation(v =>
             {
-                // Interpola tra bianco (#FFFFFF) e grigio chiaro (#E8EEF2)
+                // Interpola tra bianco (#FFFFFF) e grigio-bluastro (#D7DCE1)
                 frame.BackgroundColor = Color.FromRgba(
-                    255 + (232 - 255) * v,
-                    255 + (238 - 255) * v,
-                    255 + (242 - 255) * v,
+                    255 + (215 - 255) * v,
+                    255 + (220 - 255) * v,
+                    255 + (225 - 255) * v,
                     255
                 );
             }, 0, 1);
@@ -268,14 +271,14 @@ public partial class MainPage : ContentPage
     {
         if (sender is Frame frame)
         {
-            // ANIMAZIONE HOVER OUT: grigio chiaro → white (300ms)
+            // ANIMAZIONE HOVER OUT: grigio-bluastro → white (300ms)
             var animation = new Animation(v =>
             {
-                // Interpola da grigio chiaro (#E8EEF2) a bianco (#FFFFFF)
+                // Interpola da grigio-bluastro (#D7DCE1) a bianco (#FFFFFF)
                 frame.BackgroundColor = Color.FromRgba(
-                    232 + (255 - 232) * v,
-                    238 + (255 - 238) * v,
-                    242 + (255 - 242) * v,
+                    215 + (255 - 215) * v,
+                    220 + (255 - 220) * v,
+                    225 + (255 - 225) * v,
                     255
                 );
             }, 0, 1);
