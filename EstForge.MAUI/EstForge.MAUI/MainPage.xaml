@@ -210,13 +210,12 @@
                                             WidthRequest="40"/>
 
                                     <!-- Modifica Button -->
-                                    <Button Text="✏️"
+                                    <Button Text="Modifica"
                                             Command="{Binding Path=BindingContext.NavigateToEditQuoteCommand, Source={x:Reference mainPage}}"
                                             CommandParameter="{Binding .}"
                                             Style="{StaticResource ActionButton}"
                                             BackgroundColor="#2563EB"
-                                            WidthRequest="86"
-                                            Text="Modifica"/>
+                                            WidthRequest="86"/>
 
                                     <!-- Elimina Button -->
                                     <Button Text="🗑️"
