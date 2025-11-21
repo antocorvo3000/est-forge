@@ -2,38 +2,376 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:EstForge.Core.ViewModels;assembly=EstForge.Core"
+             xmlns:models="clr-namespace:EstForge.Data.Models;assembly=EstForge.Data"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:converters="clr-namespace:EstForge.MAUI.Converters"
              x:Class="EstForge.MAUI.MainPage"
+             x:Name="mainPage"
              x:DataType="vm:MainViewModel"
-             Title="EST-FORGE"
-             BackgroundColor="White">
+             Title="{Binding Title}"
+             BackgroundColor="#F3F4F6">
 
-    <Grid Padding="20">
-        <VerticalStackLayout Spacing="10" VerticalOptions="Center">
-            <Label Text="EST-FORGE"
-                   FontSize="32"
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <!-- Converter per visibilità -->
+            <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+
+            <!-- Custom Converters -->
+            <converters:GuidEqualsConverter x:Key="GuidEqualsConverter" />
+            <converters:GuidEqualsMultiConverter x:Key="GuidEqualsMultiConverter" />
+            <converters:IsGreaterThanZeroConverter x:Key="IsGreaterThanZeroConverter" />
+            <converters:StringNotNullOrEmptyConverter x:Key="StringNotNullOrEmptyConverter" />
+            <converters:AllTrueMultiConverter x:Key="AllTrueMultiConverter" />
+            <converters:NoneMultiConverter x:Key="NoneMultiConverter" />
+
+            <!-- Stile Glass Card -->
+            <Style x:Key="GlassCard" TargetType="Frame">
+                <Setter Property="BackgroundColor" Value="White" />
+                <Setter Property="HasShadow" Value="True" />
+                <Setter Property="CornerRadius" Value="16" />
+                <Setter Property="Padding" Value="16" />
+            </Style>
+
+            <!-- Stile Action Button -->
+            <Style x:Key="ActionButton" TargetType="Button">
+                <Setter Property="HeightRequest" Value="36" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="TextColor" Value="White" />
+                <Setter Property="FontAttributes" Value="Bold" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="Padding" Value="12,0" />
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="0">
+
+        <!-- HEADER -->
+        <Grid Grid.Row="0"
+              BackgroundColor="#2563EB"
+              Padding="24,20"
+              RowDefinitions="Auto,Auto">
+            <Label Grid.Row="0"
+                   Text="{Binding CompanyName}"
+                   TextColor="White"
+                   FontSize="28"
                    FontAttributes="Bold"
-                   HorizontalOptions="Center"
-                   TextColor="#2563EB"/>
-
-            <Label Text="{Binding CompanyName}"
-                   FontSize="20"
                    HorizontalOptions="Center"/>
-
-            <Label Text="{Binding FilteredPreventivi.Count, StringFormat='Preventivi: {0}'}"
-                   FontSize="18"
+            <Label Grid.Row="1"
+                   Text="Gestione Preventivi"
+                   TextColor="White"
+                   FontSize="14"
+                   Opacity="0.9"
                    HorizontalOptions="Center"
-                   Margin="0,20,0,0"/>
+                   Margin="0,8,0,0"/>
+        </Grid>
 
-            <Button Text="Carica Dati"
-                    Command="{Binding RefreshCommand}"
+        <!-- SEARCH BAR + NUOVO BUTTON -->
+        <Frame Grid.Row="1"
+               Style="{StaticResource GlassCard}"
+               Margin="24,16"
+               Padding="12">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <SearchBar Grid.Column="0"
+                          Placeholder="Cerca preventivi..."
+                          Text="{Binding SearchText}"
+                          BackgroundColor="#F3F4F6"
+                          HeightRequest="44"/>
+
+                <Button Grid.Column="1"
+                        Text="Nuovo"
+                        Command="{Binding NavigateToCreateCommand}"
+                        BackgroundColor="#2563EB"
+                        TextColor="White"
+                        CornerRadius="12"
+                        Padding="24,0"
+                        HeightRequest="44"
+                        FontAttributes="Bold"
+                        FontSize="14"/>
+            </Grid>
+        </Frame>
+
+        <!-- LISTA PREVENTIVI -->
+        <RefreshView Grid.Row="2"
+                     IsRefreshing="{Binding IsRefreshing}"
+                     Command="{Binding RefreshCommand}"
+                     RefreshColor="#2563EB"
+                     Margin="24,0,24,16">
+
+            <CollectionView ItemsSource="{Binding FilteredPreventivi}"
+                           SelectionMode="None">
+
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout VerticalOptions="Center"
+                                        HorizontalOptions="Center"
+                                        Spacing="16"
+                                        Margin="0,60,0,0">
+                        <Label Text="📋"
+                               FontSize="72"
+                               HorizontalOptions="Center"/>
+                        <Label Text="{Binding SearchText, StringFormat='Nessun preventivo trovato per &quot;{0}&quot;'}"
+                               FontSize="16"
+                               TextColor="#6B7280"
+                               HorizontalOptions="Center"
+                               IsVisible="{Binding SearchText, Converter={StaticResource StringNotNullOrEmptyConverter}}"/>
+                        <Label Text="Nessun preventivo presente. Creane uno nuovo!"
+                               FontSize="16"
+                               TextColor="#6B7280"
+                               HorizontalOptions="Center"
+                               IsVisible="{Binding SearchText, Converter={StaticResource InvertedBoolConverter}}"/>
+                        <Button Text="Crea il primo preventivo"
+                                Command="{Binding NavigateToCreateCommand}"
+                                BackgroundColor="#2563EB"
+                                Margin="0,12,0,0"/>
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Preventivo">
+                        <Frame Style="{StaticResource GlassCard}"
+                               Margin="0,0,0,12"
+                               Padding="0">
+
+                            <Grid ColumnDefinitions="Auto,Auto,*,Auto"
+                                  ColumnSpacing="12"
+                                  Padding="16">
+
+                                <!-- CHECKBOX (SELECTION MODE) -->
+                                <CheckBox Grid.Column="0"
+                                         IsVisible="{Binding Path=BindingContext.IsSelectionMode, Source={x:Reference mainPage}}"
+                                         VerticalOptions="Center">
+                                    <CheckBox.Behaviors>
+                                        <toolkit:EventToCommandBehavior
+                                            EventName="CheckedChanged"
+                                            Command="{Binding Path=BindingContext.ToggleQuoteSelectionCommand, Source={x:Reference mainPage}}"
+                                            CommandParameter="{Binding Id}" />
+                                    </CheckBox.Behaviors>
+                                </CheckBox>
+
+                                <!-- ICONA DOCUMENTO -->
+                                <Frame Grid.Column="1"
+                                       BackgroundColor="#EFF6FF"
+                                       BorderColor="#BFDBFE"
+                                       CornerRadius="12"
+                                       Padding="12"
+                                       HasShadow="False"
+                                       WidthRequest="56"
+                                       HeightRequest="56">
+                                    <Label Text="📄"
+                                           FontSize="28"
+                                           VerticalOptions="Center"
+                                           HorizontalOptions="Center"/>
+                                </Frame>
+
+                                <!-- INFO PREVENTIVO -->
+                                <VerticalStackLayout Grid.Column="2"
+                                                    Spacing="4"
+                                                    VerticalOptions="Center">
+                                    <Label FontSize="18"
+                                           FontAttributes="Bold"
+                                           TextColor="#1F2937">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="{Binding Numero, StringFormat='{0:D2}'}" />
+                                                <Span Text="-" />
+                                                <Span Text="{Binding Anno}" />
+                                                <Span Text=" " />
+                                                <Span Text="{Binding Cliente.NomeRagioneSociale}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+
+                                    <Label Text="{Binding UbicazioneVia}"
+                                           FontSize="14"
+                                           TextColor="#6B7280"
+                                           LineBreakMode="TailTruncation"/>
+                                </VerticalStackLayout>
+
+                                <!-- BOTTONI AZIONI O INFO -->
+                                <HorizontalStackLayout Grid.Column="3"
+                                                      Spacing="6"
+                                                      VerticalOptions="Center"
+                                                      IsVisible="{Binding Path=BindingContext.IsSelectionMode, Source={x:Reference mainPage}, Converter={StaticResource InvertedBoolConverter}}">
+
+                                    <!-- Info Button -->
+                                    <Button Text="ℹ️"
+                                            Command="{Binding Path=BindingContext.ToggleInfoCommand, Source={x:Reference mainPage}}"
+                                            CommandParameter="{Binding Id}"
+                                            Style="{StaticResource ActionButton}"
+                                            BackgroundColor="#3B82F6"
+                                            WidthRequest="40"/>
+
+                                    <!-- Clona Button -->
+                                    <Button Text="📋"
+                                            Command="{Binding Path=BindingContext.NavigateToCloneQuoteCommand, Source={x:Reference mainPage}}"
+                                            CommandParameter="{Binding .}"
+                                            Style="{StaticResource ActionButton}"
+                                            BackgroundColor="#10B981"
+                                            WidthRequest="40"/>
+
+                                    <!-- Modifica N°/Anno Button -->
+                                    <Button Text="✏️"
+                                            Command="{Binding Path=BindingContext.NavigateToEditQuoteNumberCommand, Source={x:Reference mainPage}}"
+                                            CommandParameter="{Binding .}"
+                                            Style="{StaticResource ActionButton}"
+                                            BackgroundColor="#8B5CF6"
+                                            WidthRequest="40"/>
+
+                                    <!-- Modifica Button -->
+                                    <Button Text="Modifica"
+                                            Command="{Binding Path=BindingContext.NavigateToEditQuoteCommand, Source={x:Reference mainPage}}"
+                                            CommandParameter="{Binding .}"
+                                            Style="{StaticResource ActionButton}"
+                                            BackgroundColor="#2563EB"
+                                            WidthRequest="86"/>
+
+                                    <!-- Elimina Button -->
+                                    <Button Text="🗑️"
+                                            Command="{Binding Path=BindingContext.DeletePreventivoCommand, Source={x:Reference mainPage}}"
+                                            CommandParameter="{Binding Id}"
+                                            Style="{StaticResource ActionButton}"
+                                            BackgroundColor="#EF4444"
+                                            WidthRequest="40"/>
+                                </HorizontalStackLayout>
+
+                            </Grid>
+
+                            <!-- INFO PANEL (OGGETTO E TOTALE) -->
+                            <Frame BackgroundColor="#F9FAFB"
+                                   CornerRadius="0,0,16,16"
+                                   Padding="16,12"
+                                   HasShadow="False"
+                                   Margin="0,0,0,-16">
+                                <Frame.IsVisible>
+                                    <MultiBinding Converter="{StaticResource GuidEqualsMultiConverter}">
+                                        <Binding Path="BindingContext.InfoQuoteId" Source="{x:Reference mainPage}" />
+                                        <Binding Path="Id" />
+                                    </MultiBinding>
+                                </Frame.IsVisible>
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                                    <Label Grid.Column="0"
+                                           Text="{Binding Oggetto, StringFormat='Oggetto: {0}'}"
+                                           FontSize="14"
+                                           TextColor="#2563EB"
+                                           FontAttributes="Bold"
+                                           LineBreakMode="TailTruncation"/>
+                                    <Label Grid.Column="1"
+                                           Text="{Binding Totale, StringFormat='€ {0:N2}'}"
+                                           FontSize="14"
+                                           TextColor="#1F2937"
+                                           FontAttributes="Bold"/>
+                                </Grid>
+                            </Frame>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <!-- BOTTOM ACTION BUTTONS -->
+        <Grid Grid.Row="3"
+              ColumnDefinitions="*,*"
+              ColumnSpacing="12"
+              RowDefinitions="Auto,Auto"
+              RowSpacing="12"
+              Padding="24,0,24,20">
+
+            <!-- Bottoni normali (visibili quando NON in modalità selezione o nessun elemento selezionato) -->
+            <Button Grid.Row="0" Grid.Column="0"
+                    Text="Nuovo Preventivo Personalizzato"
+                    Command="{Binding NavigateToCustomQuoteCommand}"
                     BackgroundColor="#2563EB"
-                    TextColor="White"
-                    Margin="0,20,0,0"/>
+                    Style="{StaticResource ActionButton}"
+                    HeightRequest="48"
+                    FontSize="14">
+                <Button.IsVisible>
+                    <MultiBinding Converter="{StaticResource NoneMultiConverter}">
+                        <Binding Path="IsSelectionMode" />
+                        <Binding Path="SelectedCount" Converter="{StaticResource IsGreaterThanZeroConverter}" />
+                    </MultiBinding>
+                </Button.IsVisible>
+            </Button>
 
+            <Button Grid.Row="0" Grid.Column="1"
+                    Text="Seleziona preventivi"
+                    Command="{Binding ToggleSelectionModeCommand}"
+                    BackgroundColor="#2563EB"
+                    Style="{StaticResource ActionButton}"
+                    HeightRequest="48"
+                    FontSize="14">
+                <Button.IsVisible>
+                    <MultiBinding Converter="{StaticResource NoneMultiConverter}">
+                        <Binding Path="IsSelectionMode" />
+                        <Binding Path="SelectedCount" Converter="{StaticResource IsGreaterThanZeroConverter}" />
+                    </MultiBinding>
+                </Button.IsVisible>
+            </Button>
+
+            <Button Grid.Row="1" Grid.Column="0"
+                    Text="Recupera Lavoro"
+                    Command="{Binding NavigateToRecoverWorkCommand}"
+                    BackgroundColor="#10B981"
+                    Style="{StaticResource ActionButton}"
+                    HeightRequest="48"
+                    FontSize="14">
+                <Button.IsVisible>
+                    <MultiBinding Converter="{StaticResource NoneMultiConverter}">
+                        <Binding Path="IsSelectionMode" />
+                        <Binding Path="SelectedCount" Converter="{StaticResource IsGreaterThanZeroConverter}" />
+                    </MultiBinding>
+                </Button.IsVisible>
+            </Button>
+
+            <Button Grid.Row="1" Grid.Column="1"
+                    Text="Impostazioni"
+                    Command="{Binding NavigateToSettingsCommand}"
+                    BackgroundColor="#8B5CF6"
+                    Style="{StaticResource ActionButton}"
+                    HeightRequest="48"
+                    FontSize="14">
+                <Button.IsVisible>
+                    <MultiBinding Converter="{StaticResource NoneMultiConverter}">
+                        <Binding Path="IsSelectionMode" />
+                        <Binding Path="SelectedCount" Converter="{StaticResource IsGreaterThanZeroConverter}" />
+                    </MultiBinding>
+                </Button.IsVisible>
+            </Button>
+
+            <!-- Bottoni selezione multipla (visibili quando IsSelectionMode = true E ci sono elementi selezionati) -->
+            <HorizontalStackLayout Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+                                  Spacing="12"
+                                  HorizontalOptions="Fill">
+                <HorizontalStackLayout.IsVisible>
+                    <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
+                        <Binding Path="IsSelectionMode" />
+                        <Binding Path="SelectedCount" Converter="{StaticResource IsGreaterThanZeroConverter}" />
+                    </MultiBinding>
+                </HorizontalStackLayout.IsVisible>
+                <Button Text="Deseleziona tutti"
+                        Command="{Binding DeselectAllCommand}"
+                        BackgroundColor="#6B7280"
+                        Style="{StaticResource ActionButton}"
+                        HeightRequest="48"
+                        HorizontalOptions="FillAndExpand"/>
+
+                <Button Text="{Binding SelectedCount, StringFormat='Elimina selezionati ({0})'}"
+                        Command="{Binding DeleteSelectedCommand}"
+                        BackgroundColor="#EF4444"
+                        Style="{StaticResource ActionButton}"
+                        HeightRequest="48"
+                        HorizontalOptions="FillAndExpand"/>
+            </HorizontalStackLayout>
+        </Grid>
+
+        <!-- LOADING OVERLAY -->
+        <Grid Grid.RowSpan="4"
+              IsVisible="{Binding IsBusy}"
+              BackgroundColor="#80000000">
             <ActivityIndicator IsRunning="{Binding IsBusy}"
-                              Color="#2563EB"
-                              HeightRequest="50"/>
-        </VerticalStackLayout>
+                              Color="White"
+                              WidthRequest="60"
+                              HeightRequest="60"/>
+        </Grid>
     </Grid>
 
 </ContentPage>
