@@ -152,9 +152,10 @@
 
                             <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="16">
 
-                                <!-- CHECKBOX (animata quando isSelectionMode) -->
+                                <!-- CHECKBOX (visibile quando isSelectionMode) -->
                                 <CheckBox Grid.Column="0"
                                          VerticalOptions="Center"
+                                         Opacity="1"
                                          IsVisible="{Binding Path=BindingContext.IsSelectionMode, Source={x:Reference mainPage}}">
                                     <CheckBox.Behaviors>
                                         <toolkit:EventToCommandBehavior
@@ -162,20 +163,6 @@
                                             Command="{Binding Path=BindingContext.ToggleQuoteSelectionCommand, Source={x:Reference mainPage}}"
                                             CommandParameter="{Binding Id}" />
                                     </CheckBox.Behaviors>
-                                    <CheckBox.Triggers>
-                                        <DataTrigger TargetType="CheckBox"
-                                                    Binding="{Binding Path=BindingContext.IsSelectionMode, Source={x:Reference mainPage}}"
-                                                    Value="True">
-                                            <DataTrigger.EnterActions>
-                                                <toolkit:FadeInAnimation Duration="300"/>
-                                                <toolkit:ScaleToAnimation Duration="300" Scale="1"/>
-                                            </DataTrigger.EnterActions>
-                                            <DataTrigger.ExitActions>
-                                                <toolkit:FadeOutAnimation Duration="300"/>
-                                                <toolkit:ScaleToAnimation Duration="300" Scale="0.5"/>
-                                            </DataTrigger.ExitActions>
-                                        </DataTrigger>
-                                    </CheckBox.Triggers>
                                 </CheckBox>
 
                                 <!-- ICONA -->
