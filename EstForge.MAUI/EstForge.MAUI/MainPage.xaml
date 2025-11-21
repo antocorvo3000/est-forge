@@ -42,7 +42,6 @@
                           Placeholder="Cerca preventivi..."
                           Text="{Binding SearchText}"
                           SearchCommand="{Binding SearchCommand}"
-                          ClearCommand="{Binding ClearSearchCommand}"
                           BackgroundColor="{StaticResource Gray100}"
                           PlaceholderColor="{StaticResource Gray500}"/>
 

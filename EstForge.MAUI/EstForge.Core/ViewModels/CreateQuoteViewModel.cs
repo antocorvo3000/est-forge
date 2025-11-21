@@ -247,6 +247,16 @@ public partial class CreateQuoteViewModel : BaseViewModel
         }
     }
 
+    [RelayCommand]
+    private void Cancel()
+    {
+        // Ferma auto-save
+        _autoSaveTimer?.Stop();
+
+        // Naviga indietro o chiudi la pagina
+        // La navigazione sarà gestita dalla View
+    }
+
     private Task AutoSaveAsync()
     {
         if (IsBusy || IsAutoSaving) return Task.CompletedTask;
