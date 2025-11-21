@@ -57,4 +57,10 @@ public partial class MainPage : ContentPage
             await _viewModel.InitializeAsync();
         }
     }
+
+    // Handler per chiudere info panel quando il mouse esce dalla riga
+    private void OnQuoteItemPointerExited(object? sender, PointerEventArgs e)
+    {
+        _viewModel.InfoQuoteId = null;
+    }
 }

@@ -9,14 +9,11 @@
              x:Name="mainPage"
              x:DataType="vm:MainViewModel"
              Shell.NavBarIsVisible="False"
-             BackgroundColor="#D1DCE5">
+             BackgroundColor="#C5D3DD">
 
     <ContentPage.Resources>
         <ResourceDictionary>
-            <!-- Converter per visibilità -->
             <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
-
-            <!-- Custom Converters -->
             <converters:GuidEqualsConverter x:Key="GuidEqualsConverter" />
             <converters:GuidEqualsMultiConverter x:Key="GuidEqualsMultiConverter" />
             <converters:IsGreaterThanZeroConverter x:Key="IsGreaterThanZeroConverter" />
@@ -26,21 +23,24 @@
             <converters:AllTrueMultiConverter x:Key="AllTrueMultiConverter" />
             <converters:NoneMultiConverter x:Key="NoneMultiConverter" />
 
-            <!-- Stile Glass Card -->
+            <!-- Stile Glass Card (grigio chiaro semi-trasparente) -->
             <Style x:Key="GlassCard" TargetType="Frame">
-                <Setter Property="BackgroundColor" Value="White" />
+                <Setter Property="BackgroundColor" Value="#E8EEF2" />
                 <Setter Property="HasShadow" Value="True" />
                 <Setter Property="CornerRadius" Value="16" />
-                <Setter Property="Padding" Value="16" />
-                <Setter Property="BorderColor" Value="#E0E0E0" />
+                <Setter Property="BorderColor" Value="#D0D8DD" />
             </Style>
         </ResourceDictionary>
     </ContentPage.Resources>
 
-    <ScrollView>
-        <VerticalStackLayout Spacing="12" Padding="16">
+    <!-- LAYOUT PRINCIPALE: Grid con righe fisse e centrale scrollabile -->
+    <Grid RowDefinitions="Auto,Auto,*,Auto"
+          RowSpacing="12"
+          Padding="16">
 
-            <!-- HEADER CARD 1: Gestione Preventivi -->
+        <!-- HEADERS FISSI (Row 0) -->
+        <VerticalStackLayout Grid.Row="0" Spacing="12">
+            <!-- Header 1: Gestione Preventivi -->
             <Frame Style="{StaticResource GlassCard}" Padding="16">
                 <Label Text="Gestione Preventivi"
                        FontSize="36"
@@ -49,19 +49,19 @@
                        HorizontalOptions="Center"/>
             </Frame>
 
-            <!-- HEADER CARD 2: Logo Aziendale -->
+            <!-- Header 2: Logo -->
             <Frame Style="{StaticResource GlassCard}"
                    Padding="8"
                    HorizontalOptions="Center"
-                   WidthRequest="200"
-                   HeightRequest="150">
-                <Label Text="📄"
-                       FontSize="80"
+                   WidthRequest="180"
+                   HeightRequest="130">
+                <Image Source="logo.png"
+                       Aspect="AspectFit"
                        HorizontalOptions="Center"
                        VerticalOptions="Center"/>
             </Frame>
 
-            <!-- HEADER CARD 3: Info Azienda -->
+            <!-- Header 3: Info Azienda -->
             <Frame Style="{StaticResource GlassCard}" Padding="16">
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="20">
                     <Label Grid.Column="0"
@@ -90,277 +90,354 @@
                     </VerticalStackLayout>
                 </Grid>
             </Frame>
+        </VerticalStackLayout>
 
-            <!-- SEARCH BAR + NUOVO BUTTON -->
-            <Frame Style="{StaticResource GlassCard}" Padding="12">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                    <SearchBar Grid.Column="0"
-                              Placeholder="Cerca numero preventivo, cliente o indirizzo..."
+        <!-- SEARCH BAR FISSA (Row 1) -->
+        <Frame Grid.Row="1" Style="{StaticResource GlassCard}" Padding="12">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <!-- Search Box con bordo bianco -->
+                <Frame Grid.Column="0"
+                       BackgroundColor="White"
+                       CornerRadius="8"
+                       Padding="0"
+                       HasShadow="False"
+                       BorderColor="#D0D8DD">
+                    <SearchBar Placeholder="Cerca numero preventivo, cliente o indirizzo..."
                               Text="{Binding SearchText}"
-                              BackgroundColor="#F9FAFB"
-                              HeightRequest="48"/>
+                              BackgroundColor="Transparent"
+                              HeightRequest="44"/>
+                </Frame>
 
-                    <Button Grid.Column="1"
-                            Text="+ Nuovo preventivo"
-                            Command="{Binding NavigateToCreateCommand}"
-                            BackgroundColor="#3B82F6"
-                            TextColor="White"
-                            CornerRadius="12"
-                            Padding="20,0"
-                            HeightRequest="48"
-                            FontAttributes="Bold"
-                            FontSize="14"/>
-                </Grid>
-            </Frame>
+                <Button Grid.Column="1"
+                        Text="+ Nuovo preventivo"
+                        Command="{Binding NavigateToCreateCommand}"
+                        BackgroundColor="#3B82F6"
+                        TextColor="White"
+                        CornerRadius="12"
+                        Padding="20,0"
+                        HeightRequest="48"
+                        FontAttributes="Bold"
+                        FontSize="14">
+                    <Button.Shadow>
+                        <Shadow Brush="Black" Opacity="0.3" Radius="8" Offset="0,2"/>
+                    </Button.Shadow>
+                </Button>
+            </Grid>
+        </Frame>
 
-            <!-- LISTA PREVENTIVI -->
-            <Frame Style="{StaticResource GlassCard}" Padding="12">
-                <CollectionView ItemsSource="{Binding FilteredPreventivi}"
-                               SelectionMode="None">
+        <!-- LISTA PREVENTIVI SCROLLABILE (Row 2 - flex-1) -->
+        <Frame Grid.Row="2"
+               Style="{StaticResource GlassCard}"
+               Padding="12">
+            <CollectionView ItemsSource="{Binding FilteredPreventivi}"
+                           SelectionMode="None">
 
-                    <CollectionView.EmptyView>
-                        <VerticalStackLayout VerticalOptions="Center"
-                                            HorizontalOptions="Center"
-                                            Spacing="16"
-                                            Margin="0,60,0,0">
-                            <Label Text="📋"
-                                   FontSize="72"
-                                   HorizontalOptions="Center"/>
-                            <Label Text="{Binding SearchText, StringFormat='Nessun preventivo trovato per &quot;{0}&quot;'}"
-                                   FontSize="16"
-                                   TextColor="#6B7280"
-                                   HorizontalOptions="Center"
-                                   IsVisible="{Binding SearchText, Converter={StaticResource StringNotNullOrEmptyConverter}}"/>
-                            <Label Text="Nessun preventivo presente. Creane uno nuovo!"
-                                   FontSize="16"
-                                   TextColor="#6B7280"
-                                   HorizontalOptions="Center"
-                                   IsVisible="{Binding SearchText, Converter={StaticResource StringIsNullOrEmptyConverter}}"/>
-                        </VerticalStackLayout>
-                    </CollectionView.EmptyView>
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout VerticalOptions="Center"
+                                        HorizontalOptions="Center"
+                                        Spacing="16">
+                        <Label Text="📋" FontSize="72" HorizontalOptions="Center"/>
+                        <Label Text="{Binding SearchText, StringFormat='Nessun preventivo trovato per &quot;{0}&quot;'}"
+                               FontSize="16"
+                               TextColor="#6B7280"
+                               HorizontalOptions="Center"
+                               IsVisible="{Binding SearchText, Converter={StaticResource StringNotNullOrEmptyConverter}}"/>
+                        <Label Text="Nessun preventivo presente. Creane uno nuovo!"
+                               FontSize="16"
+                               TextColor="#6B7280"
+                               HorizontalOptions="Center"
+                               IsVisible="{Binding SearchText, Converter={StaticResource StringIsNullOrEmptyConverter}}"/>
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
 
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate x:DataType="models:Preventivo">
-                            <Frame BackgroundColor="White"
-                                   CornerRadius="12"
-                                   Padding="16"
-                                   Margin="0,0,0,8"
-                                   HasShadow="True">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Preventivo">
+                        <!-- RIGA BIANCA con hover e pointer events -->
+                        <Frame BackgroundColor="White"
+                               CornerRadius="12"
+                               Padding="16"
+                               Margin="0,0,0,8"
+                               HasShadow="True"
+                               BorderColor="#E5E7EB">
+                            <Frame.GestureRecognizers>
+                                <PointerGestureRecognizer PointerExited="OnQuoteItemPointerExited"/>
+                            </Frame.GestureRecognizers>
 
-                                <Grid ColumnDefinitions="Auto,*,Auto"
-                                      ColumnSpacing="16">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
 
-                                    <!-- ICONA DOCUMENTO -->
-                                    <Frame Grid.Column="0"
-                                           BackgroundColor="#EFF6FF"
-                                           BorderColor="#BFDBFE"
-                                           CornerRadius="12"
-                                           Padding="12"
-                                           HasShadow="False"
-                                           WidthRequest="56"
-                                           HeightRequest="56">
-                                        <Label Text="📄"
-                                               FontSize="28"
-                                               VerticalOptions="Center"
-                                               HorizontalOptions="Center"/>
-                                    </Frame>
+                                <!-- ICONA -->
+                                <Frame Grid.Column="0"
+                                       BackgroundColor="#EFF6FF"
+                                       BorderColor="#BFDBFE"
+                                       CornerRadius="12"
+                                       Padding="12"
+                                       HasShadow="False"
+                                       WidthRequest="56"
+                                       HeightRequest="56">
+                                    <Label Text="📄" FontSize="28"
+                                           VerticalOptions="Center"
+                                           HorizontalOptions="Center"/>
+                                </Frame>
 
-                                    <!-- INFO PREVENTIVO -->
-                                    <VerticalStackLayout Grid.Column="1"
-                                                        Spacing="4"
-                                                        VerticalOptions="Center">
-                                        <Label FontSize="18"
-                                               FontAttributes="Bold"
-                                               TextColor="#1F2937">
-                                            <Label.FormattedText>
-                                                <FormattedString>
-                                                    <Span Text="{Binding Numero, StringFormat='{0:D2}'}" />
-                                                    <Span Text="-" />
-                                                    <Span Text="{Binding Anno}" />
-                                                    <Span Text=" " />
-                                                    <Span Text="{Binding Cliente.NomeRagioneSociale}" />
-                                                </FormattedString>
-                                            </Label.FormattedText>
-                                        </Label>
+                                <!-- INFO -->
+                                <VerticalStackLayout Grid.Column="1"
+                                                    Spacing="4"
+                                                    VerticalOptions="Center">
+                                    <Label FontSize="18" FontAttributes="Bold" TextColor="#1F2937">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="{Binding Numero, StringFormat='{0:D2}'}" />
+                                                <Span Text="-" />
+                                                <Span Text="{Binding Anno}" />
+                                                <Span Text=" " />
+                                                <Span Text="{Binding Cliente.NomeRagioneSociale}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                    <Label Text="{Binding UbicazioneVia}"
+                                           FontSize="14"
+                                           TextColor="#6B7280"
+                                           LineBreakMode="TailTruncation"/>
+                                </VerticalStackLayout>
 
-                                        <Label Text="{Binding UbicazioneVia}"
-                                               FontSize="14"
-                                               TextColor="#6B7280"
-                                               LineBreakMode="TailTruncation"/>
-                                    </VerticalStackLayout>
-
-                                    <!-- BOTTONI AZIONI -->
-                                    <HorizontalStackLayout Grid.Column="2"
-                                                          Spacing="8"
-                                                          VerticalOptions="Center"
-                                                          HorizontalOptions="End">
-                                        <HorizontalStackLayout.IsVisible>
-                                            <MultiBinding Converter="{StaticResource NoneMultiConverter}">
-                                                <Binding Path="BindingContext.IsSelectionMode" Source="{x:Reference mainPage}" />
-                                                <MultiBinding Converter="{StaticResource GuidEqualsMultiConverter}">
-                                                    <Binding Path="BindingContext.InfoQuoteId" Source="{x:Reference mainPage}" />
-                                                    <Binding Path="Id" />
-                                                </MultiBinding>
-                                            </MultiBinding>
-                                        </HorizontalStackLayout.IsVisible>
-
-                                        <!-- Info Button -->
-                                        <Button Text="ℹ️ Info"
-                                                Command="{Binding Path=BindingContext.ToggleInfoCommand, Source={x:Reference mainPage}}"
-                                                CommandParameter="{Binding Id}"
-                                                BackgroundColor="#3B82F6"
-                                                TextColor="White"
-                                                CornerRadius="8"
-                                                Padding="12,6"
-                                                FontSize="12"
-                                                FontAttributes="Bold"/>
-
-                                        <!-- Clona Button -->
-                                        <Button Text="📋 Clona"
-                                                Command="{Binding Path=BindingContext.NavigateToCloneQuoteCommand, Source={x:Reference mainPage}}"
-                                                CommandParameter="{Binding .}"
-                                                BackgroundColor="#10B981"
-                                                TextColor="White"
-                                                CornerRadius="8"
-                                                Padding="12,6"
-                                                FontSize="12"
-                                                FontAttributes="Bold"/>
-
-                                        <!-- Modifica N°/Anno Button -->
-                                        <Button Text="✏️ Modifica N°/Anno"
-                                                Command="{Binding Path=BindingContext.NavigateToEditQuoteNumberCommand, Source={x:Reference mainPage}}"
-                                                CommandParameter="{Binding .}"
-                                                BackgroundColor="#A855F7"
-                                                TextColor="White"
-                                                CornerRadius="8"
-                                                Padding="12,6"
-                                                FontSize="12"
-                                                FontAttributes="Bold"/>
-
-                                        <!-- Modifica Button -->
-                                        <Button Text="🖊️ Modifica"
-                                                Command="{Binding Path=BindingContext.NavigateToEditQuoteCommand, Source={x:Reference mainPage}}"
-                                                CommandParameter="{Binding .}"
-                                                BackgroundColor="#3B82F6"
-                                                TextColor="White"
-                                                CornerRadius="8"
-                                                Padding="12,6"
-                                                FontSize="12"
-                                                FontAttributes="Bold"/>
-
-                                        <!-- Elimina Button -->
-                                        <Button Text="🗑️ Elimina"
-                                                Command="{Binding Path=BindingContext.DeletePreventivoCommand, Source={x:Reference mainPage}}"
-                                                CommandParameter="{Binding Id}"
-                                                BackgroundColor="#EF4444"
-                                                TextColor="White"
-                                                CornerRadius="8"
-                                                Padding="12,6"
-                                                FontSize="12"
-                                                FontAttributes="Bold"/>
-                                    </HorizontalStackLayout>
-
-                                    <!-- INFO PANEL (OGGETTO E TOTALE) -->
-                                    <Grid Grid.Column="2"
-                                          ColumnDefinitions="*,Auto"
-                                          ColumnSpacing="16"
-                                          VerticalOptions="Center"
-                                          HorizontalOptions="End">
-                                        <Grid.IsVisible>
+                                <!-- BOTTONI AZIONI -->
+                                <HorizontalStackLayout Grid.Column="2"
+                                                      Spacing="8"
+                                                      VerticalOptions="Center"
+                                                      HorizontalOptions="End">
+                                    <HorizontalStackLayout.IsVisible>
+                                        <MultiBinding Converter="{StaticResource NoneMultiConverter}">
+                                            <Binding Path="BindingContext.IsSelectionMode" Source="{x:Reference mainPage}" />
                                             <MultiBinding Converter="{StaticResource GuidEqualsMultiConverter}">
                                                 <Binding Path="BindingContext.InfoQuoteId" Source="{x:Reference mainPage}" />
                                                 <Binding Path="Id" />
                                             </MultiBinding>
-                                        </Grid.IsVisible>
-                                        <Label Grid.Column="0"
-                                               FontSize="14"
-                                               TextColor="#2563EB"
-                                               FontAttributes="Bold"
-                                               LineBreakMode="TailTruncation">
-                                            <Label.FormattedText>
-                                                <FormattedString>
-                                                    <Span Text="Oggetto: " />
-                                                    <Span Text="{Binding Oggetto}" />
-                                                </FormattedString>
-                                            </Label.FormattedText>
-                                        </Label>
-                                        <Label Grid.Column="1"
-                                               Text="{Binding Totale, StringFormat='€ {0:N2}'}"
-                                               FontSize="14"
-                                               TextColor="#1F2937"
-                                               FontAttributes="Bold"/>
-                                    </Grid>
+                                        </MultiBinding>
+                                    </HorizontalStackLayout.IsVisible>
 
+                                    <Button Text="ℹ️ Info"
+                                            Command="{Binding Path=BindingContext.ToggleInfoCommand, Source={x:Reference mainPage}}"
+                                            CommandParameter="{Binding Id}"
+                                            BackgroundColor="#3B82F6"
+                                            TextColor="White"
+                                            CornerRadius="8"
+                                            Padding="12,8"
+                                            FontSize="12"
+                                            FontAttributes="Bold">
+                                        <VisualStateManager.VisualStateGroups>
+                                            <VisualStateGroup x:Name="CommonStates">
+                                                <VisualState x:Name="PointerOver">
+                                                    <VisualState.Setters>
+                                                        <Setter Property="BackgroundColor" Value="#2563EB"/>
+                                                        <Setter Property="Scale" Value="1.05"/>
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                                <VisualState x:Name="Pressed">
+                                                    <VisualState.Setters>
+                                                        <Setter Property="BackgroundColor" Value="#1E40AF"/>
+                                                        <Setter Property="Scale" Value="0.95"/>
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                            </VisualStateGroup>
+                                        </VisualStateManager.VisualStateGroups>
+                                    </Button>
+
+                                    <Button Text="📋 Clona"
+                                            Command="{Binding Path=BindingContext.NavigateToCloneQuoteCommand, Source={x:Reference mainPage}}"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#10B981"
+                                            TextColor="White"
+                                            CornerRadius="8"
+                                            Padding="12,8"
+                                            FontSize="12"
+                                            FontAttributes="Bold">
+                                        <VisualStateManager.VisualStateGroups>
+                                            <VisualStateGroup x:Name="CommonStates">
+                                                <VisualState x:Name="PointerOver">
+                                                    <VisualState.Setters>
+                                                        <Setter Property="BackgroundColor" Value="#059669"/>
+                                                        <Setter Property="Scale" Value="1.05"/>
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                                <VisualState x:Name="Pressed">
+                                                    <VisualState.Setters>
+                                                        <Setter Property="BackgroundColor" Value="#047857"/>
+                                                        <Setter Property="Scale" Value="0.95"/>
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                            </VisualStateGroup>
+                                        </VisualStateManager.VisualStateGroups>
+                                    </Button>
+
+                                    <Button Text="✏️ Modifica N°/Anno"
+                                            Command="{Binding Path=BindingContext.NavigateToEditQuoteNumberCommand, Source={x:Reference mainPage}}"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#A855F7"
+                                            TextColor="White"
+                                            CornerRadius="8"
+                                            Padding="12,8"
+                                            FontSize="12"
+                                            FontAttributes="Bold">
+                                        <VisualStateManager.VisualStateGroups>
+                                            <VisualStateGroup x:Name="CommonStates">
+                                                <VisualState x:Name="PointerOver">
+                                                    <VisualState.Setters>
+                                                        <Setter Property="BackgroundColor" Value="#9333EA"/>
+                                                        <Setter Property="Scale" Value="1.05"/>
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                                <VisualState x:Name="Pressed">
+                                                    <VisualState.Setters>
+                                                        <Setter Property="BackgroundColor" Value="#7E22CE"/>
+                                                        <Setter Property="Scale" Value="0.95"/>
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                            </VisualStateGroup>
+                                        </VisualStateManager.VisualStateGroups>
+                                    </Button>
+
+                                    <Button Text="🖊️ Modifica"
+                                            Command="{Binding Path=BindingContext.NavigateToEditQuoteCommand, Source={x:Reference mainPage}}"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#3B82F6"
+                                            TextColor="White"
+                                            CornerRadius="8"
+                                            Padding="12,8"
+                                            FontSize="12"
+                                            FontAttributes="Bold">
+                                        <VisualStateManager.VisualStateGroups>
+                                            <VisualStateGroup x:Name="CommonStates">
+                                                <VisualState x:Name="PointerOver">
+                                                    <VisualState.Setters>
+                                                        <Setter Property="BackgroundColor" Value="#2563EB"/>
+                                                        <Setter Property="Scale" Value="1.05"/>
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                                <VisualState x:Name="Pressed">
+                                                    <VisualState.Setters>
+                                                        <Setter Property="BackgroundColor" Value="#1E40AF"/>
+                                                        <Setter Property="Scale" Value="0.95"/>
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                            </VisualStateGroup>
+                                        </VisualStateManager.VisualStateGroups>
+                                    </Button>
+
+                                    <Button Text="🗑️ Elimina"
+                                            Command="{Binding Path=BindingContext.DeletePreventivoCommand, Source={x:Reference mainPage}}"
+                                            CommandParameter="{Binding Id}"
+                                            BackgroundColor="#EF4444"
+                                            TextColor="White"
+                                            CornerRadius="8"
+                                            Padding="12,8"
+                                            FontSize="12"
+                                            FontAttributes="Bold">
+                                        <VisualStateManager.VisualStateGroups>
+                                            <VisualStateGroup x:Name="CommonStates">
+                                                <VisualState x:Name="PointerOver">
+                                                    <VisualState.Setters>
+                                                        <Setter Property="BackgroundColor" Value="#DC2626"/>
+                                                        <Setter Property="Scale" Value="1.05"/>
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                                <VisualState x:Name="Pressed">
+                                                    <VisualState.Setters>
+                                                        <Setter Property="BackgroundColor" Value="#B91C1C"/>
+                                                        <Setter Property="Scale" Value="0.95"/>
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                            </VisualStateGroup>
+                                        </VisualStateManager.VisualStateGroups>
+                                    </Button>
+                                </HorizontalStackLayout>
+
+                                <!-- INFO PANEL -->
+                                <Grid Grid.Column="2"
+                                      ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="16"
+                                      VerticalOptions="Center"
+                                      HorizontalOptions="End">
+                                    <Grid.IsVisible>
+                                        <MultiBinding Converter="{StaticResource GuidEqualsMultiConverter}">
+                                            <Binding Path="BindingContext.InfoQuoteId" Source="{x:Reference mainPage}" />
+                                            <Binding Path="Id" />
+                                        </MultiBinding>
+                                    </Grid.IsVisible>
+                                    <Label Grid.Column="0"
+                                           FontSize="14"
+                                           TextColor="#2563EB"
+                                           FontAttributes="Bold"
+                                           LineBreakMode="TailTruncation">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="Oggetto: " />
+                                                <Span Text="{Binding Oggetto}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                    <Label Grid.Column="1"
+                                           Text="{Binding Totale, StringFormat='€ {0:N2}'}"
+                                           FontSize="14"
+                                           TextColor="#1F2937"
+                                           FontAttributes="Bold"/>
                                 </Grid>
-                            </Frame>
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
-            </Frame>
 
-            <!-- BOTTOM ACTION BUTTONS -->
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto,Auto" RowSpacing="12">
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Frame>
 
-                <!-- Row 0 - Prima riga bottoni -->
-                <Button Grid.Row="0" Grid.Column="0"
-                        Text="📝 Nuovo Preventivo Personalizzato"
-                        Command="{Binding NavigateToCustomQuoteCommand}"
-                        BackgroundColor="#3B82F6"
-                        TextColor="White"
-                        CornerRadius="12"
-                        Padding="16"
-                        HeightRequest="56"
-                        FontAttributes="Bold"
-                        FontSize="14"
-                        IsVisible="{Binding SelectedCount, Converter={StaticResource NotGreaterThanZeroConverter}}"/>
+        <!-- BOTTOM BUTTONS FISSI (Row 3) -->
+        <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto,Auto" RowSpacing="12">
+            <Button Grid.Row="0" Grid.Column="0"
+                    Text="📝 Nuovo Preventivo Personalizzato"
+                    Command="{Binding NavigateToCustomQuoteCommand}"
+                    BackgroundColor="#3B82F6"
+                    TextColor="White"
+                    CornerRadius="12"
+                    Padding="16"
+                    HeightRequest="52"
+                    FontAttributes="Bold"
+                    FontSize="14"
+                    IsVisible="{Binding SelectedCount, Converter={StaticResource NotGreaterThanZeroConverter}}"/>
 
-                <Button Grid.Row="0" Grid.Column="1"
-                        Text="☑️ Seleziona preventivi"
-                        Command="{Binding ToggleSelectionModeCommand}"
-                        BackgroundColor="#3B82F6"
-                        TextColor="White"
-                        CornerRadius="12"
-                        Padding="16"
-                        HeightRequest="56"
-                        FontAttributes="Bold"
-                        FontSize="14"
-                        IsVisible="{Binding SelectedCount, Converter={StaticResource NotGreaterThanZeroConverter}}"/>
+            <Button Grid.Row="0" Grid.Column="1"
+                    Text="☑️ Seleziona preventivi"
+                    Command="{Binding ToggleSelectionModeCommand}"
+                    BackgroundColor="#3B82F6"
+                    TextColor="White"
+                    CornerRadius="12"
+                    Padding="16"
+                    HeightRequest="52"
+                    FontAttributes="Bold"
+                    FontSize="14"
+                    IsVisible="{Binding SelectedCount, Converter={StaticResource NotGreaterThanZeroConverter}}"/>
 
-                <!-- Row 1 - Seconda riga bottoni -->
-                <Button Grid.Row="1" Grid.Column="0"
-                        Text="🔄 Recupera Lavoro"
-                        Command="{Binding NavigateToRecoverWorkCommand}"
-                        BackgroundColor="#3B82F6"
-                        TextColor="White"
-                        CornerRadius="12"
-                        Padding="16"
-                        HeightRequest="56"
-                        FontAttributes="Bold"
-                        FontSize="14"/>
+            <Button Grid.Row="1" Grid.Column="0"
+                    Text="🔄 Recupera Lavoro"
+                    Command="{Binding NavigateToRecoverWorkCommand}"
+                    BackgroundColor="#3B82F6"
+                    TextColor="White"
+                    CornerRadius="12"
+                    Padding="16"
+                    HeightRequest="52"
+                    FontAttributes="Bold"
+                    FontSize="14"/>
 
-                <Button Grid.Row="1" Grid.Column="1"
-                        Text="⚙️ Impostazioni"
-                        Command="{Binding NavigateToSettingsCommand}"
-                        BackgroundColor="#3B82F6"
-                        TextColor="White"
-                        CornerRadius="12"
-                        Padding="16"
-                        HeightRequest="56"
-                        FontAttributes="Bold"
-                        FontSize="14"/>
-            </Grid>
+            <Button Grid.Row="1" Grid.Column="1"
+                    Text="⚙️ Impostazioni"
+                    Command="{Binding NavigateToSettingsCommand}"
+                    BackgroundColor="#3B82F6"
+                    TextColor="White"
+                    CornerRadius="12"
+                    Padding="16"
+                    HeightRequest="52"
+                    FontAttributes="Bold"
+                    FontSize="14"/>
+        </Grid>
 
-            <!-- LOADING OVERLAY -->
-            <Grid IsVisible="{Binding IsBusy}"
-                  BackgroundColor="#80000000"
-                  Padding="100">
-                <ActivityIndicator IsRunning="{Binding IsBusy}"
-                                  Color="White"
-                                  WidthRequest="60"
-                                  HeightRequest="60"/>
-            </Grid>
-
-        </VerticalStackLayout>
-    </ScrollView>
+    </Grid>
 
 </ContentPage>
