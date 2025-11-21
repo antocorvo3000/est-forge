@@ -44,12 +44,7 @@ public static class MauiProgram
         builder.Logging.AddDebug();
 #endif
 
-        var app = builder.Build();
-
-        // Initialize database
-        InitializeDatabase(app.Services);
-
-        return app;
+        return builder.Build();
     }
 
     private static string GetConnectionString()
@@ -64,21 +59,5 @@ public static class MauiProgram
         // Oppure connessione remota a SQL Server
         var dbPath = Path.Combine(FileSystem.AppDataDirectory, "estforge.db");
         return $"Data Source={dbPath}";
-    }
-
-    private static void InitializeDatabase(IServiceProvider services)
-    {
-        using var scope = services.CreateScope();
-        var dbService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
-
-        try
-        {
-            dbService.InitializeDatabaseAsync().GetAwaiter().GetResult();
-        }
-        catch (Exception ex)
-        {
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<App>>();
-            logger.LogError(ex, "Errore durante l'inizializzazione del database");
-        }
     }
 }
