@@ -35,13 +35,93 @@ public class DatabaseSeedService : IDatabaseSeedService
             return;
         }
 
-        // Usa i clienti già presenti dal seed del DbContext
-        var clienti = await context.Clienti.OrderBy(c => c.CreatoIl).Take(5).ToListAsync();
+        // Controlla se ci sono clienti, altrimenti li crea
+        var clienti = await context.Clienti.OrderBy(c => c.CreatoIl).ToListAsync();
 
+        if (clienti.Count == 0)
+        {
+            // Inserisci i clienti di esempio
+            clienti = new List<Cliente>
+            {
+                new Cliente
+                {
+                    NomeRagioneSociale = "Rossi Mario",
+                    CodiceFiscalePIva = "RSSMRA80A01F205X",
+                    Via = "Via Garibaldi 15",
+                    Citta = "Milano",
+                    Provincia = "MI",
+                    Cap = "20100",
+                    Telefono = "+39 333 1234567",
+                    Email = "mario.rossi@example.com",
+                    CreatoIl = DateTime.UtcNow,
+                    AggiornatoIl = DateTime.UtcNow
+                },
+                new Cliente
+                {
+                    NomeRagioneSociale = "Bianchi S.r.l.",
+                    CodiceFiscalePIva = "12345678901",
+                    Via = "Corso Italia 42",
+                    Citta = "Roma",
+                    Provincia = "RM",
+                    Cap = "00100",
+                    Telefono = "+39 06 9876543",
+                    Email = "info@bianchi.it",
+                    CreatoIl = DateTime.UtcNow,
+                    AggiornatoIl = DateTime.UtcNow
+                },
+                new Cliente
+                {
+                    NomeRagioneSociale = "Verdi Costruzioni",
+                    CodiceFiscalePIva = "98765432109",
+                    Via = "Via Dante 88",
+                    Citta = "Torino",
+                    Provincia = "TO",
+                    Cap = "10100",
+                    Telefono = "+39 011 5554444",
+                    Email = "verdi@costruzioni.it",
+                    CreatoIl = DateTime.UtcNow,
+                    AggiornatoIl = DateTime.UtcNow
+                },
+                new Cliente
+                {
+                    NomeRagioneSociale = "Neri & Associati",
+                    CodiceFiscalePIva = "55566677788",
+                    Via = "Piazza San Marco 1",
+                    Citta = "Venezia",
+                    Provincia = "VE",
+                    Cap = "30100",
+                    Telefono = "+39 041 2223344",
+                    Email = "neri@associati.com",
+                    CreatoIl = DateTime.UtcNow,
+                    AggiornatoIl = DateTime.UtcNow
+                },
+                new Cliente
+                {
+                    NomeRagioneSociale = "Gialli Impianti",
+                    CodiceFiscalePIva = "11122233344",
+                    Via = "Via Mazzini 7",
+                    Citta = "Firenze",
+                    Provincia = "FI",
+                    Cap = "50100",
+                    Telefono = "+39 055 7778899",
+                    Email = "gialli@impianti.it",
+                    CreatoIl = DateTime.UtcNow,
+                    AggiornatoIl = DateTime.UtcNow
+                }
+            };
+
+            context.Clienti.AddRange(clienti);
+            await context.SaveChangesAsync();
+        }
+
+        // Prendi i primi 5 clienti
         if (clienti.Count < 5)
         {
-            // Se non ci sono abbastanza clienti, non fare nulla (il seed del DbContext deve essere già applicato)
-            return;
+            clienti = await context.Clienti.OrderBy(c => c.CreatoIl).Take(5).ToListAsync();
+        }
+        else
+        {
+            clienti = clienti.Take(5).ToList();
         }
 
         // Crea preventivi di esempio usando i clienti esistenti
