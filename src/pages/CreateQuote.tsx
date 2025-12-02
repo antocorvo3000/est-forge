@@ -55,28 +55,6 @@ const UNITS = [
   { value: "a corpo", label: "a corpo (forfettario)" },
 ];
 
-const saveQuoteAndGeneratePdf = async () => {
-  try {
-    let cliente_id = null;
-    if (clientData && clientData.name) {
-      const cliente = await salvaCliente({
-        nome_ragione_sociale: clientData.name,
-        codice_fiscale_piva: clientData.taxCode || null,
-        via: clientData.address || null,
-        citta: clientData.city || null,
-        provincia: clientData.province || null,
-        cap: clientData.zip || null,
-        telefono: clientData.phone || null,
-        email: clientData.email || null,
-      });
-      cliente_id = cliente.id;
-    }
-
-    const subtotale = calculateSubtotal();
-    const sconto_percentuale = discountEnabled ? (typeof discountValue === "number" ? discountValue : 0) : 0;
-    const sconto_valore = discountEnabled ? calculateDiscount() : 0;
-    const totale = calculateTotal();
-
 const CreateQuote = () => {
   const navigate = useNavigate();
   const location = useLocation();
