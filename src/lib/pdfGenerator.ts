@@ -57,15 +57,9 @@ export const generateQuotePDF = async (
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 12.7;
-  const footerHeight = 30;
+  const footerHeight = 28;
   const topMargin = margin;
   const bottomMargin = margin + footerHeight;
-
-  // Lo spazio disponibile è: altezza pagina - margini top e bottom
-  // Questo assicura che il contenuto non sovrapponga il footer
-  const getAvailableHeight = () => {
-    return pageHeight - topMargin - bottomMargin;
-  };
 
   // Configurazione colonne
   const colWidths = {
@@ -81,16 +75,22 @@ export const generateQuotePDF = async (
     pageWidth - 2 * margin - colWidths.nr - colWidths.um - colWidths.qty - colWidths.price - colWidths.total;
 
   const addFooter = (currentPage: number, totalPages: number, showCompanyData: boolean = true) => {
-    const footerStartY = pageHeight - footerHeight + 5;
+    // Disegna una linea di separazione
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(margin, pageHeight - footerHeight, pageWidth - margin, pageHeight - footerHeight);
 
     if (!showCompanyData) {
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
-      doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, pageHeight - 10, {
+      doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, pageHeight - 8, {
         align: "right",
       });
       return;
     }
+
+    // Footer - posizionato correttamente all'interno dello spazio riservato
+    const footerStartY = pageHeight - footerHeight + 3;
 
     if (settings.logoPath) {
       try {
@@ -98,8 +98,8 @@ export const generateQuotePDF = async (
         img.src = settings.logoPath;
 
         // Calcola dimensioni proporzionali per il logo footer
-        const maxFooterWidth = 15;
-        const maxFooterHeight = 8;
+        const maxFooterWidth = 12;
+        const maxFooterHeight = 6;
         const imgAspectRatio = img.width / img.height;
 
         let footerLogoWidth = maxFooterWidth;
@@ -115,7 +115,7 @@ export const generateQuotePDF = async (
           settings.logoPath,
           "PNG",
           margin,
-          footerStartY - 2,
+          footerStartY,
           footerLogoWidth,
           footerLogoHeight
         );
@@ -124,27 +124,27 @@ export const generateQuotePDF = async (
       }
     }
 
-    doc.setFontSize(7);
+    doc.setFontSize(6.5);
     doc.setTextColor(80, 80, 80);
     const centerX = pageWidth / 2;
     let footerTextY = footerStartY;
 
     doc.setFont("helvetica", "bold");
     doc.text(settings.name, centerX, footerTextY, { align: "center" });
-    footerTextY += 3;
+    footerTextY += 2.5;
 
     doc.setFont("helvetica", "normal");
     doc.text(`P.IVA ${settings.vatNumber} - ${settings.address}`, centerX, footerTextY, {
       align: "center",
     });
-    footerTextY += 3;
+    footerTextY += 2.5;
     doc.text(`Tel. ${settings.phone} - Email: ${settings.email}`, centerX, footerTextY, {
       align: "center",
     });
 
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, pageHeight - 10, {
+    doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, pageHeight - 8, {
       align: "right",
     });
   };
@@ -375,6 +375,8 @@ export const generateQuotePDF = async (
   const firstPageTableStart = yPos;
   let isFirstPage = true;
   let carriedForwardAmount = 0;
+  let notesPrinted = false;
+  let paymentPrinted = false;
 
   yPos = drawTableHeader(yPos, false, 0);
 
@@ -588,13 +590,13 @@ export const generateQuotePDF = async (
 
   yPos += summaryHeight + 10;
 
-  // Note
-  if (quoteData.note) {
+  // Note - stampate una sola volta
+  if (quoteData.note && !notesPrinted) {
     // Verifica spazio disponibile per le note
     const noteHeaderHeight = 10;
-    const spaceAvailableForNotes = pageHeight - bottomMargin - yPos - noteHeaderHeight;
+    const spaceAvailableForNotesHeader = pageHeight - bottomMargin - yPos - noteHeaderHeight;
 
-    if (spaceAvailableForNotes < 10) {
+    if (spaceAvailableForNotesHeader < 10) {
       // Se non c'è spazio, aggiungi una nuova pagina
       doc.addPage();
       yPos = topMargin;
@@ -608,14 +610,14 @@ export const generateQuotePDF = async (
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     const noteLines = doc.splitTextToSize(quoteData.note, pageWidth - 2 * margin);
-    
+
     // Calcola spazio necessario per le note
     const noteHeight = noteLines.length * 4;
     const spaceNeededForNotes = noteHeight + 5;
     const spaceAvailableForNotesContent = pageHeight - bottomMargin - yPos;
 
     if (spaceAvailableForNotesContent < spaceNeededForNotes) {
-      // Se le note non entrano, aggiungi una nuova pagina
+      // Se le note non entrano completamente, aggiungi una nuova pagina
       doc.addPage();
       yPos = topMargin;
       doc.setFont("helvetica", "bold");
@@ -628,15 +630,16 @@ export const generateQuotePDF = async (
 
     doc.text(noteLines, margin, yPos);
     yPos += noteLines.length * 4 + 5;
+    notesPrinted = true;
   }
 
-  // Modalità pagamento
-  if (quoteData.modalita_pagamento) {
+  // Modalità pagamento - stampata una sola volta
+  if (quoteData.modalita_pagamento && !paymentPrinted) {
     // Verifica spazio disponibile per la modalità di pagamento
     const paymentHeaderHeight = 10;
-    const spaceAvailableForPayment = pageHeight - bottomMargin - yPos - paymentHeaderHeight;
+    const spaceAvailableForPaymentHeader = pageHeight - bottomMargin - yPos - paymentHeaderHeight;
 
-    if (spaceAvailableForPayment < 10) {
+    if (spaceAvailableForPaymentHeader < 10) {
       // Se non c'è spazio, aggiungi una nuova pagina
       doc.addPage();
       yPos = topMargin;
@@ -650,14 +653,14 @@ export const generateQuotePDF = async (
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     const paymentLines = doc.splitTextToSize(quoteData.modalita_pagamento, pageWidth - 2 * margin);
-    
+
     // Calcola spazio necessario per la modalità di pagamento
     const paymentHeight = paymentLines.length * 4;
     const spaceNeededForPayment = paymentHeight + 10;
     const spaceAvailableForPaymentContent = pageHeight - bottomMargin - yPos;
 
     if (spaceAvailableForPaymentContent < spaceNeededForPayment) {
-      // Se la modalità di pagamento non entra, aggiungi una nuova pagina
+      // Se la modalità di pagamento non entra completamente, aggiungi una nuova pagina
       doc.addPage();
       yPos = topMargin;
       doc.setFont("helvetica", "bold");
@@ -670,6 +673,7 @@ export const generateQuotePDF = async (
 
     doc.text(paymentLines, margin, yPos);
     yPos += paymentLines.length * 4 + 10;
+    paymentPrinted = true;
   }
 
   // Firma
@@ -691,7 +695,7 @@ export const generateQuotePDF = async (
   doc.setFont("helvetica", "normal");
   doc.line(pageWidth - margin - 60, yPos, pageWidth - margin, yPos);
 
-  // Footer
+  // Footer - applicato a tutte le pagine
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
