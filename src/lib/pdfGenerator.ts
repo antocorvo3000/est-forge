@@ -80,7 +80,41 @@ export const generateQuotePDF = async (
     colWidths.price -
     colWidths.total;
 
+  const maxDescWidth = colWidths.desc - 4;
+
   const quoteReference = `${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}`;
+
+  // Spezza testo:
+  // - prima usa splitTextToSize (parole/spazi)
+  // - poi, per ogni linea, se è ancora più larga di maxWidth e non ci sono spazi, la taglia in pezzi
+  const splitSmart = (text: string, maxWidth: number): string[] => {
+    const baseLines = doc.splitTextToSize(text, maxWidth); // usa logica ufficiale jsPDF[web:145]
+    const result: string[] = [];
+
+    baseLines.forEach((line) => {
+      if (doc.getTextWidth(line) <= maxWidth) {
+        result.push(line);
+      } else {
+        // linea ancora troppo lunga: spezza a forza
+        let current = line;
+        while (doc.getTextWidth(current) > maxWidth) {
+          let cut = current.length;
+          // trova la lunghezza massima che entra
+          while (cut > 1 && doc.getTextWidth(current.slice(0, cut)) > maxWidth) {
+            cut--;
+          }
+          if (cut <= 0) break;
+          result.push(current.slice(0, cut));
+          current = current.slice(cut);
+        }
+        if (current.length > 0) {
+          result.push(current);
+        }
+      }
+    });
+
+    return result;
+  };
 
   const addFooter = (
     currentPage: number,
@@ -124,7 +158,7 @@ export const generateQuotePDF = async (
           footerLogoHeight
         );
       } catch {
-        // ignore logo errors
+        // ignore
       }
     }
 
@@ -168,7 +202,7 @@ export const generateQuotePDF = async (
 
       doc.addImage(settings.logoPath, "PNG", margin, yPos, headerLogoWidth, headerLogoHeight);
     } catch {
-      // ignore logo header errors
+      // ignore
     }
   }
 
@@ -285,7 +319,7 @@ export const generateQuotePDF = async (
     x += colWidths.price;
     doc.text("Totale", x + colWidths.total / 2, textY, { align: "center" });
 
-    // reset al font normale per il corpo tabella
+    // reset al font normale
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(0, 0, 0);
@@ -303,7 +337,7 @@ export const generateQuotePDF = async (
 
   yPos = drawTableHeader(yPos);
 
-  // RIGHE TABELLA
+  // RIGHE TABELLA con splitSmart
   quoteData.righe.forEach((riga, index) => {
     const nr = (index + 1).toString();
     const um = riga.unita_misura;
@@ -311,8 +345,7 @@ export const generateQuotePDF = async (
     const price = `€ ${formatCurrency(riga.prezzo_unitario)}`;
     const total = `€ ${formatCurrency(riga.totale)}`;
 
-    // splitTextToSize gestisce già le "parole" troppo lunghe spezzandole in più pezzi[web:145]
-    const fullDescLines = doc.splitTextToSize(riga.descrizione, colWidths.desc - 4);
+    const fullDescLines = splitSmart(riga.descrizione, maxDescWidth);
 
     const lineHeight = 4;
     const cellPaddingTop = 5;
@@ -372,7 +405,6 @@ export const generateQuotePDF = async (
       x += colWidths.price;
       doc.rect(x, rowStartY, colWidths.total, rowHeight);
 
-      // testo
       const descX = margin + colWidths.nr;
       const descYStart = rowStartY + cellPaddingTop;
 
