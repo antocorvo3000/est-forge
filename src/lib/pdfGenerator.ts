@@ -54,7 +54,7 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 12.7;
-  const footerMargin = 25;
+  const footerMargin = 30;
   const availableHeight = pageHeight - margin - footerMargin;
 
   // Configurazione colonne
@@ -71,12 +71,12 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     pageWidth - 2 * margin - colWidths.nr - colWidths.um - colWidths.qty - colWidths.price - colWidths.total;
 
   const addFooter = (currentPage: number, totalPages: number, showCompanyData: boolean = true) => {
-    const footerY = pageHeight - 10;
+    const footerY = pageHeight - 18;
 
     if (!showCompanyData) {
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
-      doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, footerY, { align: "right" });
+      doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: "right" });
       return;
     }
 
@@ -99,7 +99,7 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
           footerLogoWidth = maxFooterHeight * imgAspectRatio;
         }
         
-        doc.addImage(settings.logoPath, "PNG", margin, footerY - 6, footerLogoWidth, footerLogoHeight);
+        doc.addImage(settings.logoPath, "PNG", margin, footerY - 2, footerLogoWidth, footerLogoHeight);
       } catch (error) {
         console.warn("Logo footer non caricato:", error);
       }
@@ -108,7 +108,7 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     doc.setFontSize(7);
     doc.setTextColor(80, 80, 80);
     const centerX = pageWidth / 2;
-    let footerTextY = footerY - 6;
+    let footerTextY = footerY;
 
     doc.setFont("helvetica", "bold");
     doc.text(settings.name, centerX, footerTextY, { align: "center" });
@@ -121,7 +121,7 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
 
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, footerY, { align: "right" });
+    doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: "right" });
   };
 
   let yPos = margin;
