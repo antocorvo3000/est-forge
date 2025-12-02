@@ -57,7 +57,7 @@ export const generateQuotePDF = async (
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 12.7;
-  const footerHeight = 28;
+  const footerHeight = 20;
   const topMargin = margin;
   const bottomMargin = margin + footerHeight;
 
@@ -75,29 +75,31 @@ export const generateQuotePDF = async (
     pageWidth - 2 * margin - colWidths.nr - colWidths.um - colWidths.qty - colWidths.price - colWidths.total;
 
   const addFooter = (currentPage: number, totalPages: number, showCompanyData: boolean = true) => {
-    // Disegna una linea di separazione
+    // Disegna una linea di separazione in alto del footer
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.5);
     doc.line(margin, pageHeight - footerHeight, pageWidth - margin, pageHeight - footerHeight);
 
+    const footerBaseY = pageHeight - footerHeight + 4;
+
     if (!showCompanyData) {
+      // Pagina 1: solo numero pagina a destra
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
-      doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, pageHeight - 8, {
+      doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, footerBaseY + 8, {
         align: "right",
       });
       return;
     }
 
-    // Footer - posizionato correttamente all'interno dello spazio riservato
-    const footerStartY = pageHeight - footerHeight + 3;
+    // Pagine successive: dati azienda al centro e numero pagina a destra, sulla stessa riga
 
+    // Logo footer a sinistra
     if (settings.logoPath) {
       try {
         const img = new Image();
         img.src = settings.logoPath;
 
-        // Calcola dimensioni proporzionali per il logo footer
         const maxFooterWidth = 12;
         const maxFooterHeight = 6;
         const imgAspectRatio = img.width / img.height;
@@ -105,7 +107,6 @@ export const generateQuotePDF = async (
         let footerLogoWidth = maxFooterWidth;
         let footerLogoHeight = maxFooterWidth / imgAspectRatio;
 
-        // Se l'altezza supera il massimo, ricalcola partendo dall'altezza
         if (footerLogoHeight > maxFooterHeight) {
           footerLogoHeight = maxFooterHeight;
           footerLogoWidth = maxFooterHeight * imgAspectRatio;
@@ -115,7 +116,7 @@ export const generateQuotePDF = async (
           settings.logoPath,
           "PNG",
           margin,
-          footerStartY,
+          footerBaseY,
           footerLogoWidth,
           footerLogoHeight
         );
@@ -124,27 +125,19 @@ export const generateQuotePDF = async (
       }
     }
 
-    doc.setFontSize(6.5);
+    // Dati azienda al centro - una riga unica
+    doc.setFontSize(7);
     doc.setTextColor(80, 80, 80);
     const centerX = pageWidth / 2;
-    let footerTextY = footerStartY;
 
-    doc.setFont("helvetica", "bold");
-    doc.text(settings.name, centerX, footerTextY, { align: "center" });
-    footerTextY += 2.5;
-
+    const companyDataLine = `${settings.name} - P.IVA ${settings.vatNumber} - ${settings.address} - Tel. ${settings.phone} - ${settings.email}`;
     doc.setFont("helvetica", "normal");
-    doc.text(`P.IVA ${settings.vatNumber} - ${settings.address}`, centerX, footerTextY, {
-      align: "center",
-    });
-    footerTextY += 2.5;
-    doc.text(`Tel. ${settings.phone} - Email: ${settings.email}`, centerX, footerTextY, {
-      align: "center",
-    });
+    doc.text(companyDataLine, centerX, footerBaseY + 8, { align: "center" });
 
-    doc.setFontSize(7);
+    // Numero pagina a destra - allineato con i dati azienda
+    doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, pageHeight - 8, {
+    doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, footerBaseY + 8, {
       align: "right",
     });
   };
@@ -160,7 +153,6 @@ export const generateQuotePDF = async (
         img.onload = resolve;
       });
 
-      // Calcola dimensioni proporzionali per il logo header
       const maxHeaderWidth = 40;
       const maxHeaderHeight = 20;
       const imgAspectRatio = img.width / img.height;
@@ -168,7 +160,6 @@ export const generateQuotePDF = async (
       let headerLogoWidth = maxHeaderWidth;
       let headerLogoHeight = maxHeaderWidth / imgAspectRatio;
 
-      // Se l'altezza supera il massimo, ricalcola partendo dall'altezza
       if (headerLogoHeight > maxHeaderHeight) {
         headerLogoHeight = maxHeaderHeight;
         headerLogoWidth = maxHeaderHeight * imgAspectRatio;
