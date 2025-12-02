@@ -198,7 +198,7 @@ export const generateQuotePDF = async (
 
   let yPos = topMargin;
 
-  // Logo 30% più grande
+  // Logo header aumentato del 30% in più
   if (settings.logoPath) {
     try {
       const img = new Image();
@@ -207,8 +207,8 @@ export const generateQuotePDF = async (
         img.onload = resolve;
       });
 
-      const maxHeaderWidth = 52;
-      const maxHeaderHeight = 26;
+      const maxHeaderWidth = 67.6;  // 52 * 1.3
+      const maxHeaderHeight = 33.8;  // 26 * 1.3
       const imgAspectRatio = img.width / img.height;
 
       let headerLogoWidth = maxHeaderWidth;
