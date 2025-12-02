@@ -61,7 +61,6 @@ export const generateQuotePDF = async (
   const topMargin = margin;
   const bottomMargin = margin + footerHeight;
   const minSpaceBeforeBreak = 15;
-  const minTableHeight = 100;
 
   // Configurazione colonne
   const colWidths = {
@@ -338,47 +337,6 @@ export const generateQuotePDF = async (
     return y + headerHeight;
   };
 
-  // Disegna righe vuote tratteggiate per riempire spazio
-  const drawEmptyRows = (startY: number, tableStart: number, minHeight: number) => {
-    const emptyRowHeight = 10;
-    let currentY = startY;
-    const spaceAvailable = pageHeight - bottomMargin - startY - 30;
-    const heightNeeded = Math.max(0, minHeight - (startY - tableStart));
-    const rowsNeeded = Math.floor(Math.min(heightNeeded, spaceAvailable) / emptyRowHeight);
-
-    for (let i = 0; i < rowsNeeded; i++) {
-      let x = margin;
-
-      // Bordi celle
-      doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(0.3);
-      doc.rect(x, currentY, colWidths.nr, emptyRowHeight);
-      x += colWidths.nr;
-      doc.rect(x, currentY, colWidths.desc, emptyRowHeight);
-      x += colWidths.desc;
-      doc.rect(x, currentY, colWidths.um, emptyRowHeight);
-      x += colWidths.um;
-      doc.rect(x, currentY, colWidths.qty, emptyRowHeight);
-      x += colWidths.qty;
-      doc.rect(x, currentY, colWidths.price, emptyRowHeight);
-      x += colWidths.price;
-      doc.rect(x, currentY, colWidths.total, emptyRowHeight);
-
-      // Linea tratteggiata orizzontale centrata
-      doc.setDrawColor(180, 180, 180);
-      doc.setLineWidth(0.3);
-      doc.setLineDash([3, 3]);
-      const midY = currentY + emptyRowHeight / 2;
-      doc.line(margin + colWidths.nr + 2, midY, pageWidth - margin - 2, midY);
-      doc.setLineDash([]);
-      doc.setDrawColor(0, 0, 0);
-
-      currentY += emptyRowHeight;
-    }
-
-    return currentY;
-  };
-
   const drawPageSubtotalBox = (y: number, pageSubtotal: number, runningTotal: number, pageNumber: number) => {
     const boxHeight = 14;
     const boxWidth = 80;
@@ -512,17 +470,11 @@ export const generateQuotePDF = async (
     doc.text(total, x + colWidths.total - 2, bottomTextY, { align: "right" });
 
     cumulativeSubtotal += riga.totale;
-    pageSubtotal += riga.quantita * riga.prezzo_unitario;
+    pageSubtotal += riga.totale;
     itemsProcessed++;
 
     yPos += totalRowHeight;
   });
-
-  // Aggiungi righe vuote se la tabella è troppo corta
-  const currentTableHeight = yPos - tableStartY;
-  if (currentTableHeight < minTableHeight && isFirstPage) {
-    yPos = drawEmptyRows(yPos, tableStartY, minTableHeight);
-  }
 
   yPos += 5;
 
@@ -702,7 +654,10 @@ export const generateQuotePDF = async (
     const shouldShowBox = i > 1 && !hasTableContent;
     
     if (shouldShowBox) {
-      addDocumentIdentifier(true);
+      const boxEndY = addDocumentIdentifier(true);
+      // AGGIUNGI SPAZIO EXTRA dopo il box se questa pagina ha Note
+      // Questo viene fatto automaticamente perché yPos parte da topMargin
+      // e il box restituisce la posizione corretta
     }
     
     addFooter(i, totalPages, i !== 1);
