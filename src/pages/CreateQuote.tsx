@@ -116,14 +116,68 @@ const saveQuoteAndGeneratePdf = async () => {
     setIsSaved(true);
     toast.success("Preventivo salvato con successo");
 
-    // ✅ Chiude il dialog prima di generare il PDF
+    // ✅ Chiude il dialog
     setShowPdfWarningDialog(false);
 
-    // ✅ Genera il PDF invece di navigare alla home
-    await proceedToGeneratePdf();
+    // ✅ Prepara i dati PDF (SENZA try-catch interno)
+    const pdfData = {
+      numero: quoteNumber!,
+      anno: quoteYear!,
+      oggetto: subject || "Preventivo",
+      cliente: {
+        nome: clientData!.name,
+        taxCode: clientData!.taxCode,
+        address: clientData!.address,
+        city: clientData!.city,
+        province: clientData!.province,
+        zip: clientData!.zip,
+        phone: clientData!.phone,
+        email: clientData!.email,
+      },
+      ubicazione: {
+        via: workAddress,
+        citta: workCity,
+        provincia: workProvince,
+        cap: workZip,
+      },
+      righe: lines
+        .filter((line) => line.description.trim())
+        .map((line) => ({
+          descrizione: line.description,
+          unita_misura: line.unit,
+          quantita: typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0,
+          prezzo_unitario:
+            discountEnabled && !showDiscountInTable
+              ? getEffectiveUnitPrice(
+                  typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0,
+                )
+              : typeof line.unitPrice === "number"
+                ? line.unitPrice
+                : parseFloat(line.unitPrice) || 0,
+          totale: getEffectiveLineTotal(line),
+        })),
+      subtotale: calculateSubtotal(),
+      sconto_percentuale: discountEnabled ? discountValue : 0,
+      sconto_valore: discountEnabled ? calculateDiscount() : 0,
+      totale: calculateTotal(),
+      note: notesEnabled ? (notesType === "personalizzato" ? customNotes : notes) : undefined,
+      modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+      showDiscountInTable: showDiscountInTable,
+    };
+
+    // ✅ Naviga al PDF
+    navigate("/pdf-preview", {
+      state: {
+        quoteData: pdfData,
+        settings: settings,
+        from: "/create-quote",
+      },
+    });
+
   } catch (error) {
-    console.error("Errore salvataggio:", error);
+    console.error("Errore salvataggio e generazione PDF:", error);
     toast.error("Errore durante il salvataggio");
+    setShowPdfWarningDialog(false);
   }
 };
 
