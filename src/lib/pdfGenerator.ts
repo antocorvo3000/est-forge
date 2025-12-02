@@ -251,7 +251,6 @@ export const generateQuotePDF = async (
     showCarriedForward: boolean = false,
     carriedAmount: number = 0
   ) => {
-    // niente riporto, header semplice
     doc.setFillColor(200, 200, 200);
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.3);
@@ -317,6 +316,7 @@ export const generateQuotePDF = async (
     const price = `€ ${formatCurrency(riga.prezzo_unitario)}`;
     const total = `€ ${formatCurrency(riga.totale)}`;
 
+    // Sempre spezzata secondo la larghezza della colonna descrizione
     const fullDescLines = doc.splitTextToSize(riga.descrizione, colWidths.desc - 4);
     const lineHeight = 4;
     const cellPaddingTop = 5;
@@ -356,7 +356,6 @@ export const generateQuotePDF = async (
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(0.3);
 
-      // celle
       doc.rect(x, rowStartY, colWidths.nr, rowHeight);
       x += colWidths.nr;
       doc.rect(x, rowStartY, colWidths.desc, rowHeight);
@@ -369,30 +368,23 @@ export const generateQuotePDF = async (
       x += colWidths.price;
       doc.rect(x, rowStartY, colWidths.total, rowHeight);
 
-      x = margin;
+      // Scrivi su coordinate fisse della colonna Descrizione
+      const descX = margin + colWidths.nr;
+      const descYStart = rowStartY + cellPaddingTop;
 
-      // Nr solo sulla prima porzione
       if (startLineIndex === 0) {
         doc.setFont("helvetica", "normal");
-        doc.text(nr, x + colWidths.nr / 2, rowStartY + 5, { align: "center" });
+        doc.text(nr, margin + colWidths.nr / 2, rowStartY + 5, { align: "center" });
       }
-      x += colWidths.nr;
 
-      // Descrizione: SEMPRE e SOLO in questa colonna
       chunkLines.forEach((line, i) => {
-        doc.text(
-          line,
-          x + 2,
-          rowStartY + cellPaddingTop + i * lineHeight,
-          { maxWidth: colWidths.desc - 4 }
-        );
+        doc.text(line, descX + 2, descYStart + i * lineHeight);
       });
-      x += colWidths.desc;
 
+      x = descX + colWidths.desc;
       const bottomTextY = rowStartY + rowHeight - 2;
 
       if (isLastChunk) {
-        // Solo ultima porzione: U.M., Qtà, Prezzo, Totale
         doc.text(um, x + colWidths.um / 2, bottomTextY, { align: "center" });
         x += colWidths.um;
 
@@ -404,7 +396,6 @@ export const generateQuotePDF = async (
 
         doc.text(total, x + colWidths.total - 2, bottomTextY, { align: "right" });
       } else {
-        // chunk intermedi: colonne numeriche vuote
         x += colWidths.um + colWidths.qty + colWidths.price + colWidths.total;
       }
 
@@ -438,7 +429,6 @@ export const generateQuotePDF = async (
   doc.setLineWidth(0.3);
   doc.setTextColor(0, 0, 0);
 
-  // Subtotale
   doc.rect(
     summaryStartX,
     yPos,
@@ -461,7 +451,11 @@ export const generateQuotePDF = async (
 
   yPos += summaryHeight;
 
-  if (quoteData.showDiscountInTable && quoteData.sconto_percentuale && quoteData.sconto_percentuale > 0) {
+  if (
+    quoteData.showDiscountInTable &&
+    quoteData.sconto_percentuale &&
+    quoteData.sconto_percentuale > 0
+  ) {
     doc.rect(
       summaryStartX,
       yPos,
@@ -487,15 +481,23 @@ export const generateQuotePDF = async (
     yPos += summaryHeight;
   }
 
-  // Totale
   doc.rect(
     summaryStartX,
     yPos,
-    colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
+    colWidths.nr +
+      colWidths.desc +
+      colWidths.um +
+      colWidths.qty +
+      colWidths.price,
     summaryHeight
   );
   doc.rect(
-    summaryStartX + colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
+    summaryStartX +
+      colWidths.nr +
+      colWidths.desc +
+      colWidths.um +
+      colWidths.qty +
+      colWidths.price,
     yPos,
     colWidths.total,
     summaryHeight
