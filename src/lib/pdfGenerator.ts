@@ -246,11 +246,7 @@ export const generateQuotePDF = async (
   doc.text(ubicazioneText, margin + labelWidth, yPos);
   yPos += 8;
 
-  const drawTableHeader = (
-    y: number,
-    showCarriedForward: boolean = false,
-    carriedAmount: number = 0
-  ) => {
+  const drawTableHeader = (y: number) => {
     doc.setFillColor(200, 200, 200);
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.3);
@@ -289,6 +285,11 @@ export const generateQuotePDF = async (
     x += colWidths.price;
     doc.text("Totale", x + colWidths.total / 2, textY, { align: "center" });
 
+    // reset font per il corpo tabella
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+
     return y + headerHeight;
   };
 
@@ -302,11 +303,7 @@ export const generateQuotePDF = async (
   const pagesWithTableContent: number[] = [1];
 
   tableStartY = yPos;
-  yPos = drawTableHeader(yPos, false, 0);
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(0, 0, 0);
+  yPos = drawTableHeader(yPos);
 
   // RIGHE TABELLA: split descrizione + valori solo sull’ultima chunk
   quoteData.righe.forEach((riga, index) => {
@@ -316,7 +313,6 @@ export const generateQuotePDF = async (
     const price = `€ ${formatCurrency(riga.prezzo_unitario)}`;
     const total = `€ ${formatCurrency(riga.totale)}`;
 
-    // Sempre spezzata secondo la larghezza della colonna descrizione
     const fullDescLines = doc.splitTextToSize(riga.descrizione, colWidths.desc - 4);
     const lineHeight = 4;
     const cellPaddingTop = 5;
@@ -325,34 +321,47 @@ export const generateQuotePDF = async (
     let startLineIndex = 0;
 
     while (startLineIndex < fullDescLines.length) {
+      // spazio disponibile in questa pagina
       const availableHeight = pageHeight - bottomMargin - yPos;
       const maxLinesThisPage = Math.floor((availableHeight - cellPaddingTop) / lineHeight);
 
+      // se non ci sta neppure una riga -> nuova pagina
       if (maxLinesThisPage <= 0) {
         doc.addPage();
         currentPageNumber++;
         pagesWithTableContent.push(currentPageNumber);
         yPos = topMargin;
         tableStartY = yPos;
-        yPos = drawTableHeader(yPos, false, 0);
+        yPos = drawTableHeader(yPos);
         continue;
       }
 
       const remainingLines = fullDescLines.length - startLineIndex;
       const linesThisChunk = Math.min(remainingLines, maxLinesThisPage);
-
       const chunkLines = fullDescLines.slice(
         startLineIndex,
         startLineIndex + linesThisChunk
       );
-
       const isLastChunk = startLineIndex + linesThisChunk >= fullDescLines.length;
 
       const rowHeight = Math.max(chunkLines.length * lineHeight + cellPaddingTop, minRowHeight);
 
-      const rowStartY = yPos;
-      let x = margin;
+      // se la riga (questa chunk) non ci sta tutta, nuova pagina PRIMA di disegnare
+      const spaceForRow = pageHeight - bottomMargin - yPos;
+      if (rowHeight > spaceForRow) {
+        doc.addPage();
+        currentPageNumber++;
+        pagesWithTableContent.push(currentPageNumber);
+        yPos = topMargin;
+        tableStartY = yPos;
+        yPos = drawTableHeader(yPos);
+        continue;
+      }
 
+      const rowStartY = yPos;
+
+      // celle
+      let x = margin;
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(0.3);
 
@@ -368,12 +377,12 @@ export const generateQuotePDF = async (
       x += colWidths.price;
       doc.rect(x, rowStartY, colWidths.total, rowHeight);
 
-      // Scrivi su coordinate fisse della colonna Descrizione
+      // testo: descrizione sempre e solo nella colonna giusta
       const descX = margin + colWidths.nr;
       const descYStart = rowStartY + cellPaddingTop;
 
+      // Nr solo sulla prima porzione della riga
       if (startLineIndex === 0) {
-        doc.setFont("helvetica", "normal");
         doc.text(nr, margin + colWidths.nr / 2, rowStartY + 5, { align: "center" });
       }
 
@@ -415,7 +424,7 @@ export const generateQuotePDF = async (
     pagesWithTableContent.push(currentPageNumber);
     yPos = topMargin;
     tableStartY = yPos;
-    yPos = drawTableHeader(yPos, false, 0);
+    yPos = drawTableHeader(yPos);
     yPos += 5;
   }
 
@@ -429,6 +438,7 @@ export const generateQuotePDF = async (
   doc.setLineWidth(0.3);
   doc.setTextColor(0, 0, 0);
 
+  // Subtotale
   doc.rect(
     summaryStartX,
     yPos,
@@ -481,6 +491,7 @@ export const generateQuotePDF = async (
     yPos += summaryHeight;
   }
 
+  // Totale
   doc.rect(
     summaryStartX,
     yPos,
