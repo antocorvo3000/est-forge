@@ -84,35 +84,54 @@ export const generateQuotePDF = async (
 
   const quoteReference = `${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}`;
 
-  // Spezza testo:
-  // - prima usa splitTextToSize (parole/spazi)
-  // - poi, per ogni linea, se è ancora più larga di maxWidth e non ci sono spazi, la taglia in pezzi
+  // Spezza testo in modo intelligente:
+  // - testo con spazi: usa word-break di jsPDF
+  // - testo senza spazi o troppo lungo: spezza a forza carattere per carattere
   const splitSmart = (text: string, maxWidth: number): string[] => {
-    const baseLines = doc.splitTextToSize(text, maxWidth); // usa logica ufficiale jsPDF[web:145]
+    // FONDAMENTALE: assicurati che il font sia corretto prima di misurare
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    
+    // Primo tentativo: usa splitTextToSize (gestisce word-break)
+    let lines: string[];
+    try {
+      lines = doc.splitTextToSize(text, maxWidth);
+    } catch (e) {
+      lines = [text];
+    }
+    
     const result: string[] = [];
-
-    baseLines.forEach((line) => {
-      if (doc.getTextWidth(line) <= maxWidth) {
+    
+    // Per ogni linea, verifica che stia effettivamente dentro maxWidth
+    for (const line of lines) {
+      const lineWidth = doc.getTextWidth(line);
+      
+      if (lineWidth <= maxWidth) {
+        // OK, la linea ci sta
         result.push(line);
       } else {
-        // linea ancora troppo lunga: spezza a forza
-        let current = line;
-        while (doc.getTextWidth(current) > maxWidth) {
-          let cut = current.length;
-          // trova la lunghezza massima che entra
-          while (cut > 1 && doc.getTextWidth(current.slice(0, cut)) > maxWidth) {
-            cut--;
+        // La linea è ancora troppo lunga: spezzala a forza
+        let remaining = line;
+        
+        while (remaining.length > 0) {
+          // Trova quanti caratteri ci stanno
+          let fitLength = remaining.length;
+          
+          while (fitLength > 0 && doc.getTextWidth(remaining.substring(0, fitLength)) > maxWidth) {
+            fitLength--;
           }
-          if (cut <= 0) break;
-          result.push(current.slice(0, cut));
-          current = current.slice(cut);
-        }
-        if (current.length > 0) {
-          result.push(current);
+          
+          // Assicurati di prendere almeno 1 carattere (evita loop infinito)
+          if (fitLength <= 0) {
+            fitLength = 1;
+          }
+          
+          result.push(remaining.substring(0, fitLength));
+          remaining = remaining.substring(fitLength);
         }
       }
-    });
-
+    }
+    
     return result;
   };
 
@@ -345,6 +364,10 @@ export const generateQuotePDF = async (
     const price = `€ ${formatCurrency(riga.prezzo_unitario)}`;
     const total = `€ ${formatCurrency(riga.totale)}`;
 
+    // Assicura font corretto PRIMA di splitSmart
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    
     const fullDescLines = splitSmart(riga.descrizione, maxDescWidth);
 
     const lineHeight = 4;
@@ -407,6 +430,10 @@ export const generateQuotePDF = async (
 
       const descX = margin + colWidths.nr;
       const descYStart = rowStartY + cellPaddingTop;
+
+      // Assicura font normale per il testo
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
 
       if (startLineIndex === 0) {
         doc.text(nr, margin + colWidths.nr / 2, rowStartY + 5, { align: "center" });
