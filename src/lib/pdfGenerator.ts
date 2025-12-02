@@ -251,8 +251,7 @@ export const generateQuotePDF = async (
     showCarriedForward: boolean = false,
     carriedAmount: number = 0
   ) => {
-    // (riporto eliminato: showCarriedForward/carriedAmount non usati più)
-
+    // niente riporto, header semplice
     doc.setFillColor(200, 200, 200);
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.3);
@@ -310,7 +309,7 @@ export const generateQuotePDF = async (
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
 
-  // NUOVA GESTIONE RIGHE: split su più pagine, colonne numeriche solo sull'ultima parte
+  // RIGHE TABELLA: split descrizione + valori solo sull’ultima chunk
   quoteData.righe.forEach((riga, index) => {
     const nr = (index + 1).toString();
     const um = riga.unita_misura;
@@ -349,10 +348,7 @@ export const generateQuotePDF = async (
 
       const isLastChunk = startLineIndex + linesThisChunk >= fullDescLines.length;
 
-      const rowHeight = Math.max(
-        chunkLines.length * lineHeight + cellPaddingTop,
-        minRowHeight
-      );
+      const rowHeight = Math.max(chunkLines.length * lineHeight + cellPaddingTop, minRowHeight);
 
       const rowStartY = yPos;
       let x = margin;
@@ -360,7 +356,7 @@ export const generateQuotePDF = async (
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(0.3);
 
-      // Celle
+      // celle
       doc.rect(x, rowStartY, colWidths.nr, rowHeight);
       x += colWidths.nr;
       doc.rect(x, rowStartY, colWidths.desc, rowHeight);
@@ -375,24 +371,28 @@ export const generateQuotePDF = async (
 
       x = margin;
 
-      // Nr solo sulla prima porzione della riga
+      // Nr solo sulla prima porzione
       if (startLineIndex === 0) {
         doc.setFont("helvetica", "normal");
         doc.text(nr, x + colWidths.nr / 2, rowStartY + 5, { align: "center" });
       }
       x += colWidths.nr;
 
-      // Descrizione (spezzata)
-      doc.setFont("helvetica", "normal");
+      // Descrizione: SEMPRE e SOLO in questa colonna
       chunkLines.forEach((line, i) => {
-        doc.text(line, x + 2, rowStartY + cellPaddingTop + i * lineHeight);
+        doc.text(
+          line,
+          x + 2,
+          rowStartY + cellPaddingTop + i * lineHeight,
+          { maxWidth: colWidths.desc - 4 }
+        );
       });
       x += colWidths.desc;
 
       const bottomTextY = rowStartY + rowHeight - 2;
 
       if (isLastChunk) {
-        // SOLO nell'ultima parte della riga stampo i valori numerici
+        // Solo ultima porzione: U.M., Qtà, Prezzo, Totale
         doc.text(um, x + colWidths.um / 2, bottomTextY, { align: "center" });
         x += colWidths.um;
 
@@ -404,7 +404,7 @@ export const generateQuotePDF = async (
 
         doc.text(total, x + colWidths.total - 2, bottomTextY, { align: "right" });
       } else {
-        // Chunk intermedi: celle vuote ma bordate
+        // chunk intermedi: colonne numeriche vuote
         x += colWidths.um + colWidths.qty + colWidths.price + colWidths.total;
       }
 
