@@ -401,71 +401,71 @@ const [quoteNumber, setQuoteNumber] = useState<number | null>(null);
   };
 
   const saveQuote = async () => {
-    try {
-      let cliente_id = null;
-      if (clientData && clientData.name) {
-        const cliente = await salvaCliente({
-          nome_ragione_sociale: clientData.name,
-          codice_fiscale_piva: clientData.taxCode || null,
-          via: clientData.address || null,
-          citta: clientData.city || null,
-          provincia: clientData.province || null,
-          cap: clientData.zip || null,
-          telefono: clientData.phone || null,
-          email: clientData.email || null,
-        });
-        cliente_id = cliente.id;
-      }
-
-      const subtotale = calculateSubtotal();
-      const sconto_percentuale = discountEnabled ? discountValue : 0;
-      const sconto_valore = discountEnabled ? calculateDiscount() : 0;
-      const totale = calculateTotal();
-
-      const nuovoPreventivo = await salvaPreventivo({
-        numero: quoteNumber!,
-        anno: quoteYear!,
-        cliente_id,
-        oggetto: subject,
-        ubicazione_via: workAddress || null,
-        ubicazione_citta: workCity || null,
-        ubicazione_provincia: workProvince || null,
-        ubicazione_cap: workZip || null,
-        subtotale,
-        sconto_percentuale,
-        sconto_valore,
-        totale,
-        note: notesEnabled ? notes : null,
-        modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+  try {
+    let cliente_id = null;
+    if (clientData && clientData.name) {
+      const cliente = await salvaCliente({
+        nome_ragione_sociale: clientData.name,
+        codice_fiscale_piva: clientData.taxCode || null,
+        via: clientData.address || null,
+        citta: clientData.city || null,
+        provincia: clientData.province || null,
+        cap: clientData.zip || null,
+        telefono: clientData.phone || null,
+        email: clientData.email || null,
       });
-
-      const righe = lines
-        .filter((line) => line.description.trim())
-        .map((line) => ({
-          descrizione: line.description,
-          unita_misura: line.unit,
-          quantita: typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0,
-          prezzo_unitario: typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0,
-          totale: typeof line.total === "number" ? line.total : parseFloat(line.total) || 0,
-        }));
-
-      if (righe.length > 0) {
-        await salvaRighePreventivo(nuovoPreventivo.id, righe);
-      }
-
-      if (autoSaveCacheId) {
-        await eliminaCachePreventivo(autoSaveCacheId);
-        console.log("[CreateQuote] Cache eliminata:", autoSaveCacheId);
-      }
-
-      setIsSaved(true);
-      toast.success("Preventivo creato con successo");
-      navigate("/");
-    } catch (error) {
-      console.error("Errore salvataggio:", error);
-      toast.error("Errore durante il salvataggio");
+      cliente_id = cliente.id;
     }
-  };
+
+    const subtotale = calculateSubtotal();
+    const sconto_percentuale = discountEnabled ? (typeof discountValue === "number" ? discountValue : 0) : 0;
+    const sconto_valore = discountEnabled ? calculateDiscount() : 0;
+    const totale = calculateTotal();
+
+    const nuovoPreventivo = await salvaPreventivo({
+      numero: quoteNumber!,
+      anno: quoteYear!,
+      cliente_id,
+      oggetto: subject,
+      ubicazione_via: workAddress || null,
+      ubicazione_citta: workCity || null,
+      ubicazione_provincia: workProvince || null,
+      ubicazione_cap: workZip || null,
+      subtotale,
+      sconto_percentuale,
+      sconto_valore,
+      totale,
+      note: notesEnabled ? notes : null,
+      modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+    });
+
+    const righe = lines
+      .filter((line) => line.description.trim())
+      .map((line) => ({
+        descrizione: line.description,
+        unita_misura: line.unit,
+        quantita: typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0,
+        prezzo_unitario: typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0,
+        totale: typeof line.total === "number" ? line.total : parseFloat(line.total) || 0,
+      }));
+
+    if (righe.length > 0) {
+      await salvaRighePreventivo(nuovoPreventivo.id, righe);
+    }
+
+    if (autoSaveCacheId) {
+      await eliminaCachePreventivo(autoSaveCacheId);
+      console.log("[CreateQuote] Cache eliminata:", autoSaveCacheId);
+    }
+
+    setIsSaved(true);
+    toast.success("Preventivo creato con successo");
+    navigate("/");
+  } catch (error) {
+    console.error("Errore salvataggio:", error);
+    toast.error("Errore durante il salvataggio");
+  }
+};
 
   const handleViewPdf = async () => {
     if (!clientData || !clientData.name.trim()) {
