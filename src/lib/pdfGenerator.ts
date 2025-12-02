@@ -60,6 +60,7 @@ export const generateQuotePDF = async (
   const footerHeight = 15;
   const topMargin = margin;
   const bottomMargin = margin + footerHeight;
+  const minSpaceBeforeBreak = 15;
 
   // Configurazione colonne
   const colWidths = {
@@ -78,7 +79,6 @@ export const generateQuotePDF = async (
     const footerBaseY = pageHeight - footerHeight + 2;
 
     if (!showCompanyData) {
-      // Pagina 1: solo numero pagina a destra
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
       doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, footerBaseY + 6, {
@@ -87,9 +87,6 @@ export const generateQuotePDF = async (
       return;
     }
 
-    // Pagine successive: dati azienda al centro e numero pagina a destra, sulla stessa riga
-
-    // Logo footer a sinistra
     if (settings.logoPath) {
       try {
         const img = new Image();
@@ -120,7 +117,6 @@ export const generateQuotePDF = async (
       }
     }
 
-    // Dati azienda al centro - una riga unica
     doc.setFontSize(6.5);
     doc.setTextColor(80, 80, 80);
     const centerX = pageWidth / 2;
@@ -129,7 +125,6 @@ export const generateQuotePDF = async (
     doc.setFont("helvetica", "normal");
     doc.text(companyDataLine, centerX, footerBaseY + 6, { align: "center" });
 
-    // Numero pagina a destra - allineato con i dati azienda
     doc.setFontSize(7.5);
     doc.setTextColor(100, 100, 100);
     doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, footerBaseY + 6, {
@@ -242,7 +237,6 @@ export const generateQuotePDF = async (
 
   // Funzione per disegnare header tabella
   const drawTableHeader = (y: number, showCarriedForward: boolean = false, carriedAmount: number = 0) => {
-    // Se c'è un riporto, mostralo prima dell'header
     if (showCarriedForward && carriedAmount > 0) {
       const carriedHeight = 6;
       doc.setFillColor(240, 248, 255);
@@ -318,56 +312,64 @@ export const generateQuotePDF = async (
     return y + headerHeight;
   };
 
-  // Funzione per disegnare subtotale parziale (riporto pagina)
-  const drawPartialSubtotal = (y: number, amount: number) => {
-    const summaryHeight = 6;
-    const summaryStartX = margin;
+  // NUOVA FUNZIONE: Subtotale Pagina + Totale Progressivo
+  const drawPageSubtotalBox = (y: number, pageSubtotal: number, runningTotal: number, pageNumber: number) => {
+    const boxHeight = 14;
+    const boxWidth = 80;
+    const boxX = pageWidth - margin - boxWidth;
 
-    doc.setFillColor(255, 250, 240);
+    // Box con sfondo
+    doc.setFillColor(255, 248, 230);
     doc.setDrawColor(220, 160, 70);
-    doc.setLineWidth(0.3);
+    doc.setLineWidth(0.4);
+    doc.rect(boxX, y, boxWidth, boxHeight, "FD");
 
-    doc.rect(
-      summaryStartX,
-      y,
-      colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
-      summaryHeight,
-      "FD"
-    );
-    doc.rect(
-      summaryStartX + colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
-      y,
-      colWidths.total,
-      summaryHeight,
-      "FD"
-    );
+    // Linea separatore interna
+    doc.setDrawColor(220, 160, 70);
+    doc.setLineWidth(0.2);
+    doc.line(boxX, y + 7, boxX + boxWidth, y + 7);
 
+    // Testo
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(220, 100, 0);
-    doc.text("Subtotale (continua) →", pageWidth - margin - colWidths.total - 2, y + summaryHeight - 1.5, {
-      align: "right",
-    });
-    doc.text(`€ ${formatCurrency(amount)}`, pageWidth - margin - 2, y + summaryHeight - 1.5, {
-      align: "right",
-    });
     doc.setTextColor(0, 0, 0);
 
-    return y + summaryHeight;
+    // Subtotale Pagina
+    doc.text(`Subtotale Pagina ${pageNumber}:`, boxX + 2, y + 5);
+    doc.text(`€ ${formatCurrency(pageSubtotal)}`, boxX + boxWidth - 2, y + 5, { align: "right" });
+
+    // Totale Progressivo
+    doc.setTextColor(220, 100, 0);
+    doc.text("Totale Progressivo:", boxX + 2, y + 11);
+    doc.text(`€ ${formatCurrency(runningTotal)}`, boxX + boxWidth - 2, y + 11, { align: "right" });
+
+    doc.setTextColor(0, 0, 0);
+
+    // Nota di continuazione
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(7);
+    doc.setTextColor(100, 100, 100);
+    doc.text("(Continua alla pagina successiva)", pageWidth - margin, y + boxHeight + 3, { align: "right" });
+    doc.setTextColor(0, 0, 0);
+
+    return y + boxHeight + 5;
   };
 
-  // Tracciamento per i subtotali progressivi
+  // Tracciamento
   let cumulativeSubtotal = 0;
+  let pageSubtotal = 0;
+  let currentPageNumber = 1;
   let itemsProcessed = 0;
   const firstPageTableStart = yPos;
   let isFirstPage = true;
   let carriedForwardAmount = 0;
   let notesPrinted = false;
   let paymentPrinted = false;
+  let signaturePrinted = false;
 
   yPos = drawTableHeader(yPos, false, 0);
 
-  // Disegna righe con logica di split e subtotali progressivi
+  // Disegna righe
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
@@ -383,113 +385,90 @@ export const generateQuotePDF = async (
     const lineHeight = 4;
     const minChunkHeight = 10;
 
-    let lineIndex = 0;
-    let isFirstChunk = true;
-    let itemAddedToCumulative = false;
+    const totalRowHeight = Math.max(descLines.length * lineHeight + 4, minChunkHeight);
+    const spaceLeft = pageHeight - bottomMargin - yPos;
 
-    while (lineIndex < descLines.length) {
-      // Calcola lo spazio disponibile fino al footer
-      const spaceLeft = pageHeight - bottomMargin - yPos;
-      const maxLinesInChunk = Math.floor((spaceLeft - 4) / lineHeight);
-
-      // Verifica se serve nuova pagina
-      if (maxLinesInChunk < 2 && lineIndex < descLines.length) {
-        // Mostra subtotale parziale prima di cambiare pagina
-        if (!isFirstPage || yPos > firstPageTableStart + 20) {
-          yPos = drawPartialSubtotal(yPos, cumulativeSubtotal);
-          carriedForwardAmount = cumulativeSubtotal;
-        }
-
-        doc.addPage();
-        yPos = topMargin;
-        isFirstPage = false;
-        yPos = drawTableHeader(yPos, true, carriedForwardAmount);
-        continue;
+    // Se la riga non entra + serve spazio per il box subtotale
+    if (totalRowHeight > spaceLeft - 20) {
+      // Mostra box con subtotale pagina e totale progressivo
+      if (!isFirstPage || yPos > firstPageTableStart + 20) {
+        yPos = drawPageSubtotalBox(yPos + 3, pageSubtotal, cumulativeSubtotal, currentPageNumber);
+        carriedForwardAmount = cumulativeSubtotal;
+        pageSubtotal = 0; // Reset per nuova pagina
       }
 
-      const remainingLines = descLines.length - lineIndex;
-      const linesToDraw = Math.min(maxLinesInChunk, remainingLines);
-      const chunkHeight = Math.max(linesToDraw * lineHeight + 4, minChunkHeight);
-      const isLastChunk = lineIndex + linesToDraw >= descLines.length;
-
-      const rowStartY = yPos;
-      let x = margin;
-
-      // Disegna bordi
-      doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(0.3);
-      doc.rect(x, rowStartY, colWidths.nr, chunkHeight);
-      x += colWidths.nr;
-      doc.rect(x, rowStartY, colWidths.desc, chunkHeight);
-      x += colWidths.desc;
-      doc.rect(x, rowStartY, colWidths.um, chunkHeight);
-      x += colWidths.um;
-      doc.rect(x, rowStartY, colWidths.qty, chunkHeight);
-      x += colWidths.qty;
-      doc.rect(x, rowStartY, colWidths.price, chunkHeight);
-      x += colWidths.price;
-      doc.rect(x, rowStartY, colWidths.total, chunkHeight);
-
-      // Contenuto
-      x = margin;
-
-      // Nr - solo primo chunk
-      if (isFirstChunk) {
-        doc.setFont("helvetica", "normal");
-        doc.text(nr, x + colWidths.nr / 2, rowStartY + 5, { align: "center" });
-      }
-      x += colWidths.nr;
-
-      // Descrizione
-      doc.setFont("helvetica", "normal");
-      for (let i = 0; i < linesToDraw; i++) {
-        doc.text(descLines[lineIndex + i], x + 2, rowStartY + 5 + i * lineHeight);
-      }
-      x += colWidths.desc;
-
-      // Valori - solo ultimo chunk
-      if (isLastChunk) {
-        doc.setFont("helvetica", "normal");
-        const bottomTextY = rowStartY + chunkHeight - 2;
-
-        doc.text(um, x + colWidths.um / 2, bottomTextY, { align: "center" });
-        x += colWidths.um;
-
-        doc.text(qty, x + colWidths.qty - 2, bottomTextY, { align: "right" });
-        x += colWidths.qty;
-
-        doc.text(price, x + colWidths.price - 2, bottomTextY, { align: "right" });
-        x += colWidths.price;
-
-        doc.text(total, x + colWidths.total - 2, bottomTextY, { align: "right" });
-
-        // Aggiungi al subtotale cumulativo solo quando l'item è completato
-        if (!itemAddedToCumulative) {
-          cumulativeSubtotal += riga.totale;
-          itemsProcessed++;
-          itemAddedToCumulative = true;
-        }
-      }
-
-      yPos += chunkHeight;
-      lineIndex += linesToDraw;
-      isFirstChunk = false;
+      doc.addPage();
+      currentPageNumber++;
+      yPos = topMargin;
+      isFirstPage = false;
+      yPos = drawTableHeader(yPos, true, carriedForwardAmount);
     }
+
+    // Disegna la riga completa
+    const rowStartY = yPos;
+    let x = margin;
+
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.3);
+    doc.rect(x, rowStartY, colWidths.nr, totalRowHeight);
+    x += colWidths.nr;
+    doc.rect(x, rowStartY, colWidths.desc, totalRowHeight);
+    x += colWidths.desc;
+    doc.rect(x, rowStartY, colWidths.um, totalRowHeight);
+    x += colWidths.um;
+    doc.rect(x, rowStartY, colWidths.qty, totalRowHeight);
+    x += colWidths.qty;
+    doc.rect(x, rowStartY, colWidths.price, totalRowHeight);
+    x += colWidths.price;
+    doc.rect(x, rowStartY, colWidths.total, totalRowHeight);
+
+    x = margin;
+
+    doc.setFont("helvetica", "normal");
+    doc.text(nr, x + colWidths.nr / 2, rowStartY + 5, { align: "center" });
+    x += colWidths.nr;
+
+    doc.setFont("helvetica", "normal");
+    for (let i = 0; i < descLines.length; i++) {
+      doc.text(descLines[i], x + 2, rowStartY + 5 + i * lineHeight);
+    }
+    x += colWidths.desc;
+
+    doc.setFont("helvetica", "normal");
+    const bottomTextY = rowStartY + totalRowHeight - 2;
+
+    doc.text(um, x + colWidths.um / 2, bottomTextY, { align: "center" });
+    x += colWidths.um;
+
+    doc.text(qty, x + colWidths.qty - 2, bottomTextY, { align: "right" });
+    x += colWidths.qty;
+
+    doc.text(price, x + colWidths.price - 2, bottomTextY, { align: "right" });
+    x += colWidths.price;
+
+    doc.text(total, x + colWidths.total - 2, bottomTextY, { align: "right" });
+
+    cumulativeSubtotal += riga.totale;
+    pageSubtotal += riga.totale;
+    itemsProcessed++;
+
+    yPos += totalRowHeight;
   });
 
-  // Dopo aver disegnato tutte le righe, verifica spazio per i totali
+  // Dopo tutte le righe
   yPos += 5;
 
-  // Verifica se c'è spazio per i totali nella pagina corrente
   const spaceNeededForTotals = 25;
   const spaceAvailableForTotals = pageHeight - bottomMargin - yPos;
 
   if (spaceAvailableForTotals < spaceNeededForTotals) {
-    // Mostra subtotale parziale prima di cambiare pagina
-    yPos = drawPartialSubtotal(yPos, cumulativeSubtotal);
+    // Mostra box subtotale finale prima di cambiare pagina
+    yPos = drawPageSubtotalBox(yPos + 3, pageSubtotal, cumulativeSubtotal, currentPageNumber);
     carriedForwardAmount = cumulativeSubtotal;
+    pageSubtotal = 0;
 
     doc.addPage();
+    currentPageNumber++;
     yPos = topMargin;
     yPos = drawTableHeader(yPos, true, carriedForwardAmount);
     yPos += 5;
@@ -576,16 +555,30 @@ export const generateQuotePDF = async (
 
   yPos += summaryHeight + 10;
 
-  // Note - stampate una sola volta
+  // Calcola spazio per bottom content
+  let totalBottomContentHeight = 0;
+
   if (quoteData.note && !notesPrinted) {
-    const noteHeaderHeight = 10;
-    const spaceAvailableForNotesHeader = pageHeight - bottomMargin - yPos - noteHeaderHeight;
+    const noteLines = doc.splitTextToSize(quoteData.note, pageWidth - 2 * margin);
+    totalBottomContentHeight += 15 + noteLines.length * 4 + 5;
+  }
 
-    if (spaceAvailableForNotesHeader < 10) {
-      doc.addPage();
-      yPos = topMargin;
-    }
+  if (quoteData.modalita_pagamento && !paymentPrinted) {
+    const paymentLines = doc.splitTextToSize(quoteData.modalita_pagamento, pageWidth - 2 * margin);
+    totalBottomContentHeight += 10 + paymentLines.length * 4 + 10;
+  }
 
+  if (!signaturePrinted) {
+    totalBottomContentHeight += 25;
+  }
+
+  if ((pageHeight - bottomMargin - yPos) < totalBottomContentHeight + minSpaceBeforeBreak) {
+    doc.addPage();
+    yPos = topMargin + 10;
+  }
+
+  // Note
+  if (quoteData.note && !notesPrinted) {
     yPos += 10;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
@@ -594,37 +587,13 @@ export const generateQuotePDF = async (
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     const noteLines = doc.splitTextToSize(quoteData.note, pageWidth - 2 * margin);
-
-    const noteHeight = noteLines.length * 4;
-    const spaceNeededForNotes = noteHeight + 5;
-    const spaceAvailableForNotesContent = pageHeight - bottomMargin - yPos;
-
-    if (spaceAvailableForNotesContent < spaceNeededForNotes) {
-      doc.addPage();
-      yPos = topMargin;
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.text("Note:", margin, yPos);
-      yPos += 5;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-    }
-
     doc.text(noteLines, margin, yPos);
     yPos += noteLines.length * 4 + 5;
     notesPrinted = true;
   }
 
-  // Modalità pagamento - stampata una sola volta
+  // Modalità pagamento
   if (quoteData.modalita_pagamento && !paymentPrinted) {
-    const paymentHeaderHeight = 10;
-    const spaceAvailableForPaymentHeader = pageHeight - bottomMargin - yPos - paymentHeaderHeight;
-
-    if (spaceAvailableForPaymentHeader < 10) {
-      doc.addPage();
-      yPos = topMargin;
-    }
-
     yPos += 5;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
@@ -633,45 +602,24 @@ export const generateQuotePDF = async (
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     const paymentLines = doc.splitTextToSize(quoteData.modalita_pagamento, pageWidth - 2 * margin);
-
-    const paymentHeight = paymentLines.length * 4;
-    const spaceNeededForPayment = paymentHeight + 10;
-    const spaceAvailableForPaymentContent = pageHeight - bottomMargin - yPos;
-
-    if (spaceAvailableForPaymentContent < spaceNeededForPayment) {
-      doc.addPage();
-      yPos = topMargin;
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.text("Modalità di pagamento:", margin, yPos);
-      yPos += 5;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-    }
-
     doc.text(paymentLines, margin, yPos);
     yPos += paymentLines.length * 4 + 10;
     paymentPrinted = true;
   }
 
   // Firma
-  const spaceNeededForSignature = 20;
-  const spaceAvailableForSignature = pageHeight - bottomMargin - yPos;
-
-  if (spaceAvailableForSignature < spaceNeededForSignature) {
-    doc.addPage();
-    yPos = topMargin;
+  if (!signaturePrinted) {
+    yPos += 5;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("Firma per Accettazione", pageWidth - margin, yPos, { align: "right" });
+    yPos += 15;
+    doc.setFont("helvetica", "normal");
+    doc.line(pageWidth - margin - 60, yPos, pageWidth - margin, yPos);
+    signaturePrinted = true;
   }
 
-  yPos += 5;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.text("Firma per Accettazione", pageWidth - margin, yPos, { align: "right" });
-  yPos += 15;
-  doc.setFont("helvetica", "normal");
-  doc.line(pageWidth - margin - 60, yPos, pageWidth - margin, yPos);
-
-  // Footer - applicato a tutte le pagine
+  // Footer
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
