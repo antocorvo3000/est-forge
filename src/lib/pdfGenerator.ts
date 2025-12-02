@@ -123,8 +123,8 @@ export const generateQuotePDF = async (
           footerLogoWidth,
           footerLogoHeight
         );
-      } catch (error) {
-        console.warn("Logo footer non caricato:", error);
+      } catch {
+        // ignore logo errors
       }
     }
 
@@ -167,8 +167,8 @@ export const generateQuotePDF = async (
       }
 
       doc.addImage(settings.logoPath, "PNG", margin, yPos, headerLogoWidth, headerLogoHeight);
-    } catch (error) {
-      console.warn("Logo non caricato:", error);
+    } catch {
+      // ignore logo header errors
     }
   }
 
@@ -285,7 +285,7 @@ export const generateQuotePDF = async (
     x += colWidths.price;
     doc.text("Totale", x + colWidths.total / 2, textY, { align: "center" });
 
-    // reset font per il corpo tabella
+    // reset al font normale per il corpo tabella
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(0, 0, 0);
@@ -297,15 +297,13 @@ export const generateQuotePDF = async (
   let notesPrinted = false;
   let paymentPrinted = false;
   let signaturePrinted = false;
-  let tableStartY = 0;
 
   const pagesWithTotals: number[] = [];
   const pagesWithTableContent: number[] = [1];
 
-  tableStartY = yPos;
   yPos = drawTableHeader(yPos);
 
-  // RIGHE TABELLA: split descrizione + valori solo sull’ultima chunk
+  // RIGHE TABELLA
   quoteData.righe.forEach((riga, index) => {
     const nr = (index + 1).toString();
     const um = riga.unita_misura;
@@ -313,7 +311,9 @@ export const generateQuotePDF = async (
     const price = `€ ${formatCurrency(riga.prezzo_unitario)}`;
     const total = `€ ${formatCurrency(riga.totale)}`;
 
+    // splitTextToSize gestisce già le "parole" troppo lunghe spezzandole in più pezzi[web:145]
     const fullDescLines = doc.splitTextToSize(riga.descrizione, colWidths.desc - 4);
+
     const lineHeight = 4;
     const cellPaddingTop = 5;
     const minRowHeight = 10;
@@ -321,17 +321,14 @@ export const generateQuotePDF = async (
     let startLineIndex = 0;
 
     while (startLineIndex < fullDescLines.length) {
-      // spazio disponibile in questa pagina
       const availableHeight = pageHeight - bottomMargin - yPos;
       const maxLinesThisPage = Math.floor((availableHeight - cellPaddingTop) / lineHeight);
 
-      // se non ci sta neppure una riga -> nuova pagina
       if (maxLinesThisPage <= 0) {
         doc.addPage();
         currentPageNumber++;
         pagesWithTableContent.push(currentPageNumber);
         yPos = topMargin;
-        tableStartY = yPos;
         yPos = drawTableHeader(yPos);
         continue;
       }
@@ -345,23 +342,21 @@ export const generateQuotePDF = async (
       const isLastChunk = startLineIndex + linesThisChunk >= fullDescLines.length;
 
       const rowHeight = Math.max(chunkLines.length * lineHeight + cellPaddingTop, minRowHeight);
-
-      // se la riga (questa chunk) non ci sta tutta, nuova pagina PRIMA di disegnare
       const spaceForRow = pageHeight - bottomMargin - yPos;
+
       if (rowHeight > spaceForRow) {
         doc.addPage();
         currentPageNumber++;
         pagesWithTableContent.push(currentPageNumber);
         yPos = topMargin;
-        tableStartY = yPos;
         yPos = drawTableHeader(yPos);
         continue;
       }
 
       const rowStartY = yPos;
+      let x = margin;
 
       // celle
-      let x = margin;
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(0.3);
 
@@ -377,11 +372,10 @@ export const generateQuotePDF = async (
       x += colWidths.price;
       doc.rect(x, rowStartY, colWidths.total, rowHeight);
 
-      // testo: descrizione sempre e solo nella colonna giusta
+      // testo
       const descX = margin + colWidths.nr;
       const descYStart = rowStartY + cellPaddingTop;
 
-      // Nr solo sulla prima porzione della riga
       if (startLineIndex === 0) {
         doc.text(nr, margin + colWidths.nr / 2, rowStartY + 5, { align: "center" });
       }
@@ -404,8 +398,6 @@ export const generateQuotePDF = async (
         x += colWidths.price;
 
         doc.text(total, x + colWidths.total - 2, bottomTextY, { align: "right" });
-      } else {
-        x += colWidths.um + colWidths.qty + colWidths.price + colWidths.total;
       }
 
       yPos += rowHeight;
@@ -423,7 +415,6 @@ export const generateQuotePDF = async (
     currentPageNumber++;
     pagesWithTableContent.push(currentPageNumber);
     yPos = topMargin;
-    tableStartY = yPos;
     yPos = drawTableHeader(yPos);
     yPos += 5;
   }
