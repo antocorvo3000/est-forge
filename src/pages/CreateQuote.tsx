@@ -55,6 +55,78 @@ const UNITS = [
   { value: "a corpo", label: "a corpo (forfettario)" },
 ];
 
+const saveQuoteAndGeneratePdf = async () => {
+  try {
+    let cliente_id = null;
+    if (clientData && clientData.name) {
+      const cliente = await salvaCliente({
+        nome_ragione_sociale: clientData.name,
+        codice_fiscale_piva: clientData.taxCode || null,
+        via: clientData.address || null,
+        citta: clientData.city || null,
+        provincia: clientData.province || null,
+        cap: clientData.zip || null,
+        telefono: clientData.phone || null,
+        email: clientData.email || null,
+      });
+      cliente_id = cliente.id;
+    }
+
+    const subtotale = calculateSubtotal();
+    const sconto_percentuale = discountEnabled ? (typeof discountValue === "number" ? discountValue : 0) : 0;
+    const sconto_valore = discountEnabled ? calculateDiscount() : 0;
+    const totale = calculateTotal();
+
+    const nuovoPreventivo = await salvaPreventivo({
+      numero: quoteNumber!,
+      anno: quoteYear!,
+      cliente_id,
+      oggetto: subject,
+      ubicazione_via: workAddress || null,
+      ubicazione_citta: workCity || null,
+      ubicazione_provincia: workProvince || null,
+      ubicazione_cap: workZip || null,
+      subtotale,
+      sconto_percentuale,
+      sconto_valore,
+      totale,
+      note: notesEnabled ? (notesType === "personalizzato" ? customNotes : notes) : null,
+      modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+    });
+
+    const righe = lines
+      .filter((line) => line.description.trim())
+      .map((line) => ({
+        descrizione: line.description,
+        unita_misura: line.unit,
+        quantita: typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0,
+        prezzo_unitario: typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0,
+        totale: typeof line.total === "number" ? line.total : parseFloat(line.total) || 0,
+      }));
+
+    if (righe.length > 0) {
+      await salvaRighePreventivo(nuovoPreventivo.id, righe);
+    }
+
+    if (autoSaveCacheId) {
+      await eliminaCachePreventivo(autoSaveCacheId);
+      console.log("[CreateQuote] Cache eliminata:", autoSaveCacheId);
+    }
+
+    setIsSaved(true);
+    toast.success("Preventivo salvato con successo");
+
+    // ✅ Chiude il dialog prima di generare il PDF
+    setShowPdfWarningDialog(false);
+
+    // ✅ Genera il PDF invece di navigare alla home
+    await proceedToGeneratePdf();
+  } catch (error) {
+    console.error("Errore salvataggio:", error);
+    toast.error("Errore durante il salvataggio");
+  }
+};
+
 const CreateQuote = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -1278,27 +1350,28 @@ const DEFAULT_NOTES_TEXT = `-Eventuali opere extra preventivo verranno quantific
         </AlertDialog>
 
         <AlertDialog open={showPdfWarningDialog} onOpenChange={setShowPdfWarningDialog}>
-          <AlertDialogContent className="bg-white border-2 border-border max-w-lg p-8">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="text-2xl font-bold">Preventivo non ancora salvato</AlertDialogTitle>
-              <AlertDialogDescription className="text-lg font-semibold text-black mt-4">
-                Il preventivo non è ancora stato salvato. Vuoi salvarlo prima di generare il PDF?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="mt-6">
-              <AlertDialogCancel className="text-lg font-bold px-8 py-6">Annulla</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  setShowPdfWarningDialog(false);
-                  handleSave();
-                }}
-                className="text-lg font-bold px-8 py-6"
-              >
-                Salva e Genera PDF
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+  <AlertDialogContent className="bg-white border-2 border-border max-w-lg p-8">
+    <AlertDialogHeader>
+      <AlertDialogTitle className="text-2xl font-bold">
+        Preventivo non ancora salvato
+      </AlertDialogTitle>
+      <AlertDialogDescription className="text-lg font-semibold text-black mt-4">
+        Il preventivo non è ancora stato salvato. Vuoi salvarlo prima di generare il PDF?
+      </AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter className="mt-6">
+      <AlertDialogCancel className="text-lg font-bold px-8 py-6">
+        Annulla
+      </AlertDialogCancel>
+      <AlertDialogAction
+        onClick={saveQuoteAndGeneratePdf}
+        className="text-lg font-bold px-8 py-6"
+      >
+        Salva e Genera PDF
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
       </div>
     </div>
   );
