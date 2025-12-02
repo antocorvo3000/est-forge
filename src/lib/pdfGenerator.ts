@@ -77,30 +77,6 @@ export const generateQuotePDF = async (
 
   const quoteReference = `${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}`;
 
-  // Box identificativo documento - SENZA numero pagina
-  const addDocumentIdentifier = (showBox: boolean) => {
-    if (!showBox) return topMargin;
-    
-    const boxHeight = 8;
-    const boxY = topMargin;
-    
-    doc.setFillColor(245, 245, 250);
-    doc.setDrawColor(0, 0, 0);
-    doc.setLineWidth(0.3);
-    doc.rect(margin, boxY, pageWidth - 2 * margin, boxHeight, "FD");
-    
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7);
-    doc.setTextColor(0, 0, 0);
-    
-    const identifierText = `PREVENTIVO N. ${quoteReference} | TOTALE: € ${formatCurrency(quoteData.totale)}`;
-    doc.text(identifierText, pageWidth / 2, boxY + 5, { align: "center" });
-    
-    doc.setTextColor(0, 0, 0);
-    
-    return boxY + boxHeight + 2;
-  };
-
   const addFooter = (currentPage: number, totalPages: number, showCompanyData: boolean = true) => {
     const footerBaseY = pageHeight - footerHeight + 2;
 
@@ -385,7 +361,6 @@ export const generateQuotePDF = async (
   let signaturePrinted = false;
   let tableStartY = 0;
   
-  // Array per tracciare quali pagine hanno totali
   const pagesWithTotals: number[] = [];
   const pagesWithTableContent: number[] = [1];
 
@@ -495,7 +470,6 @@ export const generateQuotePDF = async (
     yPos += 5;
   }
 
-  // Segna questa pagina come contenente i totali
   pagesWithTotals.push(currentPageNumber);
 
   const summaryStartX = margin;
@@ -506,7 +480,6 @@ export const generateQuotePDF = async (
   doc.setLineWidth(0.3);
   doc.setTextColor(0, 0, 0);
 
-  // Subtotale finale
   doc.rect(
     summaryStartX,
     yPos,
@@ -555,7 +528,6 @@ export const generateQuotePDF = async (
     yPos += summaryHeight;
   }
 
-  // Totale finale
   doc.rect(
     summaryStartX,
     yPos,
@@ -599,7 +571,15 @@ export const generateQuotePDF = async (
   if (needsNewPageForBottom) {
     doc.addPage();
     currentPageNumber++;
-    yPos = topMargin;
+    // QUESTA PAGINA NON HA CONTENUTO TABELLA, quindi servirà il box
+    // Aggiungi spazio per il box PRIMA di iniziare a scrivere
+    const hasTableContent = false; // Questa nuova pagina non ha tabella
+    if (!hasTableContent) {
+      const boxHeight = 8;
+      yPos = topMargin + boxHeight + 12; // Box height + spazio extra
+    } else {
+      yPos = topMargin;
+    }
   }
 
   if (quoteData.note && !notesPrinted) {
@@ -630,7 +610,6 @@ export const generateQuotePDF = async (
     paymentPrinted = true;
   }
 
-  // Firma semplice
   if (!signaturePrinted) {
     yPos += 5;
     doc.setFont("helvetica", "bold");
@@ -642,22 +621,32 @@ export const generateQuotePDF = async (
     signaturePrinted = true;
   }
 
-  // Applica identificativi e footer a tutte le pagine
+  // Applica box e footer
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     
-    // Box identificativo SOLO se:
-    // - NON è la prima pagina
-    // - La pagina NON contiene tabella/totali
     const hasTableContent = pagesWithTableContent.includes(i) || pagesWithTotals.includes(i);
     const shouldShowBox = i > 1 && !hasTableContent;
     
     if (shouldShowBox) {
-      const boxEndY = addDocumentIdentifier(true);
-      // AGGIUNGI SPAZIO EXTRA dopo il box se questa pagina ha Note
-      // Questo viene fatto automaticamente perché yPos parte da topMargin
-      // e il box restituisce la posizione corretta
+      // Disegna il box identificativo
+      const boxHeight = 8;
+      const boxY = topMargin;
+      
+      doc.setFillColor(245, 245, 250);
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.3);
+      doc.rect(margin, boxY, pageWidth - 2 * margin, boxHeight, "FD");
+      
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(0, 0, 0);
+      
+      const identifierText = `PREVENTIVO N. ${quoteReference} | TOTALE: € ${formatCurrency(quoteData.totale)}`;
+      doc.text(identifierText, pageWidth / 2, boxY + 5, { align: "center" });
+      
+      doc.setTextColor(0, 0, 0);
     }
     
     addFooter(i, totalPages, i !== 1);
