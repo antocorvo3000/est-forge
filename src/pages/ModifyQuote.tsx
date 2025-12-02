@@ -162,7 +162,15 @@ const ModifyQuote = () => {
   }, [discountEnabled, loading]);
 
   const [notesEnabled, setNotesEnabled] = useState(false);
-  const [notes, setNotes] = useState("");
+const [notesType, setNotesType] = useState("default");
+const [notes, setNotes] = useState("");
+const [customNotes, setCustomNotes] = useState("");
+
+const DEFAULT_NOTES_TEXT = `-Eventuali opere extra preventivo verranno quantificate di € 30,00 l'ora.
+-Acqua ed energia elettrica a Vs. carico.
+-Permessi di ogni ordine e tipo Vs. carico.
+-Iva di legge a Vs. carico.
+-Quanto non espressamente citato a Vs. carico.`;
 
   const [paymentMethod, setPaymentMethod] = useState("da-concordare");
   const [customPayment, setCustomPayment] = useState("");
@@ -194,6 +202,23 @@ const ModifyQuote = () => {
       setPageTitle(isCloning ? "Clona Preventivo" : "Modifica Preventivo");
     }
   }, [id, fromCache]);
+
+  useEffect(() => {
+  if (notesEnabled && !loading) {
+    if (notesType === "default") {
+      setNotes(DEFAULT_NOTES_TEXT);
+    } else if (notesType === "default-personalizzato") {
+      if (notes === "" || notes === DEFAULT_NOTES_TEXT) {
+        setNotes(DEFAULT_NOTES_TEXT);
+      }
+    } else if (notesType === "personalizzato") {
+      if (customNotes === "" && notes !== "") {
+        setCustomNotes(notes);
+      }
+      setNotes(customNotes);
+    }
+  }
+}, [notesEnabled, notesType, loading]);
 
   useEffect(() => {
     if (!loading && !isCloning && clientData) {
@@ -324,16 +349,30 @@ const ModifyQuote = () => {
       }
 
       const scontoPerc = cacheData.sconto_percentuale ? String(cacheData.sconto_percentuale) : "0";
-      const hasDiscount = parseFloat(scontoPerc) > 0;
-      setDiscountEnabled(hasDiscount);
-      setDiscountValue(parseFloat(scontoPerc));
+const hasDiscount = parseFloat(scontoPerc) > 0;
+setDiscountEnabled(hasDiscount);
+setDiscountValue(parseFloat(scontoPerc));
 
-      setNotesEnabled(!!cacheData.note);
-      setNotes(cacheData.note || "");
+setNotesEnabled(!!cacheData.note);
+if (cacheData.note) {
+  const loadedNotesType = cacheData.note_type || "personalizzato";
+  setNotesType(loadedNotesType);
+  if (loadedNotesType === "personalizzato") {
+    setCustomNotes(cacheData.note);
+    setNotes(cacheData.note);
+  } else if (loadedNotesType === "default-personalizzato") {
+    setNotes(cacheData.note);
+  } else {
+    setNotes(DEFAULT_NOTES_TEXT);
+  }
+} else {
+  setNotes("");
+  setCustomNotes("");
+}
 
-      setPaymentMethod(cacheData.modalita_pagamento || "da-concordare");
+setPaymentMethod(cacheData.modalita_pagamento || "da-concordare");
 
-      console.log("[ModifyQuote] Dati cache caricati, cacheId:", existingCacheId);
+console.log("[ModifyQuote] Dati cache caricati, cacheId:", existingCacheId);
     } catch (error) {
       console.error("Errore caricamento cache:", error);
       toast.error("Errore nel caricamento dei dati dalla cache");
@@ -393,15 +432,24 @@ const ModifyQuote = () => {
         }
 
         const scontoPerc = data.sconto_percentuale ? String(data.sconto_percentuale) : "0";
-        const scontoVal = data.sconto_valore ? String(data.sconto_valore) : "0";
-        const hasDiscount = parseFloat(scontoPerc) > 0 || parseFloat(scontoVal) > 0;
-        setDiscountEnabled(hasDiscount);
-        setDiscountValue(parseFloat(scontoPerc));
+const scontoVal = data.sconto_valore ? String(data.sconto_valore) : "0";
+const hasDiscount = parseFloat(scontoPerc) > 0 || parseFloat(scontoVal) > 0;
+setDiscountEnabled(hasDiscount);
+setDiscountValue(parseFloat(scontoPerc));
 
-        setNotesEnabled(!!data.note);
-        setNotes(data.note || "");
+setNotesEnabled(!!data.note);
+if (data.note) {
+  // Se ci sono note precaricate, vai in modalità "personalizzato"
+  setNotesType("personalizzato");
+  setCustomNotes(data.note);
+  setNotes(data.note);
+} else {
+  setNotesType("default");
+  setNotes("");
+  setCustomNotes("");
+}
 
-        setPaymentMethod(data.modalita_pagamento || "da-concordare");
+setPaymentMethod(data.modalita_pagamento || "da-concordare");
       }
     } catch (error) {
       console.error("Errore caricamento preventivo:", error);
@@ -521,23 +569,24 @@ const ModifyQuote = () => {
   };
 
   const { cacheId: autoSaveCacheId } = useAutoSave({
-    data: {
-      numero: quoteNumber || undefined,
-      anno: quoteYear || undefined,
-      cliente_id: undefined,
-      oggetto: subject,
-      ubicazione_via: workAddress,
-      ubicazione_citta: workCity,
-      ubicazione_provincia: workProvince,
-      ubicazione_cap: workZip,
-      subtotale: calculateSubtotal(),
-      sconto_percentuale: discountEnabled ? (typeof discountValue === "number" ? discountValue : 0) : 0,
-      sconto_valore: discountEnabled ? calculateDiscount() : 0,
-      totale: calculateTotal(),
-      note: notesEnabled ? notes : undefined,
-      modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
-      stato: "bozza",
-      tipo_operazione: getTipoOperazione(),
+  data: {
+    numero: quoteNumber || undefined,
+    anno: quoteYear || undefined,
+    cliente_id: undefined,
+    oggetto: subject,
+    ubicazione_via: workAddress,
+    ubicazione_citta: workCity,
+    ubicazione_provincia: workProvince,
+    ubicazione_cap: workZip,
+    subtotale: calculateSubtotal(),
+    sconto_percentuale: discountEnabled ? (typeof discountValue === "number" ? discountValue : 0) : 0,
+    sconto_valore: discountEnabled ? calculateDiscount() : 0,
+    totale: calculateTotal(),
+    note: notesEnabled ? (notesType === "personalizzato" ? customNotes : notes) : undefined,
+    note_type: notesEnabled ? notesType : undefined,
+    modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+    stato: "bozza",
+    tipo_operazione: getTipoOperazione(),
       preventivo_originale_id: id && id !== "new" ? id : undefined,
       righe: lines.map((line) => ({
         descrizione: line.description,
@@ -608,21 +657,21 @@ const ModifyQuote = () => {
         const anno = isCreationFromCache ? creationYear : cloneYear;
 
         const nuovoPreventivo = await salvaPreventivo({
-          numero: numero!,
-          anno: anno!,
-          cliente_id,
-          oggetto: subject,
-          ubicazione_via: workAddress || null,
-          ubicazione_citta: workCity || null,
-          ubicazione_provincia: workProvince || null,
-          ubicazione_cap: workZip || null,
-          subtotale,
-          sconto_percentuale,
-          sconto_valore,
-          totale,
-          note: notesEnabled ? notes : null,
-          modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
-        });
+  numero: numero!,
+  anno: anno!,
+  cliente_id,
+  oggetto: subject,
+  ubicazione_via: workAddress || null,
+  ubicazione_citta: workCity || null,
+  ubicazione_provincia: workProvince || null,
+  ubicazione_cap: workZip || null,
+  subtotale,
+  sconto_percentuale,
+  sconto_valore,
+  totale,
+  note: notesEnabled ? (notesType === "personalizzato" ? customNotes : notes) : null,
+  modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+});
 
         const righe = lines
           .filter((line) => line.description.trim())
@@ -653,19 +702,19 @@ const ModifyQuote = () => {
         }
 
         await aggiornaPreventivo(id, {
-          cliente_id,
-          oggetto: subject,
-          ubicazione_via: workAddress || null,
-          ubicazione_citta: workCity || null,
-          ubicazione_provincia: workProvince || null,
-          ubicazione_cap: workZip || null,
-          subtotale,
-          sconto_percentuale,
-          sconto_valore,
-          totale,
-          note: notesEnabled ? notes : null,
-          modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
-        });
+  cliente_id,
+  oggetto: subject,
+  ubicazione_via: workAddress || null,
+  ubicazione_citta: workCity || null,
+  ubicazione_provincia: workProvince || null,
+  ubicazione_cap: workZip || null,
+  subtotale,
+  sconto_percentuale,
+  sconto_valore,
+  totale,
+  note: notesEnabled ? (notesType === "personalizzato" ? customNotes : notes) : null,
+  modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+});
 
         const righe = lines
           .filter((line) => line.description.trim())
@@ -794,49 +843,49 @@ const ModifyQuote = () => {
       }
 
       const pdfData = {
-        numero,
-        anno,
-        oggetto: subject || "Preventivo",
-        cliente: {
-          nome: clientData.name,
-          taxCode: clientData.taxCode,
-          address: clientData.address,
-          city: clientData.city,
-          province: clientData.province,
-          zip: clientData.zip,
-          phone: clientData.phone,
-          email: clientData.email,
-        },
-        ubicazione: {
-          via: workAddress,
-          citta: workCity,
-          provincia: workProvince,
-          cap: workZip,
-        },
-        righe: lines
-          .filter((line) => line.description.trim())
-          .map((line) => ({
-            descrizione: line.description,
-            unita_misura: line.unit,
-            quantita: typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0,
-            prezzo_unitario:
-              discountEnabled && !showDiscountInTable
-                ? getEffectiveUnitPrice(
-                    typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0,
-                  )
-                : typeof line.unitPrice === "number"
-                  ? line.unitPrice
-                  : parseFloat(line.unitPrice) || 0,
-            totale: getEffectiveLineTotal(line),
-          })),
-        subtotale: calculateSubtotal(),
-        sconto_percentuale: discountEnabled ? discountValue : 0,
-        sconto_valore: discountEnabled ? calculateDiscount() : 0,
-        totale: calculateTotal(),
-        note: notesEnabled ? notes : undefined,
-        modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
-        showDiscountInTable: showDiscountInTable,
-      };
+  numero,
+  anno,
+  oggetto: subject || "Preventivo",
+  cliente: {
+    nome: clientData.name,
+    taxCode: clientData.taxCode,
+    address: clientData.address,
+    city: clientData.city,
+    province: clientData.province,
+    zip: clientData.zip,
+    phone: clientData.phone,
+    email: clientData.email,
+  },
+  ubicazione: {
+    via: workAddress,
+    citta: workCity,
+    provincia: workProvince,
+    cap: workZip,
+  },
+  righe: lines
+    .filter((line) => line.description.trim())
+    .map((line) => ({
+      descrizione: line.description,
+      unita_misura: line.unit,
+      quantita: typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0,
+      prezzo_unitario:
+        discountEnabled && !showDiscountInTable
+          ? getEffectiveUnitPrice(
+              typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0,
+            )
+          : typeof line.unitPrice === "number"
+            ? line.unitPrice
+            : parseFloat(line.unitPrice) || 0,
+      totale: getEffectiveLineTotal(line),
+    })),
+  subtotale: calculateSubtotal(),
+  sconto_percentuale: discountEnabled ? discountValue : 0,
+  sconto_valore: discountEnabled ? calculateDiscount() : 0,
+  totale: calculateTotal(),
+  note: notesEnabled ? (notesType === "personalizzato" ? customNotes : notes) : undefined,
+  modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+  showDiscountInTable: showDiscountInTable,
+};
 
       navigate("/pdf-preview", {
         state: {
@@ -1332,39 +1381,101 @@ const ModifyQuote = () => {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="glass rounded-2xl p-6 space-y-4 mb-6"
-        >
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="notesEnabled"
-              checked={notesEnabled}
-              onCheckedChange={(checked) => setNotesEnabled(checked as boolean)}
-            />
-            <Label
-              htmlFor="notesEnabled"
-              className="cursor-pointer"
-              style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-            >
-              Aggiungi Note
-            </Label>
-          </div>
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.5 }}
+  className="glass rounded-2xl p-6 space-y-4 mb-6"
+>
+  <div className="flex items-center gap-2">
+    <Checkbox
+      id="notesEnabled"
+      checked={notesEnabled}
+      onCheckedChange={(checked) => setNotesEnabled(checked as boolean)}
+    />
+    <Label
+      htmlFor="notesEnabled"
+      className="cursor-pointer"
+      style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+    >
+      Aggiungi Note
+    </Label>
+  </div>
 
-          {notesEnabled && (
-            <div className="pl-6">
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Inserisci le note..."
-                rows={4}
-                className="bg-white"
-                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-              />
-            </div>
-          )}
-        </motion.div>
+  {notesEnabled && (
+    <div className="pl-6 space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="notesType" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+          Tipo Note
+        </Label>
+        <Select value={notesType} onValueChange={setNotesType}>
+          <SelectTrigger className="bg-white" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-white">
+            <SelectItem value="default" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+              Default (non modificabile)
+            </SelectItem>
+            <SelectItem value="default-personalizzato" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+              Default Personalizzato
+            </SelectItem>
+            <SelectItem value="personalizzato" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+              Personalizzato
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {notesType === "default" && (
+        <div className="space-y-2">
+          <Label htmlFor="notesDefault" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+            Note Standard
+          </Label>
+          <Textarea
+            id="notesDefault"
+            value={notes}
+            readOnly
+            rows={6}
+            className="bg-muted cursor-not-allowed"
+            style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+          />
+        </div>
+      )}
+
+      {notesType === "default-personalizzato" && (
+        <div className="space-y-2">
+          <Label htmlFor="notesDefaultCustom" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+            Note Standard (modificabile)
+          </Label>
+          <Textarea
+            id="notesDefaultCustom"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={6}
+            className="bg-white"
+            style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+          />
+        </div>
+      )}
+
+      {notesType === "personalizzato" && (
+        <div className="space-y-2">
+          <Label htmlFor="customNotes" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+            Note Personalizzate
+          </Label>
+          <Textarea
+            id="customNotes"
+            value={customNotes}
+            onChange={(e) => setCustomNotes(e.target.value)}
+            placeholder="Inserisci le note personalizzate..."
+            rows={6}
+            className="bg-white"
+            style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+          />
+        </div>
+      )}
+    </div>
+  )}
+</motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
