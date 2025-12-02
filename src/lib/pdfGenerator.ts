@@ -61,7 +61,7 @@ export const generateQuotePDF = async (
   const topMargin = margin;
   const bottomMargin = margin + footerHeight;
   const minSpaceBeforeBreak = 15;
-  const minTableHeight = 100; // Altezza minima della tabella per look professionale
+  const minTableHeight = 100;
 
   // Configurazione colonne
   const colWidths = {
@@ -78,41 +78,9 @@ export const generateQuotePDF = async (
 
   const quoteReference = `${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}`;
 
-  // WATERMARK NERO su ogni pagina
-  const addWatermark = (currentPage: number, totalPages: number) => {
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(40);
-    doc.setFont("helvetica", "bold");
-    
-    const watermarkText = `Prev. ${quoteReference}`;
-    const watermarkText2 = `Tot. € ${formatCurrency(quoteData.totale)}`;
-    
-    doc.saveGraphicsState();
-    
-    const centerX = pageWidth / 2;
-    const centerY = pageHeight / 2;
-    
-    doc.setGState(new doc.GState({ opacity: 0.08 }));
-    
-    const angle = -45;
-    
-    doc.text(watermarkText, centerX, centerY - 10, {
-      align: "center",
-      angle: angle,
-    });
-    
-    doc.text(watermarkText2, centerX, centerY + 10, {
-      align: "center",
-      angle: angle,
-    });
-    
-    doc.restoreGraphicsState();
-    doc.setTextColor(0, 0, 0);
-  };
-
-  // Box identificativo documento in alto a ogni pagina (tranne prima)
-  const addDocumentIdentifier = (currentPage: number, totalPages: number) => {
-    if (currentPage === 1) return;
+  // Box identificativo documento - SENZA numero pagina
+  const addDocumentIdentifier = (showBox: boolean) => {
+    if (!showBox) return topMargin;
     
     const boxHeight = 8;
     const boxY = topMargin;
@@ -126,10 +94,12 @@ export const generateQuotePDF = async (
     doc.setFontSize(7);
     doc.setTextColor(0, 0, 0);
     
-    const identifierText = `PREVENTIVO N. ${quoteReference} | TOTALE: € ${formatCurrency(quoteData.totale)} | PAGINA ${currentPage}/${totalPages}`;
+    const identifierText = `PREVENTIVO N. ${quoteReference} | TOTALE: € ${formatCurrency(quoteData.totale)}`;
     doc.text(identifierText, pageWidth / 2, boxY + 5, { align: "center" });
     
     doc.setTextColor(0, 0, 0);
+    
+    return boxY + boxHeight + 2;
   };
 
   const addFooter = (currentPage: number, totalPages: number, showCompanyData: boolean = true) => {
@@ -368,18 +338,18 @@ export const generateQuotePDF = async (
     return y + headerHeight;
   };
 
-  // NUOVA FUNZIONE: Disegna righe vuote tratteggiate per riempire spazio
-  const drawEmptyRows = (startY: number, minHeight: number) => {
+  // Disegna righe vuote tratteggiate per riempire spazio
+  const drawEmptyRows = (startY: number, tableStart: number, minHeight: number) => {
     const emptyRowHeight = 10;
     let currentY = startY;
-    const spaceAvailable = pageHeight - bottomMargin - startY - 30; // -30 per i totali
-    const heightNeeded = Math.max(0, minHeight - (startY - tableStartY));
+    const spaceAvailable = pageHeight - bottomMargin - startY - 30;
+    const heightNeeded = Math.max(0, minHeight - (startY - tableStart));
     const rowsNeeded = Math.floor(Math.min(heightNeeded, spaceAvailable) / emptyRowHeight);
 
     for (let i = 0; i < rowsNeeded; i++) {
       let x = margin;
 
-      // Bordi normali
+      // Bordi celle
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(0.3);
       doc.rect(x, currentY, colWidths.nr, emptyRowHeight);
@@ -394,13 +364,14 @@ export const generateQuotePDF = async (
       x += colWidths.price;
       doc.rect(x, currentY, colWidths.total, emptyRowHeight);
 
-      // Linea tratteggiata orizzontale nel mezzo
-      doc.setDrawColor(200, 200, 200);
-      doc.setLineWidth(0.2);
-      doc.setLineDash([2, 2]);
+      // Linea tratteggiata orizzontale centrata
+      doc.setDrawColor(180, 180, 180);
+      doc.setLineWidth(0.3);
+      doc.setLineDash([3, 3]);
       const midY = currentY + emptyRowHeight / 2;
-      doc.line(margin + colWidths.nr, midY, pageWidth - margin, midY);
+      doc.line(margin + colWidths.nr + 2, midY, pageWidth - margin - 2, midY);
       doc.setLineDash([]);
+      doc.setDrawColor(0, 0, 0);
 
       currentY += emptyRowHeight;
     }
@@ -455,6 +426,10 @@ export const generateQuotePDF = async (
   let paymentPrinted = false;
   let signaturePrinted = false;
   let tableStartY = 0;
+  
+  // Array per tracciare quali pagine hanno totali
+  const pagesWithTotals: number[] = [];
+  const pagesWithTableContent: number[] = [1];
 
   tableStartY = yPos;
   yPos = drawTableHeader(yPos, false, 0);
@@ -486,7 +461,8 @@ export const generateQuotePDF = async (
 
       doc.addPage();
       currentPageNumber++;
-      yPos = topMargin + 10;
+      pagesWithTableContent.push(currentPageNumber);
+      yPos = topMargin;
       isFirstPage = false;
       tableStartY = yPos;
       yPos = drawTableHeader(yPos, true, carriedForwardAmount);
@@ -536,16 +512,16 @@ export const generateQuotePDF = async (
     doc.text(total, x + colWidths.total - 2, bottomTextY, { align: "right" });
 
     cumulativeSubtotal += riga.totale;
-    pageSubtotal += riga.totale;
+    pageSubtotal += riga.quantita * riga.prezzo_unitario;
     itemsProcessed++;
 
     yPos += totalRowHeight;
   });
 
-  // NUOVO: Aggiungi righe vuote se la tabella è troppo corta
+  // Aggiungi righe vuote se la tabella è troppo corta
   const currentTableHeight = yPos - tableStartY;
   if (currentTableHeight < minTableHeight && isFirstPage) {
-    yPos = drawEmptyRows(yPos, minTableHeight);
+    yPos = drawEmptyRows(yPos, tableStartY, minTableHeight);
   }
 
   yPos += 5;
@@ -560,11 +536,15 @@ export const generateQuotePDF = async (
 
     doc.addPage();
     currentPageNumber++;
-    yPos = topMargin + 10;
+    pagesWithTableContent.push(currentPageNumber);
+    yPos = topMargin;
     tableStartY = yPos;
     yPos = drawTableHeader(yPos, true, carriedForwardAmount);
     yPos += 5;
   }
+
+  // Segna questa pagina come contenente i totali
+  pagesWithTotals.push(currentPageNumber);
 
   const summaryStartX = margin;
   const summaryHeight = 6;
@@ -662,9 +642,12 @@ export const generateQuotePDF = async (
     totalBottomContentHeight += 25;
   }
 
-  if ((pageHeight - bottomMargin - yPos) < totalBottomContentHeight + minSpaceBeforeBreak) {
+  const needsNewPageForBottom = (pageHeight - bottomMargin - yPos) < totalBottomContentHeight + minSpaceBeforeBreak;
+
+  if (needsNewPageForBottom) {
     doc.addPage();
-    yPos = topMargin + 10;
+    currentPageNumber++;
+    yPos = topMargin;
   }
 
   if (quoteData.note && !notesPrinted) {
@@ -707,12 +690,21 @@ export const generateQuotePDF = async (
     signaturePrinted = true;
   }
 
-  // Applica watermark e identificativi a tutte le pagine
+  // Applica identificativi e footer a tutte le pagine
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    addWatermark(i, totalPages);
-    addDocumentIdentifier(i, totalPages);
+    
+    // Box identificativo SOLO se:
+    // - NON è la prima pagina
+    // - La pagina NON contiene tabella/totali
+    const hasTableContent = pagesWithTableContent.includes(i) || pagesWithTotals.includes(i);
+    const shouldShowBox = i > 1 && !hasTableContent;
+    
+    if (shouldShowBox) {
+      addDocumentIdentifier(true);
+    }
+    
     addFooter(i, totalPages, i !== 1);
   }
 
