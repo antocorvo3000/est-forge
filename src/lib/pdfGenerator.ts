@@ -57,7 +57,7 @@ export const generateQuotePDF = async (
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 12.7;
-  const footerHeight = 20;
+  const footerHeight = 15;
   const topMargin = margin;
   const bottomMargin = margin + footerHeight;
 
@@ -75,18 +75,13 @@ export const generateQuotePDF = async (
     pageWidth - 2 * margin - colWidths.nr - colWidths.um - colWidths.qty - colWidths.price - colWidths.total;
 
   const addFooter = (currentPage: number, totalPages: number, showCompanyData: boolean = true) => {
-    // Disegna una linea di separazione in alto del footer
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.5);
-    doc.line(margin, pageHeight - footerHeight, pageWidth - margin, pageHeight - footerHeight);
-
-    const footerBaseY = pageHeight - footerHeight + 4;
+    const footerBaseY = pageHeight - footerHeight + 2;
 
     if (!showCompanyData) {
       // Pagina 1: solo numero pagina a destra
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
-      doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, footerBaseY + 8, {
+      doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, footerBaseY + 6, {
         align: "right",
       });
       return;
@@ -100,8 +95,8 @@ export const generateQuotePDF = async (
         const img = new Image();
         img.src = settings.logoPath;
 
-        const maxFooterWidth = 12;
-        const maxFooterHeight = 6;
+        const maxFooterWidth = 10;
+        const maxFooterHeight = 5;
         const imgAspectRatio = img.width / img.height;
 
         let footerLogoWidth = maxFooterWidth;
@@ -126,18 +121,18 @@ export const generateQuotePDF = async (
     }
 
     // Dati azienda al centro - una riga unica
-    doc.setFontSize(7);
+    doc.setFontSize(6.5);
     doc.setTextColor(80, 80, 80);
     const centerX = pageWidth / 2;
 
     const companyDataLine = `${settings.name} - P.IVA ${settings.vatNumber} - ${settings.address} - Tel. ${settings.phone} - ${settings.email}`;
     doc.setFont("helvetica", "normal");
-    doc.text(companyDataLine, centerX, footerBaseY + 8, { align: "center" });
+    doc.text(companyDataLine, centerX, footerBaseY + 6, { align: "center" });
 
     // Numero pagina a destra - allineato con i dati azienda
-    doc.setFontSize(8);
+    doc.setFontSize(7.5);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, footerBaseY + 8, {
+    doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, footerBaseY + 6, {
       align: "right",
     });
   };
@@ -250,8 +245,8 @@ export const generateQuotePDF = async (
     // Se c'è un riporto, mostralo prima dell'header
     if (showCarriedForward && carriedAmount > 0) {
       const carriedHeight = 6;
-      doc.setFillColor(240, 240, 255);
-      doc.setDrawColor(0, 0, 255);
+      doc.setFillColor(240, 248, 255);
+      doc.setDrawColor(70, 130, 180);
       doc.setLineWidth(0.3);
 
       let x = margin;
@@ -270,10 +265,10 @@ export const generateQuotePDF = async (
         "FD"
       );
 
-      doc.setFont("helvetica", "italic");
+      doc.setFont("helvetica", "bold");
       doc.setFontSize(8);
-      doc.setTextColor(0, 0, 255);
-      doc.text("← Riporto da pagina precedente:", margin + 2, y + carriedHeight - 1.5);
+      doc.setTextColor(70, 130, 180);
+      doc.text("← Riporto da pagina precedente", margin + 2, y + carriedHeight - 1.5);
       doc.text(`€ ${formatCurrency(carriedAmount)}`, pageWidth - margin - 2, y + carriedHeight - 1.5, {
         align: "right",
       });
@@ -328,8 +323,8 @@ export const generateQuotePDF = async (
     const summaryHeight = 6;
     const summaryStartX = margin;
 
-    doc.setFillColor(255, 255, 240);
-    doc.setDrawColor(0, 0, 0);
+    doc.setFillColor(255, 250, 240);
+    doc.setDrawColor(220, 160, 70);
     doc.setLineWidth(0.3);
 
     doc.rect(
@@ -347,15 +342,16 @@ export const generateQuotePDF = async (
       "FD"
     );
 
-    doc.setFont("helvetica", "italic");
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(0, 0, 0);
-    doc.text("Riporto a pagina successiva →", pageWidth - margin - colWidths.total - 2, y + summaryHeight - 1.5, {
+    doc.setTextColor(220, 100, 0);
+    doc.text("Subtotale (continua) →", pageWidth - margin - colWidths.total - 2, y + summaryHeight - 1.5, {
       align: "right",
     });
     doc.text(`€ ${formatCurrency(amount)}`, pageWidth - margin - 2, y + summaryHeight - 1.5, {
       align: "right",
     });
+    doc.setTextColor(0, 0, 0);
 
     return y + summaryHeight;
   };
@@ -485,7 +481,6 @@ export const generateQuotePDF = async (
   yPos += 5;
 
   // Verifica se c'è spazio per i totali nella pagina corrente
-  // Spazio necessario: subtotale + sconto (se presente) + totale + spazio = circa 20mm
   const spaceNeededForTotals = 25;
   const spaceAvailableForTotals = pageHeight - bottomMargin - yPos;
 
@@ -583,12 +578,10 @@ export const generateQuotePDF = async (
 
   // Note - stampate una sola volta
   if (quoteData.note && !notesPrinted) {
-    // Verifica spazio disponibile per le note
     const noteHeaderHeight = 10;
     const spaceAvailableForNotesHeader = pageHeight - bottomMargin - yPos - noteHeaderHeight;
 
     if (spaceAvailableForNotesHeader < 10) {
-      // Se non c'è spazio, aggiungi una nuova pagina
       doc.addPage();
       yPos = topMargin;
     }
@@ -602,13 +595,11 @@ export const generateQuotePDF = async (
     doc.setFontSize(9);
     const noteLines = doc.splitTextToSize(quoteData.note, pageWidth - 2 * margin);
 
-    // Calcola spazio necessario per le note
     const noteHeight = noteLines.length * 4;
     const spaceNeededForNotes = noteHeight + 5;
     const spaceAvailableForNotesContent = pageHeight - bottomMargin - yPos;
 
     if (spaceAvailableForNotesContent < spaceNeededForNotes) {
-      // Se le note non entrano completamente, aggiungi una nuova pagina
       doc.addPage();
       yPos = topMargin;
       doc.setFont("helvetica", "bold");
@@ -626,12 +617,10 @@ export const generateQuotePDF = async (
 
   // Modalità pagamento - stampata una sola volta
   if (quoteData.modalita_pagamento && !paymentPrinted) {
-    // Verifica spazio disponibile per la modalità di pagamento
     const paymentHeaderHeight = 10;
     const spaceAvailableForPaymentHeader = pageHeight - bottomMargin - yPos - paymentHeaderHeight;
 
     if (spaceAvailableForPaymentHeader < 10) {
-      // Se non c'è spazio, aggiungi una nuova pagina
       doc.addPage();
       yPos = topMargin;
     }
@@ -645,13 +634,11 @@ export const generateQuotePDF = async (
     doc.setFontSize(9);
     const paymentLines = doc.splitTextToSize(quoteData.modalita_pagamento, pageWidth - 2 * margin);
 
-    // Calcola spazio necessario per la modalità di pagamento
     const paymentHeight = paymentLines.length * 4;
     const spaceNeededForPayment = paymentHeight + 10;
     const spaceAvailableForPaymentContent = pageHeight - bottomMargin - yPos;
 
     if (spaceAvailableForPaymentContent < spaceNeededForPayment) {
-      // Se la modalità di pagamento non entra completamente, aggiungi una nuova pagina
       doc.addPage();
       yPos = topMargin;
       doc.setFont("helvetica", "bold");
@@ -668,12 +655,10 @@ export const generateQuotePDF = async (
   }
 
   // Firma
-  // Verifica spazio disponibile per la firma
   const spaceNeededForSignature = 20;
   const spaceAvailableForSignature = pageHeight - bottomMargin - yPos;
 
   if (spaceAvailableForSignature < spaceNeededForSignature) {
-    // Se non c'è spazio, aggiungi una nuova pagina
     doc.addPage();
     yPos = topMargin;
   }
