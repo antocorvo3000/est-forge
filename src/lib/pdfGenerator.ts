@@ -136,7 +136,7 @@ export const generateQuotePDF = async (
 
   let yPos = topMargin;
 
-  // Logo e intestazione
+  // Logo e intestazione - LOGO 30% PIÙ GRANDE
   if (settings.logoPath) {
     try {
       const img = new Image();
@@ -145,8 +145,8 @@ export const generateQuotePDF = async (
         img.onload = resolve;
       });
 
-      const maxHeaderWidth = 40;
-      const maxHeaderHeight = 20;
+      const maxHeaderWidth = 52;  // 40 * 1.3 = 52
+      const maxHeaderHeight = 26; // 20 * 1.3 = 26
       const imgAspectRatio = img.width / img.height;
 
       let headerLogoWidth = maxHeaderWidth;
@@ -571,12 +571,10 @@ export const generateQuotePDF = async (
   if (needsNewPageForBottom) {
     doc.addPage();
     currentPageNumber++;
-    // QUESTA PAGINA NON HA CONTENUTO TABELLA, quindi servirà il box
-    // Aggiungi spazio per il box PRIMA di iniziare a scrivere
-    const hasTableContent = false; // Questa nuova pagina non ha tabella
+    const hasTableContent = false;
     if (!hasTableContent) {
       const boxHeight = 8;
-      yPos = topMargin + boxHeight + 12; // Box height + spazio extra
+      yPos = topMargin + boxHeight + 12;
     } else {
       yPos = topMargin;
     }
@@ -621,7 +619,6 @@ export const generateQuotePDF = async (
     signaturePrinted = true;
   }
 
-  // Applica box e footer
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
@@ -630,7 +627,6 @@ export const generateQuotePDF = async (
     const shouldShowBox = i > 1 && !hasTableContent;
     
     if (shouldShowBox) {
-      // Disegna il box identificativo
       const boxHeight = 8;
       const boxY = topMargin;
       
