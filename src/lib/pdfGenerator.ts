@@ -44,6 +44,18 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
+// Funzione per calcolare hash SHA-256 semplificato del documento
+const generateDocumentHash = (quoteData: QuoteData): string => {
+  const dataString = `${quoteData.numero}-${quoteData.anno}-${quoteData.totale}-${quoteData.cliente.nome}-${quoteData.oggetto}`;
+  let hash = 0;
+  for (let i = 0; i < dataString.length; i++) {
+    const char = dataString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(16).toUpperCase().padStart(8, '0');
+};
+
 export const generateQuotePDF = async (
   quoteData: QuoteData,
   settings: CompanySettings
@@ -62,6 +74,10 @@ export const generateQuotePDF = async (
   const bottomMargin = margin + footerHeight;
   const minSpaceBeforeBreak = 15;
 
+  // Genera hash documento univoco
+  const documentHash = generateDocumentHash(quoteData);
+  const quoteReference = `${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}`;
+
   // Configurazione colonne
   const colWidths = {
     nr: 8,
@@ -74,6 +90,67 @@ export const generateQuotePDF = async (
 
   colWidths.desc =
     pageWidth - 2 * margin - colWidths.nr - colWidths.um - colWidths.qty - colWidths.price - colWidths.total;
+
+  // NUOVA FUNZIONE: Watermark su ogni pagina
+  const addWatermark = (currentPage: number, totalPages: number) => {
+    doc.setTextColor(200, 200, 200);
+    doc.setFontSize(40);
+    doc.setFont("helvetica", "bold");
+    
+    const watermarkText = `Prev. ${quoteReference}`;
+    const watermarkText2 = `Tot. € ${formatCurrency(quoteData.totale)}`;
+    
+    // Salva stato corrente
+    doc.saveGraphicsState();
+    
+    // Ruota e posiziona watermark diagonale
+    const centerX = pageWidth / 2;
+    const centerY = pageHeight / 2;
+    
+    doc.setGState(new doc.GState({ opacity: 0.1 }));
+    
+    // Watermark principale
+    const angle = -45;
+    const radians = (angle * Math.PI) / 180;
+    
+    doc.text(watermarkText, centerX, centerY - 10, {
+      align: "center",
+      angle: angle,
+    });
+    
+    doc.text(watermarkText2, centerX, centerY + 10, {
+      align: "center",
+      angle: angle,
+    });
+    
+    // Ripristina stato
+    doc.restoreGraphicsState();
+    doc.setTextColor(0, 0, 0);
+  };
+
+  // NUOVA FUNZIONE: Box identificativo documento in alto a ogni pagina (tranne prima)
+  const addDocumentIdentifier = (currentPage: number, totalPages: number) => {
+    if (currentPage === 1) return;
+    
+    const boxHeight = 8;
+    const boxY = topMargin;
+    
+    // Box con sfondo chiaro
+    doc.setFillColor(245, 245, 250);
+    doc.setDrawColor(100, 100, 150);
+    doc.setLineWidth(0.3);
+    doc.rect(margin, boxY, pageWidth - 2 * margin, boxHeight, "FD");
+    
+    // Testo identificativo
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.setTextColor(60, 60, 80);
+    
+    const identifierText = `PREVENTIVO N. ${quoteReference} | TOTALE: € ${formatCurrency(quoteData.totale)} | HASH: ${documentHash} | PAG. ${currentPage}/${totalPages}`;
+    doc.text(identifierText, pageWidth / 2, boxY + 5, { align: "center" });
+    
+    doc.setTextColor(0, 0, 0);
+  };
 
   const addFooter = (currentPage: number, totalPages: number, showCompanyData: boolean = true) => {
     const footerBaseY = pageHeight - footerHeight + 2;
@@ -219,8 +296,17 @@ export const generateQuotePDF = async (
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.text(`Preventivo N. ${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}`, margin, yPos);
-  yPos += 6;
+  doc.text(`Preventivo N. ${quoteReference}`, margin, yPos);
+  
+  // NUOVO: Hash documento visibile nella prima pagina
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Codice Documento: ${documentHash}`, margin, yPos + 3);
+  doc.setTextColor(0, 0, 0);
+  
+  yPos += 9;
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.text(`Oggetto: ${quoteData.oggetto}`, margin, yPos);
   yPos += 8;
@@ -235,7 +321,6 @@ export const generateQuotePDF = async (
   doc.text(ubicazioneText, margin + labelWidth, yPos);
   yPos += 8;
 
-  // Funzione per disegnare header tabella
   const drawTableHeader = (y: number, showCarriedForward: boolean = false, carriedAmount: number = 0) => {
     if (showCarriedForward && carriedAmount > 0) {
       const carriedHeight = 6;
@@ -312,40 +397,33 @@ export const generateQuotePDF = async (
     return y + headerHeight;
   };
 
-  // NUOVA FUNZIONE: Subtotale Pagina + Totale Progressivo
   const drawPageSubtotalBox = (y: number, pageSubtotal: number, runningTotal: number, pageNumber: number) => {
     const boxHeight = 14;
     const boxWidth = 80;
     const boxX = pageWidth - margin - boxWidth;
 
-    // Box con sfondo
     doc.setFillColor(255, 248, 230);
     doc.setDrawColor(220, 160, 70);
     doc.setLineWidth(0.4);
     doc.rect(boxX, y, boxWidth, boxHeight, "FD");
 
-    // Linea separatore interna
     doc.setDrawColor(220, 160, 70);
     doc.setLineWidth(0.2);
     doc.line(boxX, y + 7, boxX + boxWidth, y + 7);
 
-    // Testo
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.setTextColor(0, 0, 0);
 
-    // Subtotale Pagina
     doc.text(`Subtotale Pagina ${pageNumber}:`, boxX + 2, y + 5);
     doc.text(`€ ${formatCurrency(pageSubtotal)}`, boxX + boxWidth - 2, y + 5, { align: "right" });
 
-    // Totale Progressivo
     doc.setTextColor(220, 100, 0);
     doc.text("Totale Progressivo:", boxX + 2, y + 11);
     doc.text(`€ ${formatCurrency(runningTotal)}`, boxX + boxWidth - 2, y + 11, { align: "right" });
 
     doc.setTextColor(0, 0, 0);
 
-    // Nota di continuazione
     doc.setFont("helvetica", "italic");
     doc.setFontSize(7);
     doc.setTextColor(100, 100, 100);
@@ -355,7 +433,6 @@ export const generateQuotePDF = async (
     return y + boxHeight + 5;
   };
 
-  // Tracciamento
   let cumulativeSubtotal = 0;
   let pageSubtotal = 0;
   let currentPageNumber = 1;
@@ -369,7 +446,6 @@ export const generateQuotePDF = async (
 
   yPos = drawTableHeader(yPos, false, 0);
 
-  // Disegna righe
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
@@ -388,23 +464,20 @@ export const generateQuotePDF = async (
     const totalRowHeight = Math.max(descLines.length * lineHeight + 4, minChunkHeight);
     const spaceLeft = pageHeight - bottomMargin - yPos;
 
-    // Se la riga non entra + serve spazio per il box subtotale
     if (totalRowHeight > spaceLeft - 20) {
-      // Mostra box con subtotale pagina e totale progressivo
       if (!isFirstPage || yPos > firstPageTableStart + 20) {
         yPos = drawPageSubtotalBox(yPos + 3, pageSubtotal, cumulativeSubtotal, currentPageNumber);
         carriedForwardAmount = cumulativeSubtotal;
-        pageSubtotal = 0; // Reset per nuova pagina
+        pageSubtotal = 0;
       }
 
       doc.addPage();
       currentPageNumber++;
-      yPos = topMargin;
+      yPos = topMargin + 10; // Spazio per box identificativo
       isFirstPage = false;
       yPos = drawTableHeader(yPos, true, carriedForwardAmount);
     }
 
-    // Disegna la riga completa
     const rowStartY = yPos;
     let x = margin;
 
@@ -455,21 +528,19 @@ export const generateQuotePDF = async (
     yPos += totalRowHeight;
   });
 
-  // Dopo tutte le righe
   yPos += 5;
 
   const spaceNeededForTotals = 25;
   const spaceAvailableForTotals = pageHeight - bottomMargin - yPos;
 
   if (spaceAvailableForTotals < spaceNeededForTotals) {
-    // Mostra box subtotale finale prima di cambiare pagina
     yPos = drawPageSubtotalBox(yPos + 3, pageSubtotal, cumulativeSubtotal, currentPageNumber);
     carriedForwardAmount = cumulativeSubtotal;
     pageSubtotal = 0;
 
     doc.addPage();
     currentPageNumber++;
-    yPos = topMargin;
+    yPos = topMargin + 10;
     yPos = drawTableHeader(yPos, true, carriedForwardAmount);
     yPos += 5;
   }
@@ -505,7 +576,6 @@ export const generateQuotePDF = async (
 
   yPos += summaryHeight;
 
-  // Sconto
   if (quoteData.showDiscountInTable && quoteData.sconto_percentuale && quoteData.sconto_percentuale > 0) {
     doc.rect(
       summaryStartX,
@@ -555,7 +625,6 @@ export const generateQuotePDF = async (
 
   yPos += summaryHeight + 10;
 
-  // Calcola spazio per bottom content
   let totalBottomContentHeight = 0;
 
   if (quoteData.note && !notesPrinted) {
@@ -569,7 +638,7 @@ export const generateQuotePDF = async (
   }
 
   if (!signaturePrinted) {
-    totalBottomContentHeight += 25;
+    totalBottomContentHeight += 35; // Più spazio per disclaimer firma
   }
 
   if ((pageHeight - bottomMargin - yPos) < totalBottomContentHeight + minSpaceBeforeBreak) {
@@ -577,7 +646,6 @@ export const generateQuotePDF = async (
     yPos = topMargin + 10;
   }
 
-  // Note
   if (quoteData.note && !notesPrinted) {
     yPos += 10;
     doc.setFont("helvetica", "bold");
@@ -592,7 +660,6 @@ export const generateQuotePDF = async (
     notesPrinted = true;
   }
 
-  // Modalità pagamento
   if (quoteData.modalita_pagamento && !paymentPrinted) {
     yPos += 5;
     doc.setFont("helvetica", "bold");
@@ -607,11 +674,34 @@ export const generateQuotePDF = async (
     paymentPrinted = true;
   }
 
-  // Firma
+  // NUOVO: Firma con disclaimer specifico
   if (!signaturePrinted) {
     yPos += 5;
+    
+    // Box disclaimer firma
+    const disclaimerBoxHeight = 12;
+    doc.setFillColor(255, 250, 240);
+    doc.setDrawColor(200, 150, 50);
+    doc.setLineWidth(0.3);
+    doc.rect(margin, yPos, pageWidth - 2 * margin, disclaimerBoxHeight, "FD");
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(150, 100, 0);
+    doc.text("ATTENZIONE:", margin + 2, yPos + 4);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(0, 0, 0);
+    const disclaimerText = `Con la firma si accetta il Preventivo N. ${quoteReference} (Codice: ${documentHash}) per un importo totale di € ${formatCurrency(quoteData.totale)}. Verificare che tutte le pagine del presente documento rechino lo stesso numero di preventivo e codice documento.`;
+    const disclaimerLines = doc.splitTextToSize(disclaimerText, pageWidth - 2 * margin - 50);
+    doc.text(disclaimerLines, margin + 45, yPos + 4);
+    
+    yPos += disclaimerBoxHeight + 5;
+    
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
     doc.text("Firma per Accettazione", pageWidth - margin, yPos, { align: "right" });
     yPos += 15;
     doc.setFont("helvetica", "normal");
@@ -619,10 +709,12 @@ export const generateQuotePDF = async (
     signaturePrinted = true;
   }
 
-  // Footer
+  // Applica watermark e identificativi a tutte le pagine
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
+    addWatermark(i, totalPages);
+    addDocumentIdentifier(i, totalPages);
     addFooter(i, totalPages, i !== 1);
   }
 
