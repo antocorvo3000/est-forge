@@ -82,7 +82,24 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
 
     if (settings.logoPath) {
       try {
-        doc.addImage(settings.logoPath, "PNG", margin, footerY - 6, 15, 8);
+        const img = new Image();
+        img.src = settings.logoPath;
+        
+        // Calcola dimensioni proporzionali per il logo footer
+        const maxFooterWidth = 15;
+        const maxFooterHeight = 8;
+        const imgAspectRatio = img.width / img.height;
+        
+        let footerLogoWidth = maxFooterWidth;
+        let footerLogoHeight = maxFooterWidth / imgAspectRatio;
+        
+        // Se l'altezza supera il massimo, ricalcola partendo dall'altezza
+        if (footerLogoHeight > maxFooterHeight) {
+          footerLogoHeight = maxFooterHeight;
+          footerLogoWidth = maxFooterHeight * imgAspectRatio;
+        }
+        
+        doc.addImage(settings.logoPath, "PNG", margin, footerY - 6, footerLogoWidth, footerLogoHeight);
       } catch (error) {
         console.warn("Logo footer non caricato:", error);
       }
@@ -117,7 +134,22 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
       await new Promise((resolve) => {
         img.onload = resolve;
       });
-      doc.addImage(settings.logoPath, "PNG", margin, yPos, 40, 20);
+      
+      // Calcola dimensioni proporzionali per il logo header
+      const maxHeaderWidth = 40;
+      const maxHeaderHeight = 20;
+      const imgAspectRatio = img.width / img.height;
+      
+      let headerLogoWidth = maxHeaderWidth;
+      let headerLogoHeight = maxHeaderWidth / imgAspectRatio;
+      
+      // Se l'altezza supera il massimo, ricalcola partendo dall'altezza
+      if (headerLogoHeight > maxHeaderHeight) {
+        headerLogoHeight = maxHeaderHeight;
+        headerLogoWidth = maxHeaderHeight * imgAspectRatio;
+      }
+      
+      doc.addImage(settings.logoPath, "PNG", margin, yPos, headerLogoWidth, headerLogoHeight);
     } catch (error) {
       console.warn("Logo non caricato:", error);
     }
@@ -192,7 +224,34 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
   yPos += 8;
 
   // Funzione per disegnare header
-  const drawTableHeader = (y: number) => {
+  const drawTableHeader = (y: number, showCarriedForward: boolean = false, carriedAmount: number = 0) => {
+    // Se c'è un riporto, mostralo prima dell'header
+    if (showCarriedForward && carriedAmount > 0) {
+      const carriedHeight = 6;
+      doc.setFillColor(240, 240, 255);
+      doc.setDrawColor(0, 0, 255);
+      doc.setLineWidth(0.3);
+      
+      let x = margin;
+      doc.rect(x, y, colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price, carriedHeight, "FD");
+      doc.rect(
+        x + colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
+        y,
+        colWidths.total,
+        carriedHeight,
+        "FD"
+      );
+
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 255);
+      doc.text("← Riporto da pagina precedente:", margin + 2, y + carriedHeight - 1.5);
+      doc.text(`€ ${formatCurrency(carriedAmount)}`, pageWidth - margin - 2, y + carriedHeight - 1.5, { align: "right" });
+      doc.setTextColor(0, 0, 0);
+      
+      y += carriedHeight;
+    }
+
     doc.setFillColor(200, 200, 200);
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.3);
@@ -234,9 +293,49 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     return y + headerHeight;
   };
 
-  yPos = drawTableHeader(yPos);
+  // Funzione per disegnare subtotale parziale
+  const drawPartialSubtotal = (y: number, amount: number) => {
+    const summaryHeight = 6;
+    const summaryStartX = margin;
 
-  // Disegna righe con logica di split
+    doc.setFillColor(255, 255, 240);
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.3);
+
+    doc.rect(
+      summaryStartX,
+      y,
+      colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
+      summaryHeight,
+      "FD"
+    );
+    doc.rect(
+      summaryStartX + colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
+      y,
+      colWidths.total,
+      summaryHeight,
+      "FD"
+    );
+
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Riporto a pagina successiva →", pageWidth - margin - colWidths.total - 2, y + summaryHeight - 1.5, { align: "right" });
+    doc.text(`€ ${formatCurrency(amount)}`, pageWidth - margin - 2, y + summaryHeight - 1.5, { align: "right" });
+
+    return y + summaryHeight;
+  };
+
+  // Tracciamento per i subtotali progressivi
+  let cumulativeSubtotal = 0;
+  let itemsProcessed = 0;
+  const firstPageTableStart = yPos;
+  let isFirstPage = true;
+  let carriedForwardAmount = 0;
+
+  yPos = drawTableHeader(yPos, false, 0);
+
+  // Disegna righe con logica di split e subtotali progressivi
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
@@ -254,15 +353,24 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
 
     let lineIndex = 0;
     let isFirstChunk = true;
+    let itemAddedToCumulative = false;
 
     while (lineIndex < descLines.length) {
       const spaceLeft = availableHeight - yPos;
       const maxLinesInChunk = Math.floor((spaceLeft - 4) / lineHeight);
 
+      // Verifica se serve nuova pagina
       if (maxLinesInChunk < 2 && lineIndex < descLines.length) {
+        // Mostra subtotale parziale prima di cambiare pagina
+        if (!isFirstPage || yPos > firstPageTableStart + 20) {
+          yPos = drawPartialSubtotal(yPos, cumulativeSubtotal);
+          carriedForwardAmount = cumulativeSubtotal;
+        }
+
         doc.addPage();
         yPos = margin;
-        yPos = drawTableHeader(yPos);
+        isFirstPage = false;
+        yPos = drawTableHeader(yPos, true, carriedForwardAmount);
         continue;
       }
 
@@ -292,21 +400,21 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
       // Contenuto
       x = margin;
 
-      // Nr - solo primo chunk, normale
+      // Nr - solo primo chunk
       if (isFirstChunk) {
         doc.setFont("helvetica", "normal");
         doc.text(nr, x + colWidths.nr / 2, rowStartY + 5, { align: "center" });
       }
       x += colWidths.nr;
 
-      // Descrizione - normale
+      // Descrizione
       doc.setFont("helvetica", "normal");
       for (let i = 0; i < linesToDraw; i++) {
         doc.text(descLines[lineIndex + i], x + 2, rowStartY + 5 + i * lineHeight);
       }
       x += colWidths.desc;
 
-      // Valori - solo ultimo chunk, normale
+      // Valori - solo ultimo chunk
       if (isLastChunk) {
         doc.setFont("helvetica", "normal");
         const bottomTextY = rowStartY + chunkHeight - 2;
@@ -321,6 +429,13 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
         x += colWidths.price;
 
         doc.text(total, x + colWidths.total - 2, bottomTextY, { align: "right" });
+
+        // Aggiungi al subtotale cumulativo solo quando l'item è completato
+        if (!itemAddedToCumulative) {
+          cumulativeSubtotal += riga.totale;
+          itemsProcessed++;
+          itemAddedToCumulative = true;
+        }
       }
 
       yPos += chunkHeight;
@@ -329,49 +444,18 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     }
   });
 
-  // Calcola spazio necessario per tutto il resto
-  const summaryHeight = 6;
-  let numSummaryRows = 2; // Subtotale + Totale
-  if (quoteData.showDiscountInTable && quoteData.sconto_percentuale && quoteData.sconto_percentuale > 0) {
-    numSummaryRows++;
-  }
-
-  const totalSummaryHeight = numSummaryRows * summaryHeight + 10; // +10 per spaziatura
-
-  // Calcola altezza note
-  let notesHeight = 0;
-  if (quoteData.note) {
-    const noteLines = doc.splitTextToSize(quoteData.note, pageWidth - 2 * margin);
-    notesHeight = 10 + 5 + noteLines.length * 4 + 5; // titolo + spaziatura + testo + spaziatura
-  }
-
-  // Calcola altezza pagamento
-  let paymentHeight = 0;
-  if (quoteData.modalita_pagamento) {
-    paymentHeight = 5 + 5 + 5 + 10; // spaziatura + titolo + spaziatura + testo + spaziatura
-  }
-
-  const signatureHeight = 5 + 5 + 15 + 5; // spaziatura + testo + linea + spaziatura
-
-  const totalNeededSpace = totalSummaryHeight + notesHeight + paymentHeight + signatureHeight;
-
-  // Se non c'è spazio, vai a nuova pagina per TUTTO
-  if (yPos + totalNeededSpace > availableHeight) {
-    doc.addPage();
-    yPos = margin;
-  }
-
-  // Totali
+  // Dopo aver disegnato tutte le righe, aggiungi i totali finali
   yPos += 5;
 
   const summaryStartX = margin;
+  const summaryHeight = 6;
 
   doc.setFont("helvetica", "bold");
   doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.3);
   doc.setTextColor(0, 0, 0);
 
-  // Subtotale
+  // Subtotale finale
   doc.rect(
     summaryStartX,
     yPos,
@@ -415,7 +499,7 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     yPos += summaryHeight;
   }
 
-  // Totale
+  // Totale finale
   doc.rect(
     summaryStartX,
     yPos,
