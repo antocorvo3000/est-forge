@@ -618,6 +618,132 @@ const DEFAULT_NOTES_TEXT = `-Eventuali opere extra preventivo verranno quantific
   }
 };
 
+const saveQuoteAndGeneratePdf = async () => {
+  // Prima chiudi il dialog
+  setShowPdfWarningDialog(false);
+  
+  try {
+    let cliente_id = null;
+    if (clientData && clientData.name) {
+      const cliente = await salvaCliente({
+        nome_ragione_sociale: clientData.name,
+        codice_fiscale_piva: clientData.taxCode || null,
+        via: clientData.address || null,
+        citta: clientData.city || null,
+        provincia: clientData.province || null,
+        cap: clientData.zip || null,
+        telefono: clientData.phone || null,
+        email: clientData.email || null,
+      });
+      cliente_id = cliente.id;
+    }
+
+    const subtotale = calculateSubtotal();
+    const sconto_percentuale = discountEnabled ? (typeof discountValue === "number" ? discountValue : 0) : 0;
+    const sconto_valore = discountEnabled ? calculateDiscount() : 0;
+    const totale = calculateTotal();
+
+    const nuovoPreventivo = await salvaPreventivo({
+      numero: quoteNumber!,
+      anno: quoteYear!,
+      cliente_id,
+      oggetto: subject,
+      ubicazione_via: workAddress || null,
+      ubicazione_citta: workCity || null,
+      ubicazione_provincia: workProvince || null,
+      ubicazione_cap: workZip || null,
+      subtotale,
+      sconto_percentuale,
+      sconto_valore,
+      totale,
+      note: notesEnabled ? (notesType === "personalizzato" ? customNotes : notes) : null,
+      modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+    });
+
+    const righe = lines
+      .filter((line) => line.description.trim())
+      .map((line) => ({
+        descrizione: line.description,
+        unita_misura: line.unit,
+        quantita: typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0,
+        prezzo_unitario: typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0,
+        totale: typeof line.total === "number" ? line.total : parseFloat(line.total) || 0,
+      }));
+
+    if (righe.length > 0) {
+      await salvaRighePreventivo(nuovoPreventivo.id, righe);
+    }
+
+    if (autoSaveCacheId) {
+      await eliminaCachePreventivo(autoSaveCacheId);
+      console.log("[CreateQuote] Cache eliminata:", autoSaveCacheId);
+    }
+
+    setIsSaved(true);
+    toast.success("Preventivo salvato con successo");
+
+    // Prepara dati PDF
+    const pdfData = {
+      numero: quoteNumber!,
+      anno: quoteYear!,
+      oggetto: subject || "Preventivo",
+      cliente: {
+        nome: clientData?.name || "",
+        taxCode: clientData?.taxCode || "",
+        address: clientData?.address || "",
+        city: clientData?.city || "",
+        province: clientData?.province || "",
+        zip: clientData?.zip || "",
+        phone: clientData?.phone || "",
+        email: clientData?.email || "",
+      },
+      ubicazione: {
+        via: workAddress,
+        citta: workCity,
+        provincia: workProvince,
+        cap: workZip,
+      },
+      righe: lines
+        .filter((line) => line.description.trim())
+        .map((line) => ({
+          descrizione: line.description,
+          unita_misura: line.unit,
+          quantita: typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0,
+          prezzo_unitario:
+            discountEnabled && !showDiscountInTable
+              ? getEffectiveUnitPrice(
+                  typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0,
+                )
+              : typeof line.unitPrice === "number"
+                ? line.unitPrice
+                : parseFloat(line.unitPrice) || 0,
+          totale: getEffectiveLineTotal(line),
+        })),
+      subtotale: calculateSubtotal(),
+      sconto_percentuale: discountEnabled ? (typeof discountValue === "number" ? discountValue : 0) : 0,
+      sconto_valore: discountEnabled ? calculateDiscount() : 0,
+      totale: calculateTotal(),
+      note: notesEnabled ? (notesType === "personalizzato" ? customNotes : notes) : undefined,
+      modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+      showDiscountInTable: showDiscountInTable,
+    };
+
+    // Naviga al PDF
+    navigate("/pdf-preview", {
+      state: {
+        quoteData: pdfData,
+        settings: settings,
+        from: "/create-quote",
+      },
+    });
+
+  } catch (error) {
+    console.error("Errore salvataggio e generazione PDF:", error);
+    toast.error("Errore durante il salvataggio");
+  }
+};
+
+
   const handleViewPdf = async () => {
     if (!clientData || !clientData.name.trim()) {
       toast.error("Inserire i dati del cliente prima di generare il PDF");
