@@ -57,6 +57,7 @@ const UNITS = [
 
 const CreateQuote = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { settings } = useCompanySettings();
   const { quotes } = useQuotes();
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -110,19 +111,16 @@ const CreateQuote = () => {
   };
 
   const [clientData, setClientData] = useState<ClientData | null>(null);
-  
-  // Carica i dati del cliente dal navigation state quando si ritorna da ClientDetails
-  useEffect(() => {
-    const state = location.state as any;
-    if (state?.clientData) {
-      console.log('[CreateQuote] Dati cliente ricevuti:', state.clientData);
-      setClientData(state.clientData);
-      // Pulisci lo state per evitare di ricaricare i dati ad ogni render
-      window.history.replaceState({}, document.title);
-    }
-  }, []);
 
-  const [quoteNumber, setQuoteNumber] = useState<number | null>(null);
+// Carica i dati del cliente quando si ritorna da ClientDetails
+useEffect(() => {
+  if (location.state?.clientData) {
+    setClientData(location.state.clientData);
+  }
+}, [location.state?.clientData]);
+
+const [quoteNumber, setQuoteNumber] = useState<number | null>(null);
+
 
   const [quoteYear, setQuoteYear] = useState<number | null>(null);
   const [isQuoteNumberReady, setIsQuoteNumberReady] = useState(false);
