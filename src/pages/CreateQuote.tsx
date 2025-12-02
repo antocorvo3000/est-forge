@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, KeyboardEvent } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Plus, Trash2, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -110,8 +110,20 @@ const CreateQuote = () => {
   };
 
   const [clientData, setClientData] = useState<ClientData | null>(null);
+  
+  // Carica i dati del cliente dal navigation state quando si ritorna da ClientDetails
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.clientData) {
+      console.log('[CreateQuote] Dati cliente ricevuti:', state.clientData);
+      setClientData(state.clientData);
+      // Pulisci lo state per evitare di ricaricare i dati ad ogni render
+      window.history.replaceState({}, document.title);
+    }
+  }, []);
 
   const [quoteNumber, setQuoteNumber] = useState<number | null>(null);
+
   const [quoteYear, setQuoteYear] = useState<number | null>(null);
   const [isQuoteNumberReady, setIsQuoteNumberReady] = useState(false);
 
