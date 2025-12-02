@@ -44,18 +44,6 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
-// Funzione per calcolare hash SHA-256 semplificato del documento
-const generateDocumentHash = (quoteData: QuoteData): string => {
-  const dataString = `${quoteData.numero}-${quoteData.anno}-${quoteData.totale}-${quoteData.cliente.nome}-${quoteData.oggetto}`;
-  let hash = 0;
-  for (let i = 0; i < dataString.length; i++) {
-    const char = dataString.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash).toString(16).toUpperCase().padStart(8, '0');
-};
-
 export const generateQuotePDF = async (
   quoteData: QuoteData,
   settings: CompanySettings
@@ -73,10 +61,7 @@ export const generateQuotePDF = async (
   const topMargin = margin;
   const bottomMargin = margin + footerHeight;
   const minSpaceBeforeBreak = 15;
-
-  // Genera hash documento univoco
-  const documentHash = generateDocumentHash(quoteData);
-  const quoteReference = `${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}`;
+  const minTableHeight = 100; // Altezza minima della tabella per look professionale
 
   // Configurazione colonne
   const colWidths = {
@@ -91,27 +76,25 @@ export const generateQuotePDF = async (
   colWidths.desc =
     pageWidth - 2 * margin - colWidths.nr - colWidths.um - colWidths.qty - colWidths.price - colWidths.total;
 
-  // NUOVA FUNZIONE: Watermark su ogni pagina
+  const quoteReference = `${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}`;
+
+  // WATERMARK NERO su ogni pagina
   const addWatermark = (currentPage: number, totalPages: number) => {
-    doc.setTextColor(200, 200, 200);
+    doc.setTextColor(0, 0, 0);
     doc.setFontSize(40);
     doc.setFont("helvetica", "bold");
     
     const watermarkText = `Prev. ${quoteReference}`;
     const watermarkText2 = `Tot. € ${formatCurrency(quoteData.totale)}`;
     
-    // Salva stato corrente
     doc.saveGraphicsState();
     
-    // Ruota e posiziona watermark diagonale
     const centerX = pageWidth / 2;
     const centerY = pageHeight / 2;
     
-    doc.setGState(new doc.GState({ opacity: 0.1 }));
+    doc.setGState(new doc.GState({ opacity: 0.08 }));
     
-    // Watermark principale
     const angle = -45;
-    const radians = (angle * Math.PI) / 180;
     
     doc.text(watermarkText, centerX, centerY - 10, {
       align: "center",
@@ -123,30 +106,27 @@ export const generateQuotePDF = async (
       angle: angle,
     });
     
-    // Ripristina stato
     doc.restoreGraphicsState();
     doc.setTextColor(0, 0, 0);
   };
 
-  // NUOVA FUNZIONE: Box identificativo documento in alto a ogni pagina (tranne prima)
+  // Box identificativo documento in alto a ogni pagina (tranne prima)
   const addDocumentIdentifier = (currentPage: number, totalPages: number) => {
     if (currentPage === 1) return;
     
     const boxHeight = 8;
     const boxY = topMargin;
     
-    // Box con sfondo chiaro
     doc.setFillColor(245, 245, 250);
-    doc.setDrawColor(100, 100, 150);
+    doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.3);
     doc.rect(margin, boxY, pageWidth - 2 * margin, boxHeight, "FD");
     
-    // Testo identificativo
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7);
-    doc.setTextColor(60, 60, 80);
+    doc.setTextColor(0, 0, 0);
     
-    const identifierText = `PREVENTIVO N. ${quoteReference} | TOTALE: € ${formatCurrency(quoteData.totale)} | HASH: ${documentHash} | PAG. ${currentPage}/${totalPages}`;
+    const identifierText = `PREVENTIVO N. ${quoteReference} | TOTALE: € ${formatCurrency(quoteData.totale)} | PAGINA ${currentPage}/${totalPages}`;
     doc.text(identifierText, pageWidth / 2, boxY + 5, { align: "center" });
     
     doc.setTextColor(0, 0, 0);
@@ -297,16 +277,7 @@ export const generateQuotePDF = async (
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.text(`Preventivo N. ${quoteReference}`, margin, yPos);
-  
-  // NUOVO: Hash documento visibile nella prima pagina
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(100, 100, 100);
-  doc.text(`Codice Documento: ${documentHash}`, margin, yPos + 3);
-  doc.setTextColor(0, 0, 0);
-  
-  yPos += 9;
-  doc.setFont("helvetica", "bold");
+  yPos += 6;
   doc.setFontSize(11);
   doc.text(`Oggetto: ${quoteData.oggetto}`, margin, yPos);
   yPos += 8;
@@ -397,6 +368,46 @@ export const generateQuotePDF = async (
     return y + headerHeight;
   };
 
+  // NUOVA FUNZIONE: Disegna righe vuote tratteggiate per riempire spazio
+  const drawEmptyRows = (startY: number, minHeight: number) => {
+    const emptyRowHeight = 10;
+    let currentY = startY;
+    const spaceAvailable = pageHeight - bottomMargin - startY - 30; // -30 per i totali
+    const heightNeeded = Math.max(0, minHeight - (startY - tableStartY));
+    const rowsNeeded = Math.floor(Math.min(heightNeeded, spaceAvailable) / emptyRowHeight);
+
+    for (let i = 0; i < rowsNeeded; i++) {
+      let x = margin;
+
+      // Bordi normali
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.3);
+      doc.rect(x, currentY, colWidths.nr, emptyRowHeight);
+      x += colWidths.nr;
+      doc.rect(x, currentY, colWidths.desc, emptyRowHeight);
+      x += colWidths.desc;
+      doc.rect(x, currentY, colWidths.um, emptyRowHeight);
+      x += colWidths.um;
+      doc.rect(x, currentY, colWidths.qty, emptyRowHeight);
+      x += colWidths.qty;
+      doc.rect(x, currentY, colWidths.price, emptyRowHeight);
+      x += colWidths.price;
+      doc.rect(x, currentY, colWidths.total, emptyRowHeight);
+
+      // Linea tratteggiata orizzontale nel mezzo
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.2);
+      doc.setLineDash([2, 2]);
+      const midY = currentY + emptyRowHeight / 2;
+      doc.line(margin + colWidths.nr, midY, pageWidth - margin, midY);
+      doc.setLineDash([]);
+
+      currentY += emptyRowHeight;
+    }
+
+    return currentY;
+  };
+
   const drawPageSubtotalBox = (y: number, pageSubtotal: number, runningTotal: number, pageNumber: number) => {
     const boxHeight = 14;
     const boxWidth = 80;
@@ -443,7 +454,9 @@ export const generateQuotePDF = async (
   let notesPrinted = false;
   let paymentPrinted = false;
   let signaturePrinted = false;
+  let tableStartY = 0;
 
+  tableStartY = yPos;
   yPos = drawTableHeader(yPos, false, 0);
 
   doc.setFont("helvetica", "normal");
@@ -473,8 +486,9 @@ export const generateQuotePDF = async (
 
       doc.addPage();
       currentPageNumber++;
-      yPos = topMargin + 10; // Spazio per box identificativo
+      yPos = topMargin + 10;
       isFirstPage = false;
+      tableStartY = yPos;
       yPos = drawTableHeader(yPos, true, carriedForwardAmount);
     }
 
@@ -528,6 +542,12 @@ export const generateQuotePDF = async (
     yPos += totalRowHeight;
   });
 
+  // NUOVO: Aggiungi righe vuote se la tabella è troppo corta
+  const currentTableHeight = yPos - tableStartY;
+  if (currentTableHeight < minTableHeight && isFirstPage) {
+    yPos = drawEmptyRows(yPos, minTableHeight);
+  }
+
   yPos += 5;
 
   const spaceNeededForTotals = 25;
@@ -541,6 +561,7 @@ export const generateQuotePDF = async (
     doc.addPage();
     currentPageNumber++;
     yPos = topMargin + 10;
+    tableStartY = yPos;
     yPos = drawTableHeader(yPos, true, carriedForwardAmount);
     yPos += 5;
   }
@@ -638,7 +659,7 @@ export const generateQuotePDF = async (
   }
 
   if (!signaturePrinted) {
-    totalBottomContentHeight += 35; // Più spazio per disclaimer firma
+    totalBottomContentHeight += 25;
   }
 
   if ((pageHeight - bottomMargin - yPos) < totalBottomContentHeight + minSpaceBeforeBreak) {
@@ -674,34 +695,11 @@ export const generateQuotePDF = async (
     paymentPrinted = true;
   }
 
-  // NUOVO: Firma con disclaimer specifico
+  // Firma semplice
   if (!signaturePrinted) {
     yPos += 5;
-    
-    // Box disclaimer firma
-    const disclaimerBoxHeight = 12;
-    doc.setFillColor(255, 250, 240);
-    doc.setDrawColor(200, 150, 50);
-    doc.setLineWidth(0.3);
-    doc.rect(margin, yPos, pageWidth - 2 * margin, disclaimerBoxHeight, "FD");
-    
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(150, 100, 0);
-    doc.text("ATTENZIONE:", margin + 2, yPos + 4);
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7);
-    doc.setTextColor(0, 0, 0);
-    const disclaimerText = `Con la firma si accetta il Preventivo N. ${quoteReference} (Codice: ${documentHash}) per un importo totale di € ${formatCurrency(quoteData.totale)}. Verificare che tutte le pagine del presente documento rechino lo stesso numero di preventivo e codice documento.`;
-    const disclaimerLines = doc.splitTextToSize(disclaimerText, pageWidth - 2 * margin - 50);
-    doc.text(disclaimerLines, margin + 45, yPos + 4);
-    
-    yPos += disclaimerBoxHeight + 5;
-    
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0);
     doc.text("Firma per Accettazione", pageWidth - margin, yPos, { align: "right" });
     yPos += 15;
     doc.setFont("helvetica", "normal");
