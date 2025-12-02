@@ -44,7 +44,10 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
-export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySettings): Promise<jsPDF> => {
+export const generateQuotePDF = async (
+  quoteData: QuoteData,
+  settings: CompanySettings
+): Promise<jsPDF> => {
   const doc = new jsPDF({
     orientation: "portrait",
     unit: "mm",
@@ -54,8 +57,15 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 12.7;
-  const footerMargin = 30;
-  const availableHeight = pageHeight - margin - footerMargin;
+  const footerHeight = 30;
+  const topMargin = margin;
+  const bottomMargin = margin + footerHeight;
+
+  // Lo spazio disponibile è: altezza pagina - margini top e bottom
+  // Questo assicura che il contenuto non sovrapponga il footer
+  const getAvailableHeight = () => {
+    return pageHeight - topMargin - bottomMargin;
+  };
 
   // Configurazione colonne
   const colWidths = {
@@ -71,12 +81,14 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     pageWidth - 2 * margin - colWidths.nr - colWidths.um - colWidths.qty - colWidths.price - colWidths.total;
 
   const addFooter = (currentPage: number, totalPages: number, showCompanyData: boolean = true) => {
-    const footerY = pageHeight - 18;
+    const footerStartY = pageHeight - footerHeight + 5;
 
     if (!showCompanyData) {
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
-      doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: "right" });
+      doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, pageHeight - 10, {
+        align: "right",
+      });
       return;
     }
 
@@ -84,22 +96,29 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
       try {
         const img = new Image();
         img.src = settings.logoPath;
-        
+
         // Calcola dimensioni proporzionali per il logo footer
         const maxFooterWidth = 15;
         const maxFooterHeight = 8;
         const imgAspectRatio = img.width / img.height;
-        
+
         let footerLogoWidth = maxFooterWidth;
         let footerLogoHeight = maxFooterWidth / imgAspectRatio;
-        
+
         // Se l'altezza supera il massimo, ricalcola partendo dall'altezza
         if (footerLogoHeight > maxFooterHeight) {
           footerLogoHeight = maxFooterHeight;
           footerLogoWidth = maxFooterHeight * imgAspectRatio;
         }
-        
-        doc.addImage(settings.logoPath, "PNG", margin, footerY - 2, footerLogoWidth, footerLogoHeight);
+
+        doc.addImage(
+          settings.logoPath,
+          "PNG",
+          margin,
+          footerStartY - 2,
+          footerLogoWidth,
+          footerLogoHeight
+        );
       } catch (error) {
         console.warn("Logo footer non caricato:", error);
       }
@@ -108,23 +127,29 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     doc.setFontSize(7);
     doc.setTextColor(80, 80, 80);
     const centerX = pageWidth / 2;
-    let footerTextY = footerY;
+    let footerTextY = footerStartY;
 
     doc.setFont("helvetica", "bold");
     doc.text(settings.name, centerX, footerTextY, { align: "center" });
     footerTextY += 3;
 
     doc.setFont("helvetica", "normal");
-    doc.text(`P.IVA ${settings.vatNumber} - ${settings.address}`, centerX, footerTextY, { align: "center" });
+    doc.text(`P.IVA ${settings.vatNumber} - ${settings.address}`, centerX, footerTextY, {
+      align: "center",
+    });
     footerTextY += 3;
-    doc.text(`Tel. ${settings.phone} - Email: ${settings.email}`, centerX, footerTextY, { align: "center" });
+    doc.text(`Tel. ${settings.phone} - Email: ${settings.email}`, centerX, footerTextY, {
+      align: "center",
+    });
 
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: "right" });
+    doc.text(`Pagina ${currentPage} di ${totalPages}`, pageWidth - margin, pageHeight - 10, {
+      align: "right",
+    });
   };
 
-  let yPos = margin;
+  let yPos = topMargin;
 
   // Logo e intestazione
   if (settings.logoPath) {
@@ -134,21 +159,21 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
       await new Promise((resolve) => {
         img.onload = resolve;
       });
-      
+
       // Calcola dimensioni proporzionali per il logo header
       const maxHeaderWidth = 40;
       const maxHeaderHeight = 20;
       const imgAspectRatio = img.width / img.height;
-      
+
       let headerLogoWidth = maxHeaderWidth;
       let headerLogoHeight = maxHeaderWidth / imgAspectRatio;
-      
+
       // Se l'altezza supera il massimo, ricalcola partendo dall'altezza
       if (headerLogoHeight > maxHeaderHeight) {
         headerLogoHeight = maxHeaderHeight;
         headerLogoWidth = maxHeaderHeight * imgAspectRatio;
       }
-      
+
       doc.addImage(settings.logoPath, "PNG", margin, yPos, headerLogoWidth, headerLogoHeight);
     } catch (error) {
       console.warn("Logo non caricato:", error);
@@ -172,7 +197,7 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
   doc.text(`Email: ${settings.email}`, margin, yPos);
 
   // Cliente
-  let clientYPos = margin + 25;
+  let clientYPos = topMargin + 25;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.text(`C.a. ${quoteData.cliente.nome}`, pageWidth - margin, clientYPos, { align: "right" });
@@ -181,7 +206,9 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   if (quoteData.cliente.taxCode) {
-    doc.text(`CF/P.IVA: ${quoteData.cliente.taxCode}`, pageWidth - margin, clientYPos, { align: "right" });
+    doc.text(`CF/P.IVA: ${quoteData.cliente.taxCode}`, pageWidth - margin, clientYPos, {
+      align: "right",
+    });
     clientYPos += 4;
   }
   if (quoteData.cliente.address) {
@@ -196,11 +223,15 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     clientYPos += 4;
   }
   if (quoteData.cliente.phone) {
-    doc.text(`Tel. ${quoteData.cliente.phone}`, pageWidth - margin, clientYPos, { align: "right" });
+    doc.text(`Tel. ${quoteData.cliente.phone}`, pageWidth - margin, clientYPos, {
+      align: "right",
+    });
     clientYPos += 4;
   }
   if (quoteData.cliente.email) {
-    doc.text(`Email: ${quoteData.cliente.email}`, pageWidth - margin, clientYPos, { align: "right" });
+    doc.text(`Email: ${quoteData.cliente.email}`, pageWidth - margin, clientYPos, {
+      align: "right",
+    });
   }
 
   yPos = Math.max(yPos, clientYPos) + 10;
@@ -223,7 +254,7 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
   doc.text(ubicazioneText, margin + labelWidth, yPos);
   yPos += 8;
 
-  // Funzione per disegnare header
+  // Funzione per disegnare header tabella
   const drawTableHeader = (y: number, showCarriedForward: boolean = false, carriedAmount: number = 0) => {
     // Se c'è un riporto, mostralo prima dell'header
     if (showCarriedForward && carriedAmount > 0) {
@@ -231,9 +262,15 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
       doc.setFillColor(240, 240, 255);
       doc.setDrawColor(0, 0, 255);
       doc.setLineWidth(0.3);
-      
+
       let x = margin;
-      doc.rect(x, y, colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price, carriedHeight, "FD");
+      doc.rect(
+        x,
+        y,
+        colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
+        carriedHeight,
+        "FD"
+      );
       doc.rect(
         x + colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
         y,
@@ -246,9 +283,11 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
       doc.setFontSize(8);
       doc.setTextColor(0, 0, 255);
       doc.text("← Riporto da pagina precedente:", margin + 2, y + carriedHeight - 1.5);
-      doc.text(`€ ${formatCurrency(carriedAmount)}`, pageWidth - margin - 2, y + carriedHeight - 1.5, { align: "right" });
+      doc.text(`€ ${formatCurrency(carriedAmount)}`, pageWidth - margin - 2, y + carriedHeight - 1.5, {
+        align: "right",
+      });
       doc.setTextColor(0, 0, 0);
-      
+
       y += carriedHeight;
     }
 
@@ -293,7 +332,7 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     return y + headerHeight;
   };
 
-  // Funzione per disegnare subtotale parziale
+  // Funzione per disegnare subtotale parziale (riporto pagina)
   const drawPartialSubtotal = (y: number, amount: number) => {
     const summaryHeight = 6;
     const summaryStartX = margin;
@@ -320,8 +359,12 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8);
     doc.setTextColor(0, 0, 0);
-    doc.text("Riporto a pagina successiva →", pageWidth - margin - colWidths.total - 2, y + summaryHeight - 1.5, { align: "right" });
-    doc.text(`€ ${formatCurrency(amount)}`, pageWidth - margin - 2, y + summaryHeight - 1.5, { align: "right" });
+    doc.text("Riporto a pagina successiva →", pageWidth - margin - colWidths.total - 2, y + summaryHeight - 1.5, {
+      align: "right",
+    });
+    doc.text(`€ ${formatCurrency(amount)}`, pageWidth - margin - 2, y + summaryHeight - 1.5, {
+      align: "right",
+    });
 
     return y + summaryHeight;
   };
@@ -356,7 +399,8 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     let itemAddedToCumulative = false;
 
     while (lineIndex < descLines.length) {
-      const spaceLeft = availableHeight - yPos;
+      // Calcola lo spazio disponibile fino al footer
+      const spaceLeft = pageHeight - bottomMargin - yPos;
       const maxLinesInChunk = Math.floor((spaceLeft - 4) / lineHeight);
 
       // Verifica se serve nuova pagina
@@ -368,7 +412,7 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
         }
 
         doc.addPage();
-        yPos = margin;
+        yPos = topMargin;
         isFirstPage = false;
         yPos = drawTableHeader(yPos, true, carriedForwardAmount);
         continue;
@@ -444,8 +488,24 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     }
   });
 
-  // Dopo aver disegnato tutte le righe, aggiungi i totali finali
+  // Dopo aver disegnato tutte le righe, verifica spazio per i totali
   yPos += 5;
+
+  // Verifica se c'è spazio per i totali nella pagina corrente
+  // Spazio necessario: subtotale + sconto (se presente) + totale + spazio = circa 20mm
+  const spaceNeededForTotals = 25;
+  const spaceAvailableForTotals = pageHeight - bottomMargin - yPos;
+
+  if (spaceAvailableForTotals < spaceNeededForTotals) {
+    // Mostra subtotale parziale prima di cambiare pagina
+    yPos = drawPartialSubtotal(yPos, cumulativeSubtotal);
+    carriedForwardAmount = cumulativeSubtotal;
+
+    doc.addPage();
+    yPos = topMargin;
+    yPos = drawTableHeader(yPos, true, carriedForwardAmount);
+    yPos += 5;
+  }
 
   const summaryStartX = margin;
   const summaryHeight = 6;
@@ -460,16 +520,18 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     summaryStartX,
     yPos,
     colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
-    summaryHeight,
+    summaryHeight
   );
   doc.rect(
     summaryStartX + colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
     yPos,
     colWidths.total,
-    summaryHeight,
+    summaryHeight
   );
 
-  doc.text("Subtotale:", pageWidth - margin - colWidths.total - 2, yPos + summaryHeight - 2, { align: "right" });
+  doc.text("Subtotale:", pageWidth - margin - colWidths.total - 2, yPos + summaryHeight - 2, {
+    align: "right",
+  });
   doc.text(`€ ${formatCurrency(quoteData.subtotale)}`, pageWidth - margin - 2, yPos + summaryHeight - 2, {
     align: "right",
   });
@@ -482,18 +544,22 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
       summaryStartX,
       yPos,
       colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
-      summaryHeight,
+      summaryHeight
     );
     doc.rect(
       summaryStartX + colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
       yPos,
       colWidths.total,
-      summaryHeight,
+      summaryHeight
     );
 
     doc.setTextColor(255, 0, 0);
-    doc.text("Sconto:", pageWidth - margin - colWidths.total - 2, yPos + summaryHeight - 2, { align: "right" });
-    doc.text(`-${quoteData.sconto_percentuale}%`, pageWidth - margin - 2, yPos + summaryHeight - 2, { align: "right" });
+    doc.text("Sconto:", pageWidth - margin - colWidths.total - 2, yPos + summaryHeight - 2, {
+      align: "right",
+    });
+    doc.text(`-${quoteData.sconto_percentuale}%`, pageWidth - margin - 2, yPos + summaryHeight - 2, {
+      align: "right",
+    });
     doc.setTextColor(0, 0, 0);
 
     yPos += summaryHeight;
@@ -504,16 +570,18 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     summaryStartX,
     yPos,
     colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
-    summaryHeight,
+    summaryHeight
   );
   doc.rect(
     summaryStartX + colWidths.nr + colWidths.desc + colWidths.um + colWidths.qty + colWidths.price,
     yPos,
     colWidths.total,
-    summaryHeight,
+    summaryHeight
   );
 
-  doc.text("TOTALE:", pageWidth - margin - colWidths.total - 2, yPos + summaryHeight - 2, { align: "right" });
+  doc.text("TOTALE:", pageWidth - margin - colWidths.total - 2, yPos + summaryHeight - 2, {
+    align: "right",
+  });
   doc.text(`€ ${formatCurrency(quoteData.totale)}`, pageWidth - margin - 2, yPos + summaryHeight - 2, {
     align: "right",
   });
@@ -522,6 +590,16 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
 
   // Note
   if (quoteData.note) {
+    // Verifica spazio disponibile per le note
+    const noteHeaderHeight = 10;
+    const spaceAvailableForNotes = pageHeight - bottomMargin - yPos - noteHeaderHeight;
+
+    if (spaceAvailableForNotes < 10) {
+      // Se non c'è spazio, aggiungi una nuova pagina
+      doc.addPage();
+      yPos = topMargin;
+    }
+
     yPos += 10;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
@@ -530,12 +608,40 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     const noteLines = doc.splitTextToSize(quoteData.note, pageWidth - 2 * margin);
+    
+    // Calcola spazio necessario per le note
+    const noteHeight = noteLines.length * 4;
+    const spaceNeededForNotes = noteHeight + 5;
+    const spaceAvailableForNotesContent = pageHeight - bottomMargin - yPos;
+
+    if (spaceAvailableForNotesContent < spaceNeededForNotes) {
+      // Se le note non entrano, aggiungi una nuova pagina
+      doc.addPage();
+      yPos = topMargin;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("Note:", margin, yPos);
+      yPos += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+    }
+
     doc.text(noteLines, margin, yPos);
     yPos += noteLines.length * 4 + 5;
   }
 
   // Modalità pagamento
   if (quoteData.modalita_pagamento) {
+    // Verifica spazio disponibile per la modalità di pagamento
+    const paymentHeaderHeight = 10;
+    const spaceAvailableForPayment = pageHeight - bottomMargin - yPos - paymentHeaderHeight;
+
+    if (spaceAvailableForPayment < 10) {
+      // Se non c'è spazio, aggiungi una nuova pagina
+      doc.addPage();
+      yPos = topMargin;
+    }
+
     yPos += 5;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
@@ -543,11 +649,40 @@ export const generateQuotePDF = async (quoteData: QuoteData, settings: CompanySe
     yPos += 5;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.text(quoteData.modalita_pagamento, margin, yPos);
-    yPos += 10;
+    const paymentLines = doc.splitTextToSize(quoteData.modalita_pagamento, pageWidth - 2 * margin);
+    
+    // Calcola spazio necessario per la modalità di pagamento
+    const paymentHeight = paymentLines.length * 4;
+    const spaceNeededForPayment = paymentHeight + 10;
+    const spaceAvailableForPaymentContent = pageHeight - bottomMargin - yPos;
+
+    if (spaceAvailableForPaymentContent < spaceNeededForPayment) {
+      // Se la modalità di pagamento non entra, aggiungi una nuova pagina
+      doc.addPage();
+      yPos = topMargin;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("Modalità di pagamento:", margin, yPos);
+      yPos += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+    }
+
+    doc.text(paymentLines, margin, yPos);
+    yPos += paymentLines.length * 4 + 10;
   }
 
   // Firma
+  // Verifica spazio disponibile per la firma
+  const spaceNeededForSignature = 20;
+  const spaceAvailableForSignature = pageHeight - bottomMargin - yPos;
+
+  if (spaceAvailableForSignature < spaceNeededForSignature) {
+    // Se non c'è spazio, aggiungi una nuova pagina
+    doc.addPage();
+    yPos = topMargin;
+  }
+
   yPos += 5;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
