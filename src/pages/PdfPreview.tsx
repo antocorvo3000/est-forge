@@ -7,10 +7,11 @@ import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
 
-import { Worker, Viewer, ScrollMode } from "@react-pdf-viewer/core";
+import { Worker, Viewer, ScrollMode, SpecialZoomLevel } from "@react-pdf-viewer/core";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
 import { printPlugin } from "@react-pdf-viewer/print";
 import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
+import type { RenderViewer } from "@react-pdf-viewer/core";
 
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/zoom/lib/styles/index.css";
@@ -60,7 +61,7 @@ const PdfPreview = () => {
 
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState(SpecialZoomLevel.PageFit);
 
   const zoomPluginInstance = zoomPlugin();
   const { zoomTo } = zoomPluginInstance;
@@ -69,7 +70,7 @@ const PdfPreview = () => {
   const { print } = printPluginInstance;
 
   const pageNavigationPluginInstance = pageNavigationPlugin();
-  const { jumpToNextPage, jumpToPreviousPage } = pageNavigationPluginInstance;
+  const { jumpToPage } = pageNavigationPluginInstance;
 
   useEffect(() => {
     const data = location.state?.quoteData as QuoteData;
@@ -137,26 +138,36 @@ const PdfPreview = () => {
   };
 
   const handleZoomIn = () => {
-    const newScale = Math.min(scale + 0.25, 3);
-    setScale(newScale);
-    zoomTo(newScale);
+    if (typeof scale === "number") {
+      const newScale = Math.min(scale + 0.25, 3);
+      setScale(newScale);
+      zoomTo(newScale);
+    } else {
+      setScale(1.25);
+      zoomTo(1.25);
+    }
   };
 
   const handleZoomOut = () => {
-    const newScale = Math.max(0.5, scale - 0.25);
-    setScale(newScale);
-    zoomTo(newScale);
+    if (typeof scale === "number") {
+      const newScale = Math.max(0.5, scale - 0.25);
+      setScale(newScale);
+      zoomTo(newScale);
+    } else {
+      setScale(0.75);
+      zoomTo(0.75);
+    }
   };
 
   const handlePreviousPage = () => {
     if (currentPage > 0) {
-      jumpToPreviousPage();
+      jumpToPage(currentPage - 1);
     }
   };
 
   const handleNextPage = () => {
     if (currentPage < totalPages - 1) {
-      jumpToNextPage();
+      jumpToPage(currentPage + 1);
     }
   };
 
@@ -195,31 +206,11 @@ const PdfPreview = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex-1 glass rounded-2xl overflow-hidden flex flex-col min-h-0"
-            style={{
-              padding: 0,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center"
-            }}
           >
-            <div 
-              className="w-full h-full flex items-center justify-center"
-              style={{
-                overflow: "hidden",
-                backgroundColor: "transparent"
-              }}
-            >
+            <div className="w-full h-full flex items-center justify-center pdf-viewer-container">
               {pdfBlobUrl ? (
                 <Worker workerUrl={workerUrl}>
-                  <div 
-                    style={{ 
-                      width: "100%", 
-                      height: "100%",
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center"
-                    }}
-                  >
+                  <div className="pdf-viewer-wrapper">
                     <Viewer
                       fileUrl={pdfBlobUrl}
                       plugins={[
@@ -228,15 +219,20 @@ const PdfPreview = () => {
                         pageNavigationPluginInstance
                       ]}
                       scrollMode={ScrollMode.Page}
-                      defaultScale={1}
+                      defaultScale={SpecialZoomLevel.PageFit}
                       onDocumentLoad={(e) => {
                         setTotalPages(e.doc.numPages);
                         setCurrentPage(0);
                       }}
-                      onPageChange={(e) => setCurrentPage(e.currentPage)}
+                      onPageChange={(e) => {
+                        setCurrentPage(e.currentPage);
+                      }}
                       renderError={(error: Error) => (
-                        <div className="flex items-center justify-center h-full text-destructive">
-                          Errore caricamento PDF: {error.message}
+                        <div className="flex items-center justify-center h-full text-destructive p-4">
+                          <div className="text-center">
+                            <p className="font-semibold mb-2">Errore caricamento PDF</p>
+                            <p className="text-sm">{error.message}</p>
+                          </div>
                         </div>
                       )}
                     />
@@ -278,7 +274,7 @@ const PdfPreview = () => {
               variant="outline"
               className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
               title="Zoom Avanti"
-              disabled={scale >= 3}
+              disabled={typeof scale === "number" && scale >= 3}
             >
               <ZoomIn className="w-5 h-5" />
               <span className="text-[10px]">Zoom +</span>
@@ -289,7 +285,7 @@ const PdfPreview = () => {
               variant="outline"
               className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
               title="Zoom Indietro"
-              disabled={scale <= 0.5}
+              disabled={typeof scale === "number" && scale <= 0.5}
             >
               <ZoomOut className="w-5 h-5" />
               <span className="text-[10px]">Zoom -</span>
@@ -333,40 +329,72 @@ const PdfPreview = () => {
       </div>
 
       <style>{`
+        .pdf-viewer-container {
+          position: relative;
+          overflow: hidden;
+          background-color: transparent;
+        }
+
+        .pdf-viewer-wrapper {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
         .rpv-core__viewer {
           background-color: transparent !important;
           padding: 0 !important;
           overflow: hidden !important;
+          height: 100% !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
         }
 
         .rpv-core__inner-pages {
           background-color: transparent !important;
-          padding: 0 !important;
+          padding: 1rem !important;
           display: flex !important;
           justify-content: center !important;
           align-items: center !important;
+          overflow: hidden !important;
+        }
+
+        .rpv-core__inner-container {
+          overflow: hidden !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
         }
 
         .rpv-core__page-layer {
           background-color: white !important;
           box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
-          margin: 0 !important;
+          margin: 0 auto !important;
+        }
+
+        .rpv-core__text-layer {
+          opacity: 0.2 !important;
         }
 
         .rpv-core__arrow-button {
           display: none !important;
         }
 
-        .rpv-core__inner-pages--single {
-          overflow: hidden !important;
+        .rpv-core__canvas-layer {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
         }
 
         .rpv-core__canvas-layer canvas {
           display: block !important;
-        }
-
-        .rpv-core__inner-container {
-          overflow: hidden !important;
+          max-width: 100% !important;
+          max-height: 100% !important;
+          width: auto !important;
+          height: auto !important;
         }
       `}</style>
     </div>
