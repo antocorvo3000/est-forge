@@ -237,9 +237,11 @@ const PdfPreview = () => {
 
   // Imposta lo zoom iniziale per far stare la prima pagina intera nel viewer
   useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container || renderedPages.length === 0) return;
+  const container = scrollContainerRef.current;
+  if (!container || renderedPages.length === 0) return;
 
+  // usa requestAnimationFrame per essere sicuro che il layout sia calcolato
+  requestAnimationFrame(() => {
     const firstPage = renderedPages[0];
 
     const pageWidth = firstPage.width;
@@ -253,10 +255,12 @@ const PdfPreview = () => {
     const scaleX = containerWidth / pageWidth;
     const scaleY = containerHeight / pageHeight;
 
-    const fitScale = Math.min(scaleX, scaleY, 1); // evita di zoomare oltre 1x
+    const fitScale = Math.min(scaleX, scaleY);
 
     setZoomLevel(fitScale);
-  }, [renderedPages]);
+  });
+}, [renderedPages]);
+
 
   // Rileva pagina corrente durante lo scroll
   useEffect(() => {
@@ -294,51 +298,33 @@ const PdfPreview = () => {
     toast.success("PDF salvato con successo");
   };
 
-  // Stampa con iframe nascosto e piccoli delay per evitare pagine bianche o crash
-  const handlePrint = () => {
-    if (!pdfBlobUrl) return;
+const handlePrint = () => {
+  if (!pdfBlobUrl) return;
 
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "0";
-    iframe.src = pdfBlobUrl;
+  const printWindow = window.open(pdfBlobUrl, "_blank");
 
-    document.body.appendChild(iframe);
+  if (!printWindow) {
+    toast.error("Sblocca i popup per poter stampare");
+    return;
+  }
 
-    iframe.onload = () => {
-      try {
-        const win = iframe.contentWindow;
-        if (!win) {
-          toast.error("Impossibile accedere alla finestra di stampa");
-          if (iframe.parentNode) {
-            iframe.parentNode.removeChild(iframe);
-          }
-          return;
-        }
-
-        setTimeout(() => {
-          win.focus();
-          win.print();
-          toast.success("Invio alla stampante...");
-          setTimeout(() => {
-            if (iframe.parentNode) {
-              iframe.parentNode.removeChild(iframe);
-            }
-          }, 2000);
-        }, 300);
-      } catch (error) {
-        console.error("Errore stampa:", error);
-        toast.error("Errore durante la stampa");
-        if (iframe.parentNode) {
-          iframe.parentNode.removeChild(iframe);
-        }
-      }
-    };
+  const triggerPrint = () => {
+    try {
+      printWindow.focus();
+      printWindow.print();
+      toast.success("Invio alla stampante...");
+    } catch (error) {
+      console.error("Errore stampa:", error);
+      toast.error("Errore durante la stampa");
+    }
   };
+
+  // Alcuni browser caricano il PDF come plugin: aspetta un attimo prima di stampare
+  printWindow.addEventListener("load", () => {
+    setTimeout(triggerPrint, 400);
+  });
+};
+
 
   const handleZoomIn = () => {
     setZoomLevel((prev) => Math.min(prev + 0.25, 3));
