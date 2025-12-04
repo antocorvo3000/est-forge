@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Pencil, Trash2, Copy, Edit3, Info } from "lucide-react";
+import { motion } from "framer-motion";
+import { Pencil, Trash2, Copy, Edit3, FileText } from "lucide-react";
 import type { Quote } from "@/types/quote";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
@@ -11,17 +11,15 @@ interface QuoteItemProps {
   index: number;
   onEdit: (quote: Quote) => void;
   onDelete: (id: string) => void;
+  onViewPdf: () => void;
   fontSize?: number;
   isSelectionMode?: boolean;
   isSelected?: boolean;
   onSelect?: () => void;
-  showInfo?: boolean;
-  onInfoToggle?: () => void;
-  onMouseLeave?: () => void;
 }
 
 export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
-  ({ quote, index, onEdit, onDelete, fontSize = 1, isSelectionMode = false, isSelected = false, onSelect, showInfo = false, onInfoToggle, onMouseLeave }, ref) => {
+  ({ quote, index, onEdit, onDelete, onViewPdf, fontSize = 1, isSelectionMode = false, isSelected = false, onSelect }, ref) => {
   const navigate = useNavigate();
   const formatQuoteNumber = (num?: number) => {
     if (!num) return '00';
@@ -67,7 +65,6 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.background = 'white';
-        if (onMouseLeave) onMouseLeave();
       }}
       ref={ref}
     >
@@ -112,79 +109,53 @@ export const QuoteItem = forwardRef<HTMLDivElement, QuoteItemProps>(
       </div>
 
       <div className="flex items-center justify-end gap-3 sm:gap-4 min-w-0">
-        <AnimatePresence mode="wait">
-          {!isSelectionMode && !showInfo && (
-            <motion.div
-              key="buttons"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-              className="flex items-center gap-1 sm:gap-2 flex-shrink-0"
-              style={{ fontSize: `${fontSize}rem` }}
+        {!isSelectionMode && (
+          <div
+            className="flex items-center gap-1 sm:gap-2 flex-shrink-0"
+            style={{ fontSize: `${fontSize}rem` }}
+          >
+            <Button
+              size="sm"
+              onClick={onViewPdf}
+              className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5 bg-blue-600 text-white hover:brightness-110"
             >
-              <Button
-                size="sm"
-                onClick={onInfoToggle}
-                className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5 bg-blue-600 text-white hover:brightness-110"
-              >
-                <Info className="w-4 h-4" />
-                <span className="hidden sm:inline text-xs font-semibold">Info</span>
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => navigate("/clone-quote", { state: { quote } })}
-                className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5 bg-green-600 text-white hover:brightness-110"
-              >
-                <Copy className="w-4 h-4" />
-                <span className="hidden sm:inline text-xs font-semibold">Clona</span>
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => navigate("/edit-quote-number", { state: { quote } })}
-                className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5 bg-purple-600 text-white hover:brightness-110"
-              >
-                <Edit3 className="w-4 h-4" />
-                <span className="hidden sm:inline text-xs font-semibold">Modifica N°/Anno</span>
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => onEdit(quote)}
-                className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5 bg-primary text-white hover:brightness-110"
-              >
-                <Pencil className="w-4 h-4" />
-                <span className="hidden sm:inline text-xs font-semibold">Modifica</span>
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => onDelete(quote.id)}
-                className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5 bg-destructive text-white hover:brightness-110"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span className="hidden sm:inline text-xs font-semibold">Elimina</span>
-              </Button>
-            </motion.div>
-          )}
-
-          {!isSelectionMode && showInfo && (
-            <motion.div
-              key="info"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-              className="flex items-center gap-3 sm:gap-4 min-w-0 w-full"
-              style={{ fontSize: `${fontSize}rem` }}
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs font-semibold">Vedi</span>
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => navigate("/clone-quote", { state: { quote } })}
+              className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5 bg-green-600 text-white hover:brightness-110"
             >
-              <p className="text-sm font-semibold text-primary line-clamp-2 break-all overflow-hidden flex-1 min-w-0">
-                {quote.title || 'Nessun oggetto'}
-              </p>
-              <p className="text-sm font-bold text-foreground whitespace-nowrap flex-shrink-0">
-                {formatCurrency(quote.amount)}
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <Copy className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs font-semibold">Clona</span>
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => navigate("/edit-quote-number", { state: { quote } })}
+              className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5 bg-purple-600 text-white hover:brightness-110"
+            >
+              <Edit3 className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs font-semibold">Modifica N°/Anno</span>
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => onEdit(quote)}
+              className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5 bg-primary text-white hover:brightness-110"
+            >
+              <Pencil className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs font-semibold">Modifica</span>
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => onDelete(quote.id)}
+              className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5 bg-destructive text-white hover:brightness-110"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs font-semibold">Elimina</span>
+            </Button>
+          </div>
+        )}
       </div>
     </motion.div>
   );
