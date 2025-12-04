@@ -301,49 +301,40 @@ const PdfPreview = () => {
 const handlePrint = () => {
   if (!pdfBlobUrl) return;
 
-  // Crea un iframe nascosto
-  const iframe = document.createElement("iframe");
-  iframe.style.position = "fixed";
-  iframe.style.right = "0";
-  iframe.style.bottom = "0";
-  iframe.style.width = "0";
-  iframe.style.height = "0";
-  iframe.style.border = "0";
-  iframe.src = pdfBlobUrl;
+  // Se esiste già un iframe di stampa, riusalo
+  let iframe = document.getElementById("pdf-print-frame") as HTMLIFrameElement | null;
 
-  document.body.appendChild(iframe);
+  if (!iframe) {
+    iframe = document.createElement("iframe");
+    iframe.id = "pdf-print-frame";
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    document.body.appendChild(iframe);
+  }
+
+  iframe.src = pdfBlobUrl;
 
   iframe.onload = () => {
     try {
-      const win = iframe.contentWindow;
+      const win = iframe!.contentWindow;
       if (!win) {
         toast.error("Impossibile accedere alla finestra di stampa");
-        document.body.removeChild(iframe);
         return;
       }
 
-      // Piccolo delay per essere sicuri che il PDF sia pronto
-      setTimeout(() => {
-        win.focus();
-        win.print();
-        // NON chiudere subito: alcuni browser hanno bisogno che l'iframe resti vivo
-        setTimeout(() => {
-          if (iframe.parentNode) {
-            iframe.parentNode.removeChild(iframe);
-          }
-        }, 2000);
-      }, 300);
+      // Nessun timeout dopo print, nessuna rimozione iframe
+      win.focus();
+      win.print();
     } catch (error) {
       console.error("Errore stampa:", error);
       toast.error("Errore durante la stampa");
-      if (iframe.parentNode) {
-        iframe.parentNode.removeChild(iframe);
-      }
     }
   };
 };
-
-
 
   const handleZoomIn = () => {
     setZoomLevel((prev) => Math.min(prev + 0.25, 3));
