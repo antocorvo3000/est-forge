@@ -287,16 +287,56 @@ const PdfPreview = () => {
     return () => container.removeEventListener("scroll", handleScroll);
   }, [renderedPages]);
 
-  const handleSave = () => {
-    if (!pdfBlobUrl || !quoteData) return;
-    const link = document.createElement("a");
-    link.href = pdfBlobUrl;
-    link.download = `Preventivo_${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("PDF salvato con successo");
-  };
+  const handleSave = async () => {
+  if (!pdfBlobUrl || !quoteData) return;
+
+  try {
+    // Verifica se il browser supporta la File System Access API
+    if ('showSaveFilePicker' in window) {
+      // Usa la moderna API per mostrare sempre la finestra "Salva con nome"
+      const fileName = `Preventivo_${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}.pdf`;
+      
+      const handle = await (window as any).showSaveFilePicker({
+        suggestedName: fileName,
+        types: [
+          {
+            description: 'PDF Document',
+            accept: {
+              'application/pdf': ['.pdf'],
+            },
+          },
+        ],
+      });
+
+      // Scarica il blob e scrivilo nel file scelto
+      const response = await fetch(pdfBlobUrl);
+      const blob = await response.blob();
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+
+      toast.success("PDF salvato con successo");
+    } else {
+      // Fallback per browser che non supportano showSaveFilePicker
+      const link = document.createElement("a");
+      link.href = pdfBlobUrl;
+      link.download = `Preventivo_${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("PDF scaricato con successo");
+    }
+  } catch (err: any) {
+    // L'utente ha annullato la finestra di salvataggio
+    if (err.name === 'AbortError') {
+      console.log("Salvataggio annullato dall'utente");
+      return;
+    }
+    console.error("Errore durante il salvataggio:", err);
+    toast.error("Errore durante il salvataggio del PDF");
+  }
+};
+
 
 const handlePrint = () => {
   if (!pdfBlobUrl) return;
