@@ -45,21 +45,45 @@ interface RenderedPage {
   height: number;
 }
 
-// Carica pdf.js dinamicamente da CDN
-const loadPdfJs = async (): Promise<typeof import("pdfjs-dist") | null> => {
-  // Prova prima l'import del modulo installato
-  try {
-    const pdfjs = await import("pdfjs-dist");
-    pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-    return pdfjs;
-  } catch {
-    console.log("pdfjs-dist non installato, carico da CDN...");
-  }
+// Carica pdf.js dai file locali in /src/pages/
+const loadPdfJs = async (): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    // Controlla se già caricato
+    if ((window as any).pdfjsLib) {
+      resolve((window as any).pdfjsLib);
+      return;
+    }
 
-  // Fallback: carica da CDN
-  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = "/src/pages/pdf.min.js";
+    
+    script.onload = () => {
+      const pdfjsLib = (window as any).pdfjsLib;
+      if (pdfjsLib) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "/src/pages/pdf.worker.min.js";
+        resolve(pdfjsLib);
+      } else {
+        // Fallback a CDN se i file locali non funzionano
+        console.log("File locali non trovati, uso CDN...");
+        loadFromCDN().then(resolve).catch(reject);
+      }
+    };
+    
+    script.onerror = () => {
+      console.log("Errore caricamento file locali, uso CDN...");
+      loadFromCDN().then(resolve).catch(reject);
+    };
+    
+    document.head.appendChild(script);
+  });
+};
+
+// Fallback CDN
+const loadFromCDN = (): Promise<any> => {
+  return new Promise((resolve, reject) => {
     const script = document.createElement("script");
     script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    
     script.onload = () => {
       const pdfjsLib = (window as any).pdfjsLib;
       if (pdfjsLib) {
@@ -67,10 +91,11 @@ const loadPdfJs = async (): Promise<typeof import("pdfjs-dist") | null> => {
           "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
         resolve(pdfjsLib);
       } else {
-        resolve(null);
+        reject(new Error("pdfjsLib non trovato"));
       }
     };
-    script.onerror = () => resolve(null);
+    
+    script.onerror = () => reject(new Error("Errore caricamento CDN"));
     document.head.appendChild(script);
   });
 };
@@ -96,14 +121,15 @@ const PdfPreview = () => {
 
   // Carica pdf.js all'avvio
   useEffect(() => {
-    loadPdfJs().then((lib) => {
-      if (lib) {
+    loadPdfJs()
+      .then((lib) => {
         setPdfJsLib(lib);
         setPdfJsLoaded(true);
-      } else {
+      })
+      .catch((err) => {
+        console.error("Errore caricamento pdf.js:", err);
         toast.error("Impossibile caricare il visualizzatore PDF");
-      }
-    });
+      });
   }, []);
 
   // Renderizza tutte le pagine del PDF come immagini
@@ -123,7 +149,6 @@ const PdfPreview = () => {
         const page = await pdf.getPage(pageNum);
         const viewport = page.getViewport({ scale });
         
-        // Crea canvas offscreen
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
         
@@ -136,7 +161,6 @@ const PdfPreview = () => {
             viewport: viewport,
           }).promise;
           
-          // Converti in data URL (immagine)
           const dataUrl = canvas.toDataURL("image/png");
           
           pages.push({
@@ -466,7 +490,6 @@ const PdfPreview = () => {
           overflow: hidden !important;
         }
 
-        /* Scrollbar personalizzata */
         .pdf-scroll-container::-webkit-scrollbar {
           width: 10px;
         }
