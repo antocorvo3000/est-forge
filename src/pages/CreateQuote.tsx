@@ -485,7 +485,6 @@ const DEFAULT_NOTES_TEXT = `-Eventuali opere extra preventivo verranno quantific
 
     setIsSaved(true);
     toast.success("Preventivo creato con successo");
-    navigate("/");
   } catch (error) {
     console.error("Errore salvataggio:", error);
     toast.error("Errore durante il salvataggio");
