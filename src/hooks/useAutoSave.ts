@@ -15,6 +15,7 @@ interface AutoSaveData {
   sconto_valore?: number;
   totale?: number;
   note?: string;
+  note_type?: string;
   modalita_pagamento?: string;
   stato?: string;
   tipo_operazione: "creazione" | "modifica" | "clonazione";
