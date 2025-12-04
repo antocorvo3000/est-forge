@@ -157,8 +157,13 @@ const DEFAULT_NOTES_TEXT = `-Eventuali opere extra preventivo verranno quantific
 -Quanto non espressamente citato a Vs. carico.`;
 
 
-  const [paymentMethod, setPaymentMethod] = useState("da-concordare");
-  const [customPayment, setCustomPayment] = useState("");
+const [paymentEnabled, setPaymentEnabled] = useState(false);
+const [paymentType, setPaymentType] = useState("default");
+const [paymentMethod, setPaymentMethod] = useState("");
+const [customPayment, setCustomPayment] = useState("");
+
+const DEFAULT_PAYMENT_TEXT = "Acconto 30% inizio lavori saldo a fine lavori.";
+
 
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showPdfWarningDialog, setShowPdfWarningDialog] = useState(false);
@@ -218,6 +223,20 @@ const DEFAULT_NOTES_TEXT = `-Eventuali opere extra preventivo verranno quantific
     }
   }
 }, [notesEnabled, notesType]);
+
+useEffect(() => {
+  if (paymentEnabled) {
+    if (paymentType === "default") {
+      setPaymentMethod(DEFAULT_PAYMENT_TEXT);
+    } else if (paymentType === "default-personalizzato") {
+      if (paymentMethod === "" || paymentMethod === DEFAULT_PAYMENT_TEXT) {
+        setPaymentMethod(DEFAULT_PAYMENT_TEXT);
+      }
+    } else if (paymentType === "personalizzato") {
+      setPaymentMethod(customPayment);
+    }
+  }
+}, [paymentEnabled, paymentType]);
 
 
   useEffect(() => {
@@ -395,7 +414,8 @@ const DEFAULT_NOTES_TEXT = `-Eventuali opere extra preventivo verranno quantific
     totale: calculateTotal(),
     note: notesEnabled ? (notesType === "personalizzato" ? customNotes : notes) : undefined,
     note_type: notesEnabled ? notesType : undefined,
-    modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+        modalita_pagamento: paymentEnabled ? (paymentType === "personalizzato" ? customPayment : paymentMethod) : undefined,
+    payment_type: paymentEnabled ? paymentType : undefined,
     stato: "bozza",
     tipo_operazione: "creazione",
       righe: lines.map((line) => ({
@@ -461,7 +481,7 @@ const DEFAULT_NOTES_TEXT = `-Eventuali opere extra preventivo verranno quantific
   sconto_valore,
   totale,
   note: notesEnabled ? (notesType === "personalizzato" ? customNotes : notes) : null,
-  modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+    modalita_pagamento: paymentEnabled ? (paymentType === "personalizzato" ? customPayment : paymentMethod) : null,
 });
 
     const righe = lines
@@ -530,7 +550,7 @@ const saveQuoteAndGeneratePdf = async () => {
       sconto_valore,
       totale,
       note: notesEnabled ? (notesType === "personalizzato" ? customNotes : notes) : null,
-      modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+        modalita_pagamento: paymentEnabled ? (paymentType === "personalizzato" ? customPayment : paymentMethod) : null,
     });
 
     const righe = lines
@@ -597,7 +617,7 @@ const saveQuoteAndGeneratePdf = async () => {
       sconto_valore: discountEnabled ? calculateDiscount() : 0,
       totale: calculateTotal(),
       note: notesEnabled ? (notesType === "personalizzato" ? customNotes : notes) : undefined,
-      modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+        modalita_pagamento: paymentEnabled ? (paymentType === "personalizzato" ? customPayment : paymentMethod) : undefined,
       showDiscountInTable: showDiscountInTable,
     };
 
@@ -677,7 +697,7 @@ const saveQuoteAndGeneratePdf = async () => {
   sconto_valore: discountEnabled ? calculateDiscount() : 0,
   totale: calculateTotal(),
   note: notesEnabled ? (notesType === "personalizzato" ? customNotes : notes) : undefined,
-  modalita_pagamento: paymentMethod === "personalizzato" ? customPayment : paymentMethod,
+  modalita_pagamento: paymentEnabled ? (paymentType === "personalizzato" ? customPayment : paymentMethod) : undefined,
   showDiscountInTable: showDiscountInTable,
 };
 
@@ -1268,59 +1288,102 @@ const saveQuoteAndGeneratePdf = async () => {
 
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="glass rounded-2xl p-6 space-y-4 mb-6"
-        >
-          <div className="space-y-2">
-            <Label htmlFor="paymentMethod" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-              Modalità di Pagamento
-            </Label>
-            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger className="bg-white" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-white">
-                <SelectItem value="da-concordare" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-                  Da concordare
-                </SelectItem>
-                <SelectItem value="bonifico" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-                  Bonifico bancario
-                </SelectItem>
-                <SelectItem value="contanti" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-                  Contanti
-                </SelectItem>
-                <SelectItem value="assegno" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-                  Assegno
-                </SelectItem>
-                <SelectItem value="carta" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-                  Carta di credito
-                </SelectItem>
-                <SelectItem value="personalizzato" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-                  Personalizzato
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.6 }}
+  className="glass rounded-2xl p-6 space-y-4 mb-6"
+>
+  <div className="flex items-center gap-2">
+    <Checkbox
+      id="paymentEnabled"
+      checked={paymentEnabled}
+      onCheckedChange={(checked) => setPaymentEnabled(checked as boolean)}
+    />
+    <Label
+      htmlFor="paymentEnabled"
+      className="cursor-pointer"
+      style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+    >
+      Aggiungi Modalità di Pagamento
+    </Label>
+  </div>
 
-          {paymentMethod === "personalizzato" && (
-            <div className="space-y-2">
-              <Label htmlFor="customPayment" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
-                Modalità Personalizzata
-              </Label>
-              <Textarea
-                id="customPayment"
-                value={customPayment}
-                onChange={(e) => setCustomPayment(e.target.value)}
-                placeholder="Inserisci la modalità di pagamento personalizzata..."
-                rows={3}
-                className="bg-white"
-                style={{ fontSize: `${settings.fontSizeQuote}rem` }}
-              />
-            </div>
-          )}
-        </motion.div>
+  {paymentEnabled && (
+    <div className="pl-6 space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="paymentType" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+          Tipo Modalità
+        </Label>
+        <Select value={paymentType} onValueChange={setPaymentType}>
+          <SelectTrigger className="bg-white" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-white">
+            <SelectItem value="default" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+              Default (non modificabile)
+            </SelectItem>
+            <SelectItem value="default-personalizzato" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+              Default Modificabile
+            </SelectItem>
+            <SelectItem value="personalizzato" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+              Personalizzato
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {paymentType === "default" && (
+        <div className="space-y-2">
+          <Label htmlFor="paymentDefault" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+            Modalità Standard
+          </Label>
+          <Textarea
+            id="paymentDefault"
+            value={paymentMethod}
+            readOnly
+            rows={3}
+            className="bg-muted cursor-not-allowed"
+            style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+          />
+        </div>
+      )}
+
+      {paymentType === "default-personalizzato" && (
+        <div className="space-y-2">
+          <Label htmlFor="paymentDefaultCustom" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+            Modalità Standard (modificabile)
+          </Label>
+          <Textarea
+            id="paymentDefaultCustom"
+            value={paymentMethod}
+            onChange={(e) => setPaymentMethod(e.target.value)}
+            rows={3}
+            className="bg-white"
+            style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+          />
+        </div>
+      )}
+
+      {paymentType === "personalizzato" && (
+        <div className="space-y-2">
+          <Label htmlFor="customPayment" style={{ fontSize: `${settings.fontSizeQuote}rem` }}>
+            Modalità Personalizzata
+          </Label>
+          <Textarea
+            id="customPayment"
+            value={customPayment}
+            onChange={(e) => setCustomPayment(e.target.value)}
+            placeholder="Inserisci la modalità di pagamento personalizzata..."
+            rows={3}
+            className="bg-white"
+            style={{ fontSize: `${settings.fontSizeQuote}rem` }}
+          />
+        </div>
+      )}
+    </div>
+  )}
+</motion.div>
+
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
