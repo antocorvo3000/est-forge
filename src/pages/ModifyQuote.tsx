@@ -827,18 +827,20 @@ payment_type: paymentEnabled ? paymentType : undefined,
   };
 
   const handleViewPdf = async () => {
-    if (isCloning && !isCloningSaved) {
-      setShowPdfWarningDialog(true);
-      return;
-    }
+  if (isCloning && !isCloningSaved) {
+    setShowPdfWarningDialog(true);
+    return;
+  }
 
-    if (!isCloning && hasModifications()) {
-      setShowPdfWarningDialog(true);
-      return;
-    }
+  // Se è già stato salvato, non mostrare il popup
+  if (!isCloning && !isSaved && hasModifications()) {
+    setShowPdfWarningDialog(true);
+    return;
+  }
 
-    await proceedToGeneratePdf();
-  };
+  await proceedToGeneratePdf();
+};
+
 
   const proceedToGeneratePdf = async () => {
     if (!clientData || !clientData.name.trim()) {
