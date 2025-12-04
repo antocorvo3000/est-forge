@@ -209,44 +209,37 @@ const PdfPreview = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex-1 glass rounded-2xl p-4 flex flex-col min-h-0 overflow-hidden"
-            ref={viewerContainerRef}
           >
+            {/* Container PDF con dimensioni esplicite */}
             <div 
-              className="flex-1 min-h-0 w-full relative"
+              ref={viewerContainerRef}
+              className="pdf-viewer-container"
               style={{
-                overflow: 'hidden'
+                flex: 1,
+                minHeight: 0,
+                width: '100%',
+                height: '100%',
               }}
             >
-              <div
-                className="absolute inset-0"
-                style={{
-                  transform: `scale(${zoomLevel})`,
-                  transformOrigin: 'top center',
-                  transition: 'transform 0.2s ease-out',
-                }}
-              >
-                {pdfBlobUrl ? (
-                  <Worker workerUrl={workerUrl}>
-                    <div style={{ height: '100%', width: '100%' }}>
-                      <Viewer
-                        fileUrl={pdfBlobUrl}
-                        plugins={[zoomPluginInstance]}
-                        defaultScale={SpecialZoomLevel.PageFit}
-                        scrollMode={ScrollMode.Page}
-                        onDocumentLoad={(e) => {
-                          setTotalPages(e.doc.numPages);
-                          setCurrentPage(1);
-                        }}
-                        onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
-                      />
-                    </div>
-                  </Worker>
-                ) : (
-                  <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                    ⚠️ PDF non disponibile
-                  </div>
-                )}
-              </div>
+              {pdfBlobUrl ? (
+                <Worker workerUrl={workerUrl}>
+                  <Viewer
+                    fileUrl={pdfBlobUrl}
+                    plugins={[zoomPluginInstance]}
+                    defaultScale={SpecialZoomLevel.PageFit}
+                    scrollMode={ScrollMode.Page}
+                    onDocumentLoad={(e) => {
+                      setTotalPages(e.doc.numPages);
+                      setCurrentPage(1);
+                    }}
+                    onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
+                  />
+                </Worker>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                  ⚠️ PDF non disponibile
+                </div>
+              )}
             </div>
           </motion.div>
 
@@ -333,20 +326,31 @@ const PdfPreview = () => {
       </div>
 
       <style>{`
-        /* BLOCCA SCROLL PAGINA */
+        /* BLOCCA SCROLL PAGINA PRINCIPALE */
         body {
           overflow: hidden !important;
         }
 
-        /* Viewer principale - deve avere altezza definita */
-        .rpv-core__viewer {
+        /* Container principale del viewer - DEVE avere altezza */
+        .pdf-viewer-container {
+          display: flex;
+          flex-direction: column;
+        }
+
+        /* Viewer principale */
+        .pdf-viewer-container .rpv-core__viewer {
           height: 100% !important;
           width: 100% !important;
           background-color: transparent !important;
         }
 
-        /* VIEWER - scroll verticale con snap tra pagine */
-        .rpv-core__inner-pages {
+        /* Inner container */
+        .pdf-viewer-container .rpv-core__inner-container {
+          height: 100% !important;
+        }
+
+        /* SCROLL PAGES - scroll verticale con snap */
+        .pdf-viewer-container .rpv-core__inner-pages {
           background-color: transparent !important;
           padding: 1rem 0 !important;
           scroll-snap-type: y mandatory !important;
@@ -355,12 +359,11 @@ const PdfPreview = () => {
           flex-direction: column !important;
           align-items: center !important;
           gap: 1.5rem !important;
-          height: 100% !important;
           overflow-y: auto !important;
         }
 
-        /* CONTAINER SINGOLA PAGINA - FIT con pagina PDF */
-        .rpv-core__page-layer {
+        /* CONTAINER SINGOLA PAGINA - FIT */
+        .pdf-viewer-container .rpv-core__page-layer {
           scroll-snap-align: center !important;
           scroll-snap-stop: always !important;
           background-color: white !important;
@@ -372,29 +375,20 @@ const PdfPreview = () => {
           height: fit-content !important;
         }
 
-        /* Container interno FIT */
-        .rpv-core__inner-container {
-          width: 100% !important;
-          height: 100% !important;
-          display: flex !important;
-          justify-content: center !important;
-          align-items: flex-start !important;
-        }
-
         /* Canvas senza spazi */
-        .rpv-core__canvas-layer {
+        .pdf-viewer-container .rpv-core__canvas-layer {
           line-height: 0 !important;
           display: block !important;
         }
 
-        .rpv-core__canvas-layer canvas {
+        .pdf-viewer-container .rpv-core__canvas-layer canvas {
           display: block !important;
           margin: 0 !important;
           padding: 0 !important;
         }
 
         /* Text layer */
-        .rpv-core__text-layer {
+        .pdf-viewer-container .rpv-core__text-layer {
           line-height: 1 !important;
         }
 
@@ -404,21 +398,21 @@ const PdfPreview = () => {
         }
 
         /* Scrollbar personalizzata */
-        .rpv-core__inner-pages::-webkit-scrollbar {
+        .pdf-viewer-container .rpv-core__inner-pages::-webkit-scrollbar {
           width: 10px;
         }
 
-        .rpv-core__inner-pages::-webkit-scrollbar-track {
+        .pdf-viewer-container .rpv-core__inner-pages::-webkit-scrollbar-track {
           background: rgba(0, 0, 0, 0.05);
           border-radius: 5px;
         }
 
-        .rpv-core__inner-pages::-webkit-scrollbar-thumb {
+        .pdf-viewer-container .rpv-core__inner-pages::-webkit-scrollbar-thumb {
           background: rgba(0, 0, 0, 0.25);
           border-radius: 5px;
         }
 
-        .rpv-core__inner-pages::-webkit-scrollbar-thumb:hover {
+        .pdf-viewer-container .rpv-core__inner-pages::-webkit-scrollbar-thumb:hover {
           background: rgba(0, 0, 0, 0.35);
         }
       `}</style>
