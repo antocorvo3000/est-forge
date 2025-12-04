@@ -9,7 +9,6 @@ import type { CompanySettings } from "@/types/companySettings";
 
 import { Worker, Viewer, SpecialZoomLevel, ScrollMode } from "@react-pdf-viewer/core";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
-import type { RenderViewer, RenderPage } from "@react-pdf-viewer/core";
 
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/zoom/lib/styles/index.css";
@@ -112,11 +111,9 @@ const PdfPreview = () => {
     toast.success("PDF salvato con successo");
   };
 
-  // CORREZIONE 1: Stampa migliorata con iframe nascosto per stampa diretta
   const handlePrint = () => {
     if (!pdfBlobUrl) return;
     
-    // Crea un iframe nascosto per stampare direttamente
     const iframe = document.createElement('iframe');
     iframe.style.display = 'none';
     iframe.src = pdfBlobUrl;
@@ -128,14 +125,9 @@ const PdfPreview = () => {
         iframe.contentWindow?.focus();
         iframe.contentWindow?.print();
         toast.success("Invio alla stampante...");
-        
-        // Rimuovi iframe dopo 1 secondo
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-        }, 1000);
+        setTimeout(() => document.body.removeChild(iframe), 1000);
       } catch (error) {
         console.error("Errore stampa iframe:", error);
-        // Fallback al metodo originale
         const w = window.open(pdfBlobUrl, "_blank");
         if (!w) {
           toast.error("Sblocca i popup per stampare");
@@ -162,32 +154,26 @@ const PdfPreview = () => {
     zoomTo(newScale);
   };
 
-  // CORREZIONE 2: Navigazione manuale tra pagine con scroll programmatico
   const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      const targetPage = currentPage - 1;
-      scrollToPage(targetPage - 1); // -1 perché l'indice parte da 0
+    if (currentPage > 1 && viewerContainerRef.current) {
+      const targetPageIndex = currentPage - 2;
+      const pageElement = viewerContainerRef.current.querySelector(
+        `[data-testid="core__page-layer-${targetPageIndex}"]`
+      );
+      if (pageElement) {
+        pageElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     }
   };
 
   const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      const targetPage = currentPage + 1;
-      scrollToPage(targetPage - 1); // -1 perché l'indice parte da 0
-    }
-  };
-
-  const scrollToPage = (pageIndex: number) => {
-    // Trova l'elemento della pagina specifica nel DOM
-    const pageElement = document.querySelector(`[data-testid="core__page-layer-${pageIndex}"]`);
-    if (pageElement) {
-      pageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-      // Fallback: scroll calcolato in base all'altezza stimata
-      const container = viewerContainerRef.current?.querySelector('.rpv-core__inner-pages');
-      if (container) {
-        const pageHeight = container.scrollHeight / totalPages;
-        container.scrollTop = pageIndex * pageHeight;
+    if (currentPage < totalPages && viewerContainerRef.current) {
+      const targetPageIndex = currentPage;
+      const pageElement = viewerContainerRef.current.querySelector(
+        `[data-testid="core__page-layer-${targetPageIndex}"]`
+      );
+      if (pageElement) {
+        pageElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     }
   };
@@ -209,8 +195,8 @@ const PdfPreview = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 w-full flex-1 flex flex-col">
+    <div className="min-h-screen max-h-screen bg-background flex flex-col overflow-hidden">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 w-full flex-1 flex flex-col min-h-0">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -222,18 +208,17 @@ const PdfPreview = () => {
           <h1 className="text-3xl font-extrabold tracking-tight">Genera PDF Preventivo</h1>
         </motion.div>
 
-        <div className="flex gap-6 flex-1 min-h-0 overflow-hidden">
-          {/* CORREZIONE 3: Container adattivo con proporzioni corrette */}
+        <div className="flex gap-6 flex-1 min-h-0">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex-1 glass rounded-2xl p-4 flex flex-col min-h-0 overflow-hidden"
+            className="flex-1 glass rounded-2xl p-4 flex flex-col min-h-0"
             ref={viewerContainerRef}
           >
-            <div className="flex-1 min-h-0 w-full overflow-hidden">
+            <div className="flex-1 min-h-0 w-full relative">
               {pdfBlobUrl ? (
                 <Worker workerUrl={workerUrl}>
-                  <div className="h-full w-full pdf-viewer-container">
+                  <div className="absolute inset-0">
                     <Viewer
                       fileUrl={pdfBlobUrl}
                       plugins={[zoomPluginInstance]}
@@ -243,9 +228,7 @@ const PdfPreview = () => {
                         setTotalPages(e.doc.numPages);
                         setCurrentPage(1);
                       }}
-                      onPageChange={(e) => {
-                        setCurrentPage(e.currentPage + 1);
-                      }}
+                      onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
                     />
                   </div>
                 </Worker>
@@ -260,7 +243,7 @@ const PdfPreview = () => {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="w-20 flex flex-col gap-3"
+            className="w-20 flex flex-col gap-3 flex-shrink-0"
           >
             <Button
               onClick={handleSave}
@@ -304,7 +287,6 @@ const PdfPreview = () => {
 
             <div className="h-px bg-border my-2" />
 
-            {/* BOTTONI NAVIGAZIONE PAGINE */}
             <Button
               onClick={handlePreviousPage}
               variant="outline"
@@ -340,73 +322,79 @@ const PdfPreview = () => {
         </div>
       </div>
 
-      {/* CSS OTTIMIZZATO PER CONTAINER ADATTIVO */}
       <style>{`
-        .pdf-viewer-container {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
+        /* IMPEDISCE SCROLL DELLA PAGINA */
+        body {
+          overflow: hidden !important;
         }
 
+        /* Container PDF con dimensioni fisse */
         .rpv-core__viewer {
           background-color: transparent !important;
           height: 100% !important;
+          width: 100% !important;
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
+          overflow: hidden !important;
         }
 
+        /* Inner pages in modalità pagina singola */
         .rpv-core__inner-pages {
           background-color: transparent !important;
           display: flex !important;
-          flex-direction: column !important;
           align-items: center !important;
-          justify-content: flex-start !important;
-          padding: 1rem !important;
-          overflow-y: auto !important;
-          scroll-behavior: smooth !important;
+          justify-content: center !important;
+          overflow: hidden !important;
+          height: 100% !important;
+          width: 100% !important;
         }
 
         .rpv-core__inner-container {
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
+          overflow: auto !important;
+          max-height: 100% !important;
+          scroll-behavior: smooth !important;
         }
 
         .rpv-core__page-layer {
           background-color: white !important;
           box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
-          margin: 0.5rem auto !important;
+          margin: 0.5rem !important;
         }
 
-        /* Nasconde frecce di navigazione native */
+        /* Nasconde frecce native */
         .rpv-core__arrow-button {
           display: none !important;
         }
 
-        /* Ottimizzazione canvas per proporzioni corrette */
+        /* Canvas ottimizzato */
         .rpv-core__canvas-layer canvas {
           display: block !important;
           max-width: 100% !important;
+          max-height: 100% !important;
+          width: auto !important;
           height: auto !important;
         }
 
-        /* Scroll smooth per navigazione pagine */
-        .rpv-core__inner-pages::-webkit-scrollbar {
-          width: 8px;
+        /* Scrollbar personalizzata per inner container */
+        .rpv-core__inner-container::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
         }
 
-        .rpv-core__inner-pages::-webkit-scrollbar-track {
+        .rpv-core__inner-container::-webkit-scrollbar-track {
           background: transparent;
         }
 
-        .rpv-core__inner-pages::-webkit-scrollbar-thumb {
+        .rpv-core__inner-container::-webkit-scrollbar-thumb {
           background: rgba(0, 0, 0, 0.2);
-          border-radius: 4px;
+          border-radius: 3px;
         }
 
-        .rpv-core__inner-pages::-webkit-scrollbar-thumb:hover {
+        .rpv-core__inner-container::-webkit-scrollbar-thumb:hover {
           background: rgba(0, 0, 0, 0.3);
         }
       `}</style>
