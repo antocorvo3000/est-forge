@@ -45,10 +45,9 @@ interface RenderedPage {
   height: number;
 }
 
-// Carica pdf.js dai file locali in /src/pages/
+// Carica pdf.js dai file locali o CDN
 const loadPdfJs = async (): Promise<any> => {
   return new Promise((resolve, reject) => {
-    // Controlla se già caricato
     if ((window as any).pdfjsLib) {
       resolve((window as any).pdfjsLib);
       return;
@@ -63,7 +62,6 @@ const loadPdfJs = async (): Promise<any> => {
         pdfjsLib.GlobalWorkerOptions.workerSrc = "/src/pages/pdf.worker.min.js";
         resolve(pdfjsLib);
       } else {
-        // Fallback a CDN se i file locali non funzionano
         console.log("File locali non trovati, uso CDN...");
         loadFromCDN().then(resolve).catch(reject);
       }
@@ -78,7 +76,6 @@ const loadPdfJs = async (): Promise<any> => {
   });
 };
 
-// Fallback CDN
 const loadFromCDN = (): Promise<any> => {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
@@ -143,7 +140,7 @@ const PdfPreview = () => {
       setTotalPages(pdf.numPages);
       
       const pages: RenderedPage[] = [];
-      const scale = 2; // Alta risoluzione
+      const scale = 2;
       
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         const page = await pdf.getPage(pageNum);
@@ -242,7 +239,7 @@ const PdfPreview = () => {
       }
     };
 
-    container.addEventListener("scroll", handleScroll);
+    container.addEventListener("scroll", handleScroll, { passive: true });
     return () => container.removeEventListener("scroll", handleScroll);
   }, [renderedPages]);
 
@@ -293,7 +290,7 @@ const PdfPreview = () => {
     if (currentPage > 1) {
       pageRefs.current[currentPage - 2]?.scrollIntoView({ 
         behavior: "smooth", 
-        block: "center" 
+        block: "start" 
       });
     }
   };
@@ -302,7 +299,7 @@ const PdfPreview = () => {
     if (currentPage < totalPages) {
       pageRefs.current[currentPage]?.scrollIntoView({ 
         behavior: "smooth", 
-        block: "center" 
+        block: "start" 
       });
     }
   };
@@ -348,16 +345,12 @@ const PdfPreview = () => {
             animate={{ opacity: 1, x: 0 }}
             className="flex-1 glass rounded-2xl p-4 flex flex-col min-h-0 overflow-hidden"
           >
-            {/* UN SOLO scroll verticale */}
+            {/* Scroll FLUIDO - senza snap */}
             <div
               ref={scrollContainerRef}
               className="pdf-scroll-container flex-1 overflow-y-auto overflow-x-hidden"
-              style={{
-                scrollSnapType: "y mandatory",
-                scrollBehavior: "smooth",
-              }}
             >
-              {/* Wrapper ZOOM - scala container + pagine insieme */}
+              {/* Wrapper ZOOM */}
               <div
                 className="flex flex-col items-center gap-6 py-4"
                 style={{
@@ -367,13 +360,10 @@ const PdfPreview = () => {
                 }}
               >
                 {renderedPages.map((page, index) => (
-                  /* Container SINGOLA PAGINA - FIT esatto */
                   <div
                     key={page.pageNum}
                     ref={(el) => (pageRefs.current[index] = el)}
                     style={{
-                      scrollSnapAlign: "center",
-                      scrollSnapStop: "always",
                       width: "fit-content",
                       height: "fit-content",
                       backgroundColor: "white",
@@ -383,7 +373,6 @@ const PdfPreview = () => {
                       lineHeight: 0,
                     }}
                   >
-                    {/* Immagine della pagina - NO spazi */}
                     <img
                       src={page.dataUrl}
                       alt={`Pagina ${page.pageNum}`}
@@ -488,6 +477,12 @@ const PdfPreview = () => {
       <style>{`
         body {
           overflow: hidden !important;
+        }
+
+        /* Scroll FLUIDO */
+        .pdf-scroll-container {
+          scroll-behavior: smooth;
+          -webkit-overflow-scrolling: touch;
         }
 
         .pdf-scroll-container::-webkit-scrollbar {
