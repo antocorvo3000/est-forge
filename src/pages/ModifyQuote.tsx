@@ -241,28 +241,34 @@ useEffect(() => {
 
 
   useEffect(() => {
-    if (!loading && !isCloning && clientData) {
+  if (!loading && !isCloning && clientData) {
+    // Aspetta che tutti gli useEffect abbiano finito di aggiornare gli stati
+    const timer = setTimeout(() => {
       const initialState = JSON.stringify({
-  clientData,
-  workAddress,
-  workCity,
-  workProvince,
-  workZip,
-  subject,
-  lines,
-  discountEnabled,
-  discountValue,
-  showDiscountInTable,
-  notesEnabled,
-  notes,
-  paymentEnabled,
-  paymentType,
-  paymentMethod,
-  customPayment,
-});
+        clientData,
+        workAddress,
+        workCity,
+        workProvince,
+        workZip,
+        subject,
+        lines,
+        discountEnabled,
+        discountValue,
+        showDiscountInTable,
+        notesEnabled,
+        notes,
+        paymentEnabled,
+        paymentType,
+        paymentMethod,
+        customPayment,
+      });
       setInitialData(initialState);
-    }
-  }, [loading, isCloning]);
+      console.log("[ModifyQuote] initialData impostato:", initialState.substring(0, 100));
+    }, 500); // Delay per permettere a tutti gli stati di stabilizzarsi
+
+    return () => clearTimeout(timer);
+  }
+}, [loading, isCloning, clientData, workAddress, workCity, subject, lines, discountEnabled, notesEnabled, paymentEnabled]);
 
   useEffect(() => {
     if (!loading && lines.length > 0) {
