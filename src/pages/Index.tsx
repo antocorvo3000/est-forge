@@ -44,8 +44,8 @@ const Index = () => {
     quote?: Quote;
   }>({ open: false });
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [selectedQuotes, setSelectedQuotes] = useState<Set<string>>(new Set());
-  const [infoQuoteId, setInfoQuoteId] = useState<string | null>(null);
+const [selectedQuotes, setSelectedQuotes] = useState<Set<string>>(new Set());
+
 
   const filteredQuotes = useMemo(() => {
     const query = debouncedSearch.toLowerCase().trim();
@@ -189,6 +189,80 @@ const Index = () => {
     }
   };
 
+  const handleViewPdf = async (quote: Quote) => {
+  try {
+    // Carica i dati completi del preventivo
+    const data = await getQuoteById(quote.id);
+    
+    if (!data) {
+      toast.error("Impossibile caricare il preventivo");
+      return;
+    }
+
+    // Prepara i dati del cliente
+    const clientData = data.clienti ? {
+      nome: data.clienti.nome_ragione_sociale || "",
+      taxCode: data.clienti.codice_fiscale_piva || "",
+      address: data.clienti.via || "",
+      city: data.clienti.citta || "",
+      province: data.clienti.provincia || "",
+      zip: data.clienti.cap || "",
+      phone: data.clienti.telefono || "",
+      email: data.clienti.email || "",
+    } : {
+      nome: "",
+    };
+
+    // Prepara le righe del preventivo
+    const righe = data.righe_preventivo && data.righe_preventivo.length > 0
+      ? data.righe_preventivo
+          .sort((a: any, b: any) => a.numero_riga - b.numero_riga)
+          .map((riga: any) => ({
+            descrizione: riga.descrizione,
+            unita_misura: riga.unita_misura,
+            quantita: parseFloat(riga.quantita),
+            prezzo_unitario: parseFloat(riga.prezzo_unitario),
+            totale: parseFloat(riga.totale),
+          }))
+      : [];
+
+    // Prepara i dati per il PDF
+    const pdfData = {
+      numero: data.numero,
+      anno: data.anno,
+      oggetto: data.oggetto || "Preventivo",
+      cliente: clientData,
+      ubicazione: {
+        via: data.ubicazione_via || "",
+        citta: data.ubicazione_citta || "",
+        provincia: data.ubicazione_provincia || "",
+        cap: data.ubicazione_cap || "",
+      },
+      righe: righe,
+      subtotale: parseFloat(data.subtotale || 0),
+      sconto_percentuale: parseFloat(data.sconto_percentuale || 0),
+      sconto_valore: parseFloat(data.sconto_valore || 0),
+      totale: parseFloat(data.totale || 0),
+      note: data.note || undefined,
+      modalita_pagamento: data.modalita_pagamento || undefined,
+      showDiscountInTable: parseFloat(data.sconto_percentuale || 0) > 0 && parseFloat(data.sconto_valore || 0) > 0,
+    };
+
+    // Naviga direttamente alla preview PDF
+    navigate("/pdf-preview", {
+      state: {
+        quoteData: pdfData,
+        settings: settings,
+        from: "/",
+      },
+    });
+  } catch (error) {
+    console.error("Errore caricamento preventivo:", error);
+    toast.error("Errore durante il caricamento del preventivo");
+  }
+};
+
+
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 w-full flex-1 flex flex-col gap-3 sm:gap-4 overflow-hidden">
@@ -244,19 +318,17 @@ const Index = () => {
               <AnimatePresence mode="popLayout">
                 {filteredQuotes.map((quote, index) => (
                   <QuoteItem
-                    key={quote.id}
-                    quote={quote}
-                    index={index}
-                    onEdit={handleEditQuote}
-                    onDelete={() => handleDeleteClick(quote)}
-                    fontSize={settings.fontSizeList}
-                    isSelectionMode={isSelectionMode}
-                    isSelected={selectedQuotes.has(quote.id)}
-                    onSelect={() => handleSelectQuote(quote.id)}
-                    showInfo={infoQuoteId === quote.id}
-                    onInfoToggle={() => setInfoQuoteId(infoQuoteId === quote.id ? null : quote.id)}
-                    onMouseLeave={() => setInfoQuoteId(null)}
-                  />
+  key={quote.id}
+  quote={quote}
+  index={index}
+  onEdit={handleEditQuote}
+  onDelete={() => handleDeleteClick(quote)}
+  onViewPdf={() => handleViewPdf(quote)}
+  fontSize={settings.fontSizeList}
+  isSelectionMode={isSelectionMode}
+  isSelected={selectedQuotes.has(quote.id)}
+  onSelect={() => handleSelectQuote(quote.id)}
+/>
                 ))}
               </AnimatePresence>
             )}
