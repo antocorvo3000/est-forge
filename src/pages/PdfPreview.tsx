@@ -11,7 +11,6 @@ import { Worker, Viewer, SpecialZoomLevel, ScrollMode } from "@react-pdf-viewer/
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/zoom/lib/styles/index.css";
-import "./pdf-transparent.css";
 
 interface QuoteData {
   numero: number;
@@ -213,35 +212,41 @@ const PdfPreview = () => {
             ref={viewerContainerRef}
           >
             <div 
-              className="flex-1 min-h-0 w-full pdf-zoom-wrapper"
+              className="flex-1 min-h-0 w-full relative"
               style={{
-                transform: `scale(${zoomLevel})`,
-                transformOrigin: 'top center',
-                transition: 'transform 0.2s ease-out',
-                overflow: 'visible'
+                overflow: 'hidden'
               }}
             >
-              {pdfBlobUrl ? (
-                <Worker workerUrl={workerUrl}>
-                  <div className="h-full w-full">
-                    <Viewer
-                      fileUrl={pdfBlobUrl}
-                      plugins={[zoomPluginInstance]}
-                      defaultScale={SpecialZoomLevel.PageFit}
-                      scrollMode={ScrollMode.Page}
-                      onDocumentLoad={(e) => {
-                        setTotalPages(e.doc.numPages);
-                        setCurrentPage(1);
-                      }}
-                      onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
-                    />
+              <div
+                className="absolute inset-0"
+                style={{
+                  transform: `scale(${zoomLevel})`,
+                  transformOrigin: 'top center',
+                  transition: 'transform 0.2s ease-out',
+                }}
+              >
+                {pdfBlobUrl ? (
+                  <Worker workerUrl={workerUrl}>
+                    <div style={{ height: '100%', width: '100%' }}>
+                      <Viewer
+                        fileUrl={pdfBlobUrl}
+                        plugins={[zoomPluginInstance]}
+                        defaultScale={SpecialZoomLevel.PageFit}
+                        scrollMode={ScrollMode.Page}
+                        onDocumentLoad={(e) => {
+                          setTotalPages(e.doc.numPages);
+                          setCurrentPage(1);
+                        }}
+                        onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
+                      />
+                    </div>
+                  </Worker>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                    ⚠️ PDF non disponibile
                   </div>
-                </Worker>
-              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                  ⚠️ PDF non disponibile
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </motion.div>
 
@@ -333,9 +338,11 @@ const PdfPreview = () => {
           overflow: hidden !important;
         }
 
-        /* Zoom wrapper con overflow visible per permettere rendering */
-        .pdf-zoom-wrapper {
-          will-change: transform;
+        /* Viewer principale - deve avere altezza definita */
+        .rpv-core__viewer {
+          height: 100% !important;
+          width: 100% !important;
+          background-color: transparent !important;
         }
 
         /* VIEWER - scroll verticale con snap tra pagine */
@@ -348,6 +355,8 @@ const PdfPreview = () => {
           flex-direction: column !important;
           align-items: center !important;
           gap: 1.5rem !important;
+          height: 100% !important;
+          overflow-y: auto !important;
         }
 
         /* CONTAINER SINGOLA PAGINA - FIT con pagina PDF */
@@ -369,7 +378,7 @@ const PdfPreview = () => {
           height: 100% !important;
           display: flex !important;
           justify-content: center !important;
-          align-items: center !important;
+          align-items: flex-start !important;
         }
 
         /* Canvas senza spazi */
