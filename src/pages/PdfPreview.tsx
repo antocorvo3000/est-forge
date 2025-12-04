@@ -7,11 +7,6 @@ import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
 
-import * as pdfjsLib from "pdfjs-dist";
-
-// Worker URL
-pdfjsLib.GlobalWorkerOptions.workerSrc = "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
-
 interface QuoteData {
   numero: number;
   anno: number;
@@ -43,12 +38,42 @@ interface QuoteData {
   showDiscountInTable: boolean;
 }
 
-interface PageData {
+interface RenderedPage {
   pageNum: number;
-  canvas: HTMLCanvasElement | null;
+  dataUrl: string;
   width: number;
   height: number;
 }
+
+// Carica pdf.js dinamicamente da CDN
+const loadPdfJs = async (): Promise<typeof import("pdfjs-dist") | null> => {
+  // Prova prima l'import del modulo installato
+  try {
+    const pdfjs = await import("pdfjs-dist");
+    pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+    return pdfjs;
+  } catch {
+    console.log("pdfjs-dist non installato, carico da CDN...");
+  }
+
+  // Fallback: carica da CDN
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    script.onload = () => {
+      const pdfjsLib = (window as any).pdfjsLib;
+      if (pdfjsLib) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        resolve(pdfjsLib);
+      } else {
+        resolve(null);
+      }
+    };
+    script.onerror = () => resolve(null);
+    document.head.appendChild(script);
+  });
+};
 
 const PdfPreview = () => {
   const navigate = useNavigate();
@@ -62,25 +87,43 @@ const PdfPreview = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [zoomLevel, setZoomLevel] = useState(1);
-  const [pages, setPages] = useState<PageData[]>([]);
+  const [renderedPages, setRenderedPages] = useState<RenderedPage[]>([]);
+  const [pdfJsLoaded, setPdfJsLoaded] = useState(false);
+  const [pdfJsLib, setPdfJsLib] = useState<any>(null);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Carica e renderizza PDF
-  const loadPdf = useCallback(async (url: string) => {
+  // Carica pdf.js all'avvio
+  useEffect(() => {
+    loadPdfJs().then((lib) => {
+      if (lib) {
+        setPdfJsLib(lib);
+        setPdfJsLoaded(true);
+      } else {
+        toast.error("Impossibile caricare il visualizzatore PDF");
+      }
+    });
+  }, []);
+
+  // Renderizza tutte le pagine del PDF come immagini
+  const renderPdfPages = useCallback(async (url: string) => {
+    if (!pdfJsLib) return;
+
     try {
-      const loadingTask = pdfjsLib.getDocument(url);
+      const loadingTask = pdfJsLib.getDocument(url);
       const pdf = await loadingTask.promise;
       
       setTotalPages(pdf.numPages);
       
-      const pagesData: PageData[] = [];
+      const pages: RenderedPage[] = [];
+      const scale = 2; // Alta risoluzione
       
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 1.5 }); // Scala base per qualità
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale });
         
+        // Crea canvas offscreen
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
         
@@ -92,23 +135,26 @@ const PdfPreview = () => {
             canvasContext: context,
             viewport: viewport,
           }).promise;
+          
+          // Converti in data URL (immagine)
+          const dataUrl = canvas.toDataURL("image/png");
+          
+          pages.push({
+            pageNum,
+            dataUrl,
+            width: viewport.width,
+            height: viewport.height,
+          });
         }
-        
-        pagesData.push({
-          pageNum: i,
-          canvas: canvas,
-          width: viewport.width,
-          height: viewport.height,
-        });
       }
       
-      setPages(pagesData);
+      setRenderedPages(pages);
       setLoading(false);
     } catch (err) {
-      console.error("Errore caricamento PDF:", err);
-      toast.error("Errore durante il caricamento del PDF");
+      console.error("Errore rendering PDF:", err);
+      toast.error("Errore durante il rendering del PDF");
     }
-  }, []);
+  }, [pdfJsLib]);
 
   useEffect(() => {
     const data = location.state?.quoteData as QuoteData;
@@ -132,7 +178,6 @@ const PdfPreview = () => {
         const pdfBlob = new Blob([blob], { type: "application/pdf" });
         const url = URL.createObjectURL(pdfBlob);
         setPdfBlobUrl(url);
-        await loadPdf(url);
       } catch (err) {
         console.error("Errore generazione PDF:", err);
         toast.error("Errore durante la generazione del PDF");
@@ -143,9 +188,16 @@ const PdfPreview = () => {
     return () => {
       if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
     };
-  }, [location.state, navigate, loadPdf]);
+  }, [location.state, navigate]);
 
-  // Rileva pagina corrente durante lo scroll
+  // Renderizza quando pdf.js è caricato e il blob URL è pronto
+  useEffect(() => {
+    if (pdfJsLoaded && pdfBlobUrl) {
+      renderPdfPages(pdfBlobUrl);
+    }
+  }, [pdfJsLoaded, pdfBlobUrl, renderPdfPages]);
+
+  // Rileva pagina corrente durante scroll
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -168,7 +220,7 @@ const PdfPreview = () => {
 
     container.addEventListener("scroll", handleScroll);
     return () => container.removeEventListener("scroll", handleScroll);
-  }, [pages]);
+  }, [renderedPages]);
 
   const handleSave = () => {
     if (!pdfBlobUrl || !quoteData) return;
@@ -210,18 +262,12 @@ const PdfPreview = () => {
     };
   };
 
-  const handleZoomIn = () => {
-    setZoomLevel((prev) => Math.min(prev + 0.25, 3));
-  };
-
-  const handleZoomOut = () => {
-    setZoomLevel((prev) => Math.max(prev - 0.25, 0.5));
-  };
+  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 0.25, 3));
+  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 0.25, 0.5));
 
   const handlePreviousPage = () => {
     if (currentPage > 1) {
-      const targetPage = currentPage - 1;
-      pageRefs.current[targetPage - 1]?.scrollIntoView({ 
+      pageRefs.current[currentPage - 2]?.scrollIntoView({ 
         behavior: "smooth", 
         block: "center" 
       });
@@ -230,8 +276,7 @@ const PdfPreview = () => {
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
-      const targetPage = currentPage + 1;
-      pageRefs.current[targetPage - 1]?.scrollIntoView({ 
+      pageRefs.current[currentPage]?.scrollIntoView({ 
         behavior: "smooth", 
         block: "center" 
       });
@@ -247,7 +292,12 @@ const PdfPreview = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-lg">Generazione PDF in corso...</div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <div className="text-lg">
+            {!pdfJsLoaded ? "Caricamento visualizzatore..." : "Generazione PDF in corso..."}
+          </div>
+        </div>
       </div>
     );
   }
@@ -274,16 +324,16 @@ const PdfPreview = () => {
             animate={{ opacity: 1, x: 0 }}
             className="flex-1 glass rounded-2xl p-4 flex flex-col min-h-0 overflow-hidden"
           >
-            {/* Container con UN SOLO scroll verticale */}
+            {/* UN SOLO scroll verticale */}
             <div
               ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto overflow-x-hidden"
+              className="pdf-scroll-container flex-1 overflow-y-auto overflow-x-hidden"
               style={{
                 scrollSnapType: "y mandatory",
                 scrollBehavior: "smooth",
               }}
             >
-              {/* Wrapper per ZOOM - scala container + pagine insieme */}
+              {/* Wrapper ZOOM - scala container + pagine insieme */}
               <div
                 className="flex flex-col items-center gap-6 py-4"
                 style={{
@@ -292,12 +342,11 @@ const PdfPreview = () => {
                   transition: "transform 0.2s ease-out",
                 }}
               >
-                {pages.map((page, index) => (
+                {renderedPages.map((page, index) => (
                   /* Container SINGOLA PAGINA - FIT esatto */
                   <div
                     key={page.pageNum}
                     ref={(el) => (pageRefs.current[index] = el)}
-                    className="page-container"
                     style={{
                       scrollSnapAlign: "center",
                       scrollSnapStop: "always",
@@ -310,23 +359,18 @@ const PdfPreview = () => {
                       lineHeight: 0,
                     }}
                   >
-                    {/* Canvas renderizzato - NO spazi */}
-                    anvas
-                      ref={(canvasEl) => {
-                        if (canvasEl && page.canvas) {
-                          const ctx = canvasEl.getContext("2d");
-                          canvasEl.width = page.width;
-                          canvasEl.height = page.height;
-                          if (ctx) {
-                            ctx.drawImage(page.canvas, 0, 0);
-                          }
-                        }
-                      }}
+                    {/* Immagine della pagina - NO spazi */}
+                    <img
+                      src={page.dataUrl}
+                      alt={`Pagina ${page.pageNum}`}
                       style={{
                         display: "block",
+                        maxWidth: "100%",
+                        height: "auto",
                         margin: 0,
                         padding: 0,
                       }}
+                      draggable={false}
                     />
                   </div>
                 ))}
@@ -423,21 +467,21 @@ const PdfPreview = () => {
         }
 
         /* Scrollbar personalizzata */
-        .flex-1.overflow-y-auto::-webkit-scrollbar {
+        .pdf-scroll-container::-webkit-scrollbar {
           width: 10px;
         }
 
-        .flex-1.overflow-y-auto::-webkit-scrollbar-track {
+        .pdf-scroll-container::-webkit-scrollbar-track {
           background: rgba(0, 0, 0, 0.05);
           border-radius: 5px;
         }
 
-        .flex-1.overflow-y-auto::-webkit-scrollbar-thumb {
+        .pdf-scroll-container::-webkit-scrollbar-thumb {
           background: rgba(0, 0, 0, 0.25);
           border-radius: 5px;
         }
 
-        .flex-1.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+        .pdf-scroll-container::-webkit-scrollbar-thumb:hover {
           background: rgba(0, 0, 0, 0.35);
         }
       `}</style>
