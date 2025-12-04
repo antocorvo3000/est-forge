@@ -832,14 +832,27 @@ payment_type: paymentEnabled ? paymentType : undefined,
     return;
   }
 
-  // Se è già stato salvato, non mostrare il popup
-  if (!isCloning && !isSaved && hasModifications()) {
+  // Se è già stato salvato, genera direttamente il PDF
+  if (isSaved) {
+    await proceedToGeneratePdf();
+    return;
+  }
+
+  // Se è la prima apertura (initialData vuoto), non c'è nulla da salvare
+  if (initialData === "") {
+    await proceedToGeneratePdf();
+    return;
+  }
+
+  // Controlla se ci sono modifiche non salvate
+  if (!isCloning && hasModifications()) {
     setShowPdfWarningDialog(true);
     return;
   }
 
   await proceedToGeneratePdf();
 };
+
 
 
   const proceedToGeneratePdf = async () => {
