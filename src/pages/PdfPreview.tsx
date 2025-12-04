@@ -7,7 +7,7 @@ import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
 
-import { Worker, Viewer, SpecialZoomLevel, ScrollMode } from "@react-pdf-viewer/core";
+import { Worker, Viewer, SpecialZoomLevel } from "@react-pdf-viewer/core";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/zoom/lib/styles/index.css";
@@ -57,7 +57,6 @@ const PdfPreview = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [scale, setScale] = useState(1);
-  const [pdfDocument, setPdfDocument] = useState<any>(null);
 
   const zoomPluginInstance = zoomPlugin();
   const { zoomTo } = zoomPluginInstance;
@@ -111,14 +110,11 @@ const PdfPreview = () => {
 
   const handlePrint = () => {
     if (!pdfBlobUrl) return;
-    const printWindow = window.open(pdfBlobUrl, "_blank");
-    if (!printWindow) {
-      toast.error("Sblocca i popup per stampare");
-      return;
-    }
-    printWindow.addEventListener("load", () => {
-      printWindow.focus();
-      printWindow.print();
+    const w = window.open(pdfBlobUrl, "_blank");
+    if (!w) return toast.error("Sblocca i popup per stampare");
+    w.addEventListener("load", () => {
+      w.focus();
+      w.print();
     });
     toast.success("Invio alla stampante...");
   };
@@ -133,30 +129,6 @@ const PdfPreview = () => {
     const newScale = Math.max(0.5, scale - 0.25);
     setScale(newScale);
     zoomTo(newScale);
-  };
-
-  const handlePreviousPage = async () => {
-    if (currentPage > 1 && pdfDocument) {
-      const newPage = currentPage - 1;
-      setCurrentPage(newPage);
-      const container = document.querySelector('.rpv-core__inner-pages');
-      if (container) {
-        const pageElement = container.querySelector(`[data-testid="core__page-layer-${newPage - 1}"]`);
-        pageElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
-  };
-
-  const handleNextPage = async () => {
-    if (currentPage < totalPages && pdfDocument) {
-      const newPage = currentPage + 1;
-      setCurrentPage(newPage);
-      const container = document.querySelector('.rpv-core__inner-pages');
-      if (container) {
-        const pageElement = container.querySelector(`[data-testid="core__page-layer-${newPage - 1}"]`);
-        pageElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
   };
 
   const handleGoBack = (e: React.MouseEvent) => {
@@ -178,6 +150,7 @@ const PdfPreview = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 w-full flex-1 flex flex-col">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -190,6 +163,7 @@ const PdfPreview = () => {
         </motion.div>
 
         <div className="flex gap-6 flex-1 min-h-0 overflow-hidden">
+          {/* 📄 Widget viewer */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -203,11 +177,7 @@ const PdfPreview = () => {
                       fileUrl={pdfBlobUrl}
                       plugins={[zoomPluginInstance]}
                       defaultScale={SpecialZoomLevel.PageFit}
-                      scrollMode={ScrollMode.Page}
-                      onDocumentLoad={(e) => {
-                        setTotalPages(e.doc.numPages);
-                        setPdfDocument(e.doc);
-                      }}
+                      onDocumentLoad={(e) => setTotalPages(e.doc.numPages)}
                       onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
                     />
                   </div>
@@ -220,6 +190,7 @@ const PdfPreview = () => {
             </div>
           </motion.div>
 
+          {/* 🎛 Control panel */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -246,53 +217,29 @@ const PdfPreview = () => {
             <Button
               onClick={handleZoomIn}
               variant="outline"
-              className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
-              title="Zoom Avanti"
+              className="h-24 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
+              title="Zoom In"
             >
               <ZoomIn className="w-5 h-5" />
-              <span className="text-[10px]">Zoom +</span>
+              <span>Zoom avanti</span>
             </Button>
 
             <Button
               onClick={handleZoomOut}
               variant="outline"
-              className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
-              title="Zoom Indietro"
+              className="h-24 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
+              title="Zoom Out"
             >
               <ZoomOut className="w-5 h-5" />
-              <span className="text-[10px]">Zoom -</span>
-            </Button>
-
-            <div className="h-px bg-border my-2" />
-
-            <Button
-              onClick={handlePreviousPage}
-              variant="outline"
-              className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
-              title="Pagina Precedente"
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="w-5 h-5" />
-              <span className="text-[10px]">Prec</span>
-            </Button>
-
-            <Button
-              onClick={handleNextPage}
-              variant="outline"
-              className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
-              title="Pagina Successiva"
-              disabled={currentPage === totalPages}
-            >
-              <ChevronRight className="w-5 h-5" />
-              <span className="text-[10px]">Succ</span>
+              <span>Zoom indietro</span>
             </Button>
 
             <Button
               variant="outline"
               className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs cursor-default pointer-events-none"
             >
-              <span className="font-semibold text-[10px]">Pagina</span>
-              <span className="text-[11px] font-bold">
+              <span className="font-semibold">Pagina</span>
+              <span>
                 {currentPage} / {totalPages}
               </span>
             </Button>
