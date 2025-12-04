@@ -195,7 +195,7 @@ const PdfPreview = () => {
   }
 
   return (
-    <div className="min-h-screen max-h-screen bg-background flex flex-col overflow-hidden">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 w-full flex-1 flex flex-col min-h-0">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -215,10 +215,10 @@ const PdfPreview = () => {
             className="flex-1 glass rounded-2xl p-4 flex flex-col min-h-0"
             ref={viewerContainerRef}
           >
-            <div className="flex-1 min-h-0 w-full relative">
+            <div className="flex-1 min-h-0 w-full">
               {pdfBlobUrl ? (
                 <Worker workerUrl={workerUrl}>
-                  <div className="absolute inset-0">
+                  <div className="h-full w-full">
                     <Viewer
                       fileUrl={pdfBlobUrl}
                       plugins={[zoomPluginInstance]}
@@ -323,46 +323,38 @@ const PdfPreview = () => {
       </div>
 
       <style>{`
-        /* IMPEDISCE SCROLL DELLA PAGINA */
+        /* IMPEDISCE SCROLL DELLA PAGINA PRINCIPALE */
         body {
           overflow: hidden !important;
         }
 
-        /* Container PDF con dimensioni fisse */
+        /* Viewer occupa tutto lo spazio disponibile */
         .rpv-core__viewer {
           background-color: transparent !important;
           height: 100% !important;
           width: 100% !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          overflow: hidden !important;
         }
 
-        /* Inner pages in modalità pagina singola */
+        /* Container delle pagine - DEVE essere visibile */
         .rpv-core__inner-pages {
           background-color: transparent !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          overflow: hidden !important;
+          overflow-y: auto !important;
+          overflow-x: hidden !important;
           height: 100% !important;
-          width: 100% !important;
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: center !important;
+          scroll-behavior: smooth !important;
         }
 
         .rpv-core__inner-container {
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          overflow: auto !important;
-          max-height: 100% !important;
-          scroll-behavior: smooth !important;
+          width: 100% !important;
         }
 
         .rpv-core__page-layer {
           background-color: white !important;
           box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
-          margin: 0.5rem !important;
+          margin: 0.5rem auto !important;
         }
 
         /* Nasconde frecce native */
@@ -373,28 +365,24 @@ const PdfPreview = () => {
         /* Canvas ottimizzato */
         .rpv-core__canvas-layer canvas {
           display: block !important;
-          max-width: 100% !important;
-          max-height: 100% !important;
-          width: auto !important;
-          height: auto !important;
         }
 
-        /* Scrollbar personalizzata per inner container */
-        .rpv-core__inner-container::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
+        /* Scrollbar personalizzata */
+        .rpv-core__inner-pages::-webkit-scrollbar {
+          width: 8px;
         }
 
-        .rpv-core__inner-container::-webkit-scrollbar-track {
-          background: transparent;
+        .rpv-core__inner-pages::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.05);
+          border-radius: 4px;
         }
 
-        .rpv-core__inner-container::-webkit-scrollbar-thumb {
+        .rpv-core__inner-pages::-webkit-scrollbar-thumb {
           background: rgba(0, 0, 0, 0.2);
-          border-radius: 3px;
+          border-radius: 4px;
         }
 
-        .rpv-core__inner-container::-webkit-scrollbar-thumb:hover {
+        .rpv-core__inner-pages::-webkit-scrollbar-thumb:hover {
           background: rgba(0, 0, 0, 0.3);
         }
       `}</style>
