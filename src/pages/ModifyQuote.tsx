@@ -808,29 +808,44 @@ payment_type: paymentEnabled ? paymentType : undefined,
   };
 
   const hasModifications = () => {
-    if (isCloning) return false;
+  if (isCloning) return false;
+  
+  // Se initialData è vuoto, significa che non abbiamo ancora stabilizzato lo stato
+  if (initialData === "") {
+    return false;
+  }
 
-    const currentState = JSON.stringify({
-  clientData,
-  workAddress,
-  workCity,
-  workProvince,
-  workZip,
-  subject,
-  lines,
-  discountEnabled,
-  discountValue,
-  showDiscountInTable,
-  notesEnabled,
-  notes,
-  paymentEnabled,
-  paymentType,
-  paymentMethod,
-  customPayment,
-});
+  const currentState = JSON.stringify({
+    clientData,
+    workAddress,
+    workCity,
+    workProvince,
+    workZip,
+    subject,
+    lines,
+    discountEnabled,
+    discountValue,
+    showDiscountInTable,
+    notesEnabled,
+    notes,
+    paymentEnabled,
+    paymentType,
+    paymentMethod,
+    customPayment,
+  });
 
-    return initialData !== currentState;
-  };
+  const hasChanged = initialData !== currentState;
+  
+  // Debug: mostra cosa è cambiato
+  if (hasChanged) {
+    console.log("[ModifyQuote] Modifiche rilevate");
+    console.log("Initial:", initialData.substring(0, 200));
+    console.log("Current:", currentState.substring(0, 200));
+  }
+
+  return hasChanged;
+};
+
 
   const handleViewPdf = async () => {
   if (isCloning && !isCloningSaved) {
