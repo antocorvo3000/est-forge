@@ -1,7 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Download, Printer, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  Printer,
+  ZoomIn,
+  ZoomOut,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
@@ -21,7 +29,12 @@ interface QuoteData {
     phone?: string;
     email?: string;
   };
-  ubicazione: { via: string; citta: string; provincia: string; cap: string };
+  ubicazione: {
+    via: string;
+    citta: string;
+    provincia: string;
+    cap: string;
+  };
   righe: Array<{
     descrizione: string;
     unita_misura: string;
@@ -45,7 +58,7 @@ interface RenderedPage {
   height: number;
 }
 
-// Carica pdf.js dai file locali o CDN
+// Carica pdf.js dai file locali o, in fallback, da CDN
 const loadPdfJs = async (): Promise<any> => {
   return new Promise((resolve, reject) => {
     if ((window as any).pdfjsLib) {
@@ -55,7 +68,7 @@ const loadPdfJs = async (): Promise<any> => {
 
     const script = document.createElement("script");
     script.src = "/src/pages/pdf.min.js";
-    
+
     script.onload = () => {
       const pdfjsLib = (window as any).pdfjsLib;
       if (pdfjsLib) {
@@ -66,12 +79,12 @@ const loadPdfJs = async (): Promise<any> => {
         loadFromCDN().then(resolve).catch(reject);
       }
     };
-    
+
     script.onerror = () => {
       console.log("Errore caricamento file locali, uso CDN...");
       loadFromCDN().then(resolve).catch(reject);
     };
-    
+
     document.head.appendChild(script);
   });
 };
@@ -80,18 +93,18 @@ const loadFromCDN = (): Promise<any> => {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
     script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-    
+
     script.onload = () => {
       const pdfjsLib = (window as any).pdfjsLib;
       if (pdfjsLib) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
           "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
         resolve(pdfjsLib);
       } else {
         reject(new Error("pdfjsLib non trovato"));
       }
     };
-    
+
     script.onerror = () => reject(new Error("Errore caricamento CDN"));
     document.head.appendChild(script);
   });
@@ -130,53 +143,57 @@ const PdfPreview = () => {
   }, []);
 
   // Renderizza tutte le pagine del PDF come immagini
-  const renderPdfPages = useCallback(async (url: string) => {
-    if (!pdfJsLib) return;
+  const renderPdfPages = useCallback(
+    async (url: string) => {
+      if (!pdfJsLib) return;
 
-    try {
-      const loadingTask = pdfJsLib.getDocument(url);
-      const pdf = await loadingTask.promise;
-      
-      setTotalPages(pdf.numPages);
-      
-      const pages: RenderedPage[] = [];
-      const scale = 2;
-      
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        const page = await pdf.getPage(pageNum);
-        const viewport = page.getViewport({ scale });
-        
-        const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d");
-        
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        
-        if (context) {
-          await page.render({
-            canvasContext: context,
-            viewport: viewport,
-          }).promise;
-          
-          const dataUrl = canvas.toDataURL("image/png");
-          
-          pages.push({
-            pageNum,
-            dataUrl,
-            width: viewport.width,
-            height: viewport.height,
-          });
+      try {
+        const loadingTask = pdfJsLib.getDocument(url);
+        const pdf = await loadingTask.promise;
+
+        setTotalPages(pdf.numPages);
+
+        const pages: RenderedPage[] = [];
+        const scale = 2;
+
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const viewport = page.getViewport({ scale });
+
+          const canvas = document.createElement("canvas");
+          const context = canvas.getContext("2d");
+
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+
+          if (context) {
+            await page.render({
+              canvasContext: context,
+              viewport: viewport,
+            }).promise;
+
+            const dataUrl = canvas.toDataURL("image/png");
+
+            pages.push({
+              pageNum,
+              dataUrl,
+              width: viewport.width,
+              height: viewport.height,
+            });
+          }
         }
-      }
-      
-      setRenderedPages(pages);
-      setLoading(false);
-    } catch (err) {
-      console.error("Errore rendering PDF:", err);
-      toast.error("Errore durante il rendering del PDF");
-    }
-  }, [pdfJsLib]);
 
+        setRenderedPages(pages);
+        setLoading(false);
+      } catch (err) {
+        console.error("Errore rendering PDF:", err);
+        toast.error("Errore durante il rendering del PDF");
+      }
+    },
+    [pdfJsLib]
+  );
+
+  // Recupera i dati dal navigation state, genera il PDF e crea il blob URL
   useEffect(() => {
     const data = location.state?.quoteData as QuoteData;
     const companySettings = location.state?.settings as CompanySettings;
@@ -211,14 +228,37 @@ const PdfPreview = () => {
     };
   }, [location.state, navigate]);
 
-  // Renderizza quando pdf.js è caricato e il blob URL è pronto
+  // Quando pdf.js è caricato e il blob URL è pronto, renderizza le pagine
   useEffect(() => {
     if (pdfJsLoaded && pdfBlobUrl) {
       renderPdfPages(pdfBlobUrl);
     }
   }, [pdfJsLoaded, pdfBlobUrl, renderPdfPages]);
 
-  // Rileva pagina corrente durante scroll
+  // Imposta lo zoom iniziale per far stare la prima pagina intera nel viewer
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container || renderedPages.length === 0) return;
+
+    const firstPage = renderedPages[0];
+
+    const pageWidth = firstPage.width;
+    const pageHeight = firstPage.height;
+
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+
+    if (!pageWidth || !pageHeight || !containerWidth || !containerHeight) return;
+
+    const scaleX = containerWidth / pageWidth;
+    const scaleY = containerHeight / pageHeight;
+
+    const fitScale = Math.min(scaleX, scaleY, 1); // evita di zoomare oltre 1x
+
+    setZoomLevel(fitScale);
+  }, [renderedPages]);
+
+  // Rileva pagina corrente durante lo scroll
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -245,68 +285,90 @@ const PdfPreview = () => {
 
   const handleSave = () => {
     if (!pdfBlobUrl || !quoteData) return;
-    const a = document.createElement("a");
-    a.href = pdfBlobUrl;
-    a.download = `Preventivo_${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    const link = document.createElement("a");
+    link.href = pdfBlobUrl;
+    link.download = `Preventivo_${quoteData.numero.toString().padStart(2, "0")}-${quoteData.anno}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     toast.success("PDF salvato con successo");
   };
 
+  // Stampa con iframe nascosto e piccoli delay per evitare pagine bianche o crash
   const handlePrint = () => {
     if (!pdfBlobUrl) return;
-    
+
     const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
     iframe.src = pdfBlobUrl;
+
     document.body.appendChild(iframe);
-    
+
     iframe.onload = () => {
       try {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-        toast.success("Invio alla stampante...");
-        setTimeout(() => document.body.removeChild(iframe), 1000);
-      } catch {
-        const w = window.open(pdfBlobUrl, "_blank");
-        if (!w) {
-          toast.error("Sblocca i popup per stampare");
-        } else {
-          w.addEventListener("load", () => {
-            w.focus();
-            w.print();
-          });
+        const win = iframe.contentWindow;
+        if (!win) {
+          toast.error("Impossibile accedere alla finestra di stampa");
+          if (iframe.parentNode) {
+            iframe.parentNode.removeChild(iframe);
+          }
+          return;
         }
-        document.body.removeChild(iframe);
+
+        setTimeout(() => {
+          win.focus();
+          win.print();
+          toast.success("Invio alla stampante...");
+          setTimeout(() => {
+            if (iframe.parentNode) {
+              iframe.parentNode.removeChild(iframe);
+            }
+          }, 2000);
+        }, 300);
+      } catch (error) {
+        console.error("Errore stampa:", error);
+        toast.error("Errore durante la stampa");
+        if (iframe.parentNode) {
+          iframe.parentNode.removeChild(iframe);
+        }
       }
     };
   };
 
-  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 0.25, 3));
-  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 0.25, 0.5));
+  const handleZoomIn = () => {
+    setZoomLevel((prev) => Math.min(prev + 0.25, 3));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel((prev) => Math.max(prev - 0.25, 0.5));
+  };
 
   const handlePreviousPage = () => {
     if (currentPage > 1) {
-      pageRefs.current[currentPage - 2]?.scrollIntoView({ 
-        behavior: "smooth", 
-        block: "start" 
+      pageRefs.current[currentPage - 2]?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
       });
     }
   };
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
-      pageRefs.current[currentPage]?.scrollIntoView({ 
-        behavior: "smooth", 
-        block: "start" 
+      pageRefs.current[currentPage]?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
       });
     }
   };
 
-  const handleGoBack = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleGoBack = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
     navigate(returnPath, { replace: true });
   };
 
@@ -345,12 +407,10 @@ const PdfPreview = () => {
             animate={{ opacity: 1, x: 0 }}
             className="flex-1 glass rounded-2xl p-4 flex flex-col min-h-0 overflow-hidden"
           >
-            {/* Scroll FLUIDO - senza snap */}
             <div
               ref={scrollContainerRef}
               className="pdf-scroll-container flex-1 overflow-y-auto overflow-x-hidden"
             >
-              {/* Wrapper ZOOM */}
               <div
                 className="flex flex-col items-center gap-6 py-4"
                 style={{
@@ -362,7 +422,7 @@ const PdfPreview = () => {
                 {renderedPages.map((page, index) => (
                   <div
                     key={page.pageNum}
-                    ref={(el) => (pageRefs.current[index] = el)}
+                    ref={(element) => (pageRefs.current[index] = element)}
                     style={{
                       width: "fit-content",
                       height: "fit-content",
@@ -479,7 +539,6 @@ const PdfPreview = () => {
           overflow: hidden !important;
         }
 
-        /* Scroll FLUIDO */
         .pdf-scroll-container {
           scroll-behavior: smooth;
           -webkit-overflow-scrolling: touch;
