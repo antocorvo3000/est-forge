@@ -7,7 +7,7 @@ import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
 
-import { Worker, Viewer, SpecialZoomLevel, ScrollMode } from "@react-pdf-viewer/core";
+import { Worker, Viewer, ScrollMode } from "@react-pdf-viewer/core";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
 
 import "@react-pdf-viewer/core/lib/styles/index.css";
@@ -57,9 +57,10 @@ const PdfPreview = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [scale, setScale] = useState(1);
+  const [zoomLevel, setZoomLevel] = useState(1);
   
   const viewerContainerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const zoomPluginInstance = zoomPlugin();
   const { zoomTo } = zoomPluginInstance;
@@ -143,38 +144,45 @@ const PdfPreview = () => {
   };
 
   const handleZoomIn = () => {
-    const newScale = Math.min(scale + 0.25, 3);
-    setScale(newScale);
-    zoomTo(newScale);
+    const newZoom = Math.min(zoomLevel + 0.25, 3);
+    setZoomLevel(newZoom);
+    zoomTo(newZoom);
   };
 
   const handleZoomOut = () => {
-    const newScale = Math.max(0.5, scale - 0.25);
-    setScale(newScale);
-    zoomTo(newScale);
+    const newZoom = Math.max(0.5, zoomLevel - 0.25);
+    setZoomLevel(newZoom);
+    zoomTo(newZoom);
+  };
+
+  const scrollToPage = (pageNumber: number) => {
+    if (!scrollContainerRef.current) return;
+    
+    const pageIndex = pageNumber - 1;
+    const pageElements = scrollContainerRef.current.querySelectorAll('.pdf-page-container');
+    
+    if (pageElements[pageIndex]) {
+      pageElements[pageIndex].scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'nearest',
+        inline: 'center'
+      });
+    }
   };
 
   const handlePreviousPage = () => {
-    if (currentPage > 1 && viewerContainerRef.current) {
-      const targetPageIndex = currentPage - 2;
-      const pageElement = viewerContainerRef.current.querySelector(
-        `[data-testid="core__page-layer-${targetPageIndex}"]`
-      );
-      if (pageElement) {
-        pageElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
+    if (currentPage > 1) {
+      const newPage = currentPage - 1;
+      setCurrentPage(newPage);
+      scrollToPage(newPage);
     }
   };
 
   const handleNextPage = () => {
-    if (currentPage < totalPages && viewerContainerRef.current) {
-      const targetPageIndex = currentPage;
-      const pageElement = viewerContainerRef.current.querySelector(
-        `[data-testid="core__page-layer-${targetPageIndex}"]`
-      );
-      if (pageElement) {
-        pageElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
+    if (currentPage < totalPages) {
+      const newPage = currentPage + 1;
+      setCurrentPage(newPage);
+      scrollToPage(newPage);
     }
   };
 
@@ -215,14 +223,28 @@ const PdfPreview = () => {
             className="flex-1 glass rounded-2xl p-4 flex flex-col min-h-0"
             ref={viewerContainerRef}
           >
-            <div className="flex-1 min-h-0 w-full">
+            <div 
+              className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden pdf-scroll-container"
+              ref={scrollContainerRef}
+              style={{
+                scrollSnapType: 'y mandatory',
+                scrollBehavior: 'smooth'
+              }}
+            >
               {pdfBlobUrl ? (
                 <Worker workerUrl={workerUrl}>
-                  <div className="h-full w-full">
+                  <div 
+                    className="pdf-pages-wrapper"
+                    style={{
+                      transform: `scale(${zoomLevel})`,
+                      transformOrigin: 'top center',
+                      transition: 'transform 0.2s ease-out'
+                    }}
+                  >
                     <Viewer
                       fileUrl={pdfBlobUrl}
                       plugins={[zoomPluginInstance]}
-                      defaultScale={SpecialZoomLevel.PageFit}
+                      defaultScale={1}
                       scrollMode={ScrollMode.Page}
                       onDocumentLoad={(e) => {
                         setTotalPages(e.doc.numPages);
@@ -268,7 +290,7 @@ const PdfPreview = () => {
               variant="outline"
               className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
               title="Zoom Avanti"
-              disabled={scale >= 3}
+              disabled={zoomLevel >= 3}
             >
               <ZoomIn className="w-5 h-5" />
               <span className="text-[10px]">Zoom +</span>
@@ -279,7 +301,7 @@ const PdfPreview = () => {
               variant="outline"
               className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
               title="Zoom Indietro"
-              disabled={scale <= 0.5}
+              disabled={zoomLevel <= 0.5}
             >
               <ZoomOut className="w-5 h-5" />
               <span className="text-[10px]">Zoom -</span>
@@ -328,33 +350,82 @@ const PdfPreview = () => {
           overflow: hidden !important;
         }
 
-        /* Viewer occupa tutto lo spazio disponibile */
+        /* Container principale con scroll snap */
+        .pdf-scroll-container::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        .pdf-scroll-container::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.05);
+          border-radius: 4px;
+        }
+
+        .pdf-scroll-container::-webkit-scrollbar-thumb {
+          background: rgba(0, 0, 0, 0.2);
+          border-radius: 4px;
+        }
+
+        .pdf-scroll-container::-webkit-scrollbar-thumb:hover {
+          background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Wrapper che si scala con lo zoom */
+        .pdf-pages-wrapper {
+          width: 100%;
+          min-height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 1rem 0;
+        }
+
+        /* Viewer di base */
         .rpv-core__viewer {
           background-color: transparent !important;
-          height: 100% !important;
           width: 100% !important;
         }
 
-        /* Container delle pagine - DEVE essere visibile */
+        /* Container delle pagine con scroll snap */
         .rpv-core__inner-pages {
           background-color: transparent !important;
-          overflow-y: auto !important;
-          overflow-x: hidden !important;
-          height: 100% !important;
           display: flex !important;
           flex-direction: column !important;
           align-items: center !important;
-          scroll-behavior: smooth !important;
+          gap: 1rem !important;
         }
 
-        .rpv-core__inner-container {
-          width: 100% !important;
-        }
-
+        /* Ogni container di pagina con scroll snap */
         .rpv-core__page-layer {
+          scroll-snap-align: start !important;
+          scroll-snap-stop: always !important;
           background-color: white !important;
           box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
-          margin: 0.5rem auto !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+
+        /* Container interno della pagina - FIT alla pagina */
+        .rpv-core__inner-container {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          width: fit-content !important;
+          height: fit-content !important;
+        }
+
+        /* Canvas - nessuno spazio bianco */
+        .rpv-core__canvas-layer {
+          display: block !important;
+          line-height: 0 !important;
+        }
+
+        .rpv-core__canvas-layer canvas {
+          display: block !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
 
         /* Nasconde frecce native */
@@ -362,28 +433,21 @@ const PdfPreview = () => {
           display: none !important;
         }
 
-        /* Canvas ottimizzato */
-        .rpv-core__canvas-layer canvas {
-          display: block !important;
+        /* Text layer ottimizzato */
+        .rpv-core__text-layer {
+          line-height: 1 !important;
         }
 
-        /* Scrollbar personalizzata */
-        .rpv-core__inner-pages::-webkit-scrollbar {
-          width: 8px;
+        /* Aggiunge la classe per lo scroll snap sui container */
+        .rpv-core__page-layer {
+          scroll-margin-top: 1rem !important;
         }
 
-        .rpv-core__inner-pages::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.05);
-          border-radius: 4px;
-        }
-
-        .rpv-core__inner-pages::-webkit-scrollbar-thumb {
-          background: rgba(0, 0, 0, 0.2);
-          border-radius: 4px;
-        }
-
-        .rpv-core__inner-pages::-webkit-scrollbar-thumb:hover {
-          background: rgba(0, 0, 0, 0.3);
+        /* Assicura che non ci siano spazi extra */
+        .rpv-core__page-layer > div {
+          display: flex !important;
+          width: fit-content !important;
+          height: fit-content !important;
         }
       `}</style>
     </div>
