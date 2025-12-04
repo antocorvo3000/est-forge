@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Download, Printer, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react";
@@ -7,8 +7,10 @@ import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
 
-import { Worker, Viewer, SpecialZoomLevel } from "@react-pdf-viewer/core";
+import { Worker, Viewer, SpecialZoomLevel, ScrollMode } from "@react-pdf-viewer/core";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
+import type { RenderViewer, RenderPage } from "@react-pdf-viewer/core";
+
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/zoom/lib/styles/index.css";
 import "./pdf-transparent.css";
@@ -57,6 +59,8 @@ const PdfPreview = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [scale, setScale] = useState(1);
+  
+  const viewerContainerRef = useRef<HTMLDivElement>(null);
 
   const zoomPluginInstance = zoomPlugin();
   const { zoomTo } = zoomPluginInstance;
@@ -108,19 +112,46 @@ const PdfPreview = () => {
     toast.success("PDF salvato con successo");
   };
 
+  // CORREZIONE 1: Stampa migliorata con iframe nascosto per stampa diretta
   const handlePrint = () => {
     if (!pdfBlobUrl) return;
-    const w = window.open(pdfBlobUrl, "_blank");
-    if (!w) return toast.error("Sblocca i popup per stampare");
-    w.addEventListener("load", () => {
-      w.focus();
-      w.print();
-    });
-    toast.success("Invio alla stampante...");
+    
+    // Crea un iframe nascosto per stampare direttamente
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = pdfBlobUrl;
+    
+    document.body.appendChild(iframe);
+    
+    iframe.onload = () => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        toast.success("Invio alla stampante...");
+        
+        // Rimuovi iframe dopo 1 secondo
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1000);
+      } catch (error) {
+        console.error("Errore stampa iframe:", error);
+        // Fallback al metodo originale
+        const w = window.open(pdfBlobUrl, "_blank");
+        if (!w) {
+          toast.error("Sblocca i popup per stampare");
+        } else {
+          w.addEventListener("load", () => {
+            w.focus();
+            w.print();
+          });
+        }
+        document.body.removeChild(iframe);
+      }
+    };
   };
 
   const handleZoomIn = () => {
-    const newScale = scale + 0.25;
+    const newScale = Math.min(scale + 0.25, 3);
     setScale(newScale);
     zoomTo(newScale);
   };
@@ -129,6 +160,36 @@ const PdfPreview = () => {
     const newScale = Math.max(0.5, scale - 0.25);
     setScale(newScale);
     zoomTo(newScale);
+  };
+
+  // CORREZIONE 2: Navigazione manuale tra pagine con scroll programmatico
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      const targetPage = currentPage - 1;
+      scrollToPage(targetPage - 1); // -1 perché l'indice parte da 0
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      const targetPage = currentPage + 1;
+      scrollToPage(targetPage - 1); // -1 perché l'indice parte da 0
+    }
+  };
+
+  const scrollToPage = (pageIndex: number) => {
+    // Trova l'elemento della pagina specifica nel DOM
+    const pageElement = document.querySelector(`[data-testid="core__page-layer-${pageIndex}"]`);
+    if (pageElement) {
+      pageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      // Fallback: scroll calcolato in base all'altezza stimata
+      const container = viewerContainerRef.current?.querySelector('.rpv-core__inner-pages');
+      if (container) {
+        const pageHeight = container.scrollHeight / totalPages;
+        container.scrollTop = pageIndex * pageHeight;
+      }
+    }
   };
 
   const handleGoBack = (e: React.MouseEvent) => {
@@ -150,7 +211,6 @@ const PdfPreview = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 w-full flex-1 flex flex-col">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -163,22 +223,29 @@ const PdfPreview = () => {
         </motion.div>
 
         <div className="flex gap-6 flex-1 min-h-0 overflow-hidden">
-          {/* 📄 Widget viewer */}
+          {/* CORREZIONE 3: Container adattivo con proporzioni corrette */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex-1 glass rounded-2xl p-4 flex flex-col min-h-0 overflow-hidden"
+            ref={viewerContainerRef}
           >
             <div className="flex-1 min-h-0 w-full overflow-hidden">
               {pdfBlobUrl ? (
                 <Worker workerUrl={workerUrl}>
-                  <div className="h-full w-full">
+                  <div className="h-full w-full pdf-viewer-container">
                     <Viewer
                       fileUrl={pdfBlobUrl}
                       plugins={[zoomPluginInstance]}
                       defaultScale={SpecialZoomLevel.PageFit}
-                      onDocumentLoad={(e) => setTotalPages(e.doc.numPages)}
-                      onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
+                      scrollMode={ScrollMode.Page}
+                      onDocumentLoad={(e) => {
+                        setTotalPages(e.doc.numPages);
+                        setCurrentPage(1);
+                      }}
+                      onPageChange={(e) => {
+                        setCurrentPage(e.currentPage + 1);
+                      }}
                     />
                   </div>
                 </Worker>
@@ -190,7 +257,6 @@ const PdfPreview = () => {
             </div>
           </motion.div>
 
-          {/* 🎛 Control panel */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -217,35 +283,133 @@ const PdfPreview = () => {
             <Button
               onClick={handleZoomIn}
               variant="outline"
-              className="h-24 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
-              title="Zoom In"
+              className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
+              title="Zoom Avanti"
+              disabled={scale >= 3}
             >
               <ZoomIn className="w-5 h-5" />
-              <span>Zoom avanti</span>
+              <span className="text-[10px]">Zoom +</span>
             </Button>
 
             <Button
               onClick={handleZoomOut}
               variant="outline"
-              className="h-24 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
-              title="Zoom Out"
+              className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
+              title="Zoom Indietro"
+              disabled={scale <= 0.5}
             >
               <ZoomOut className="w-5 h-5" />
-              <span>Zoom indietro</span>
+              <span className="text-[10px]">Zoom -</span>
+            </Button>
+
+            <div className="h-px bg-border my-2" />
+
+            {/* BOTTONI NAVIGAZIONE PAGINE */}
+            <Button
+              onClick={handlePreviousPage}
+              variant="outline"
+              className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
+              title="Pagina Precedente"
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="w-5 h-5" />
+              <span className="text-[10px]">Prec</span>
+            </Button>
+
+            <Button
+              onClick={handleNextPage}
+              variant="outline"
+              className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs px-1"
+              title="Pagina Successiva"
+              disabled={currentPage >= totalPages}
+            >
+              <ChevronRight className="w-5 h-5" />
+              <span className="text-[10px]">Succ</span>
             </Button>
 
             <Button
               variant="outline"
               className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs cursor-default pointer-events-none"
             >
-              <span className="font-semibold">Pagina</span>
-              <span>
+              <span className="font-semibold text-[10px]">Pagina</span>
+              <span className="text-[11px] font-bold">
                 {currentPage} / {totalPages}
               </span>
             </Button>
           </motion.div>
         </div>
       </div>
+
+      {/* CSS OTTIMIZZATO PER CONTAINER ADATTIVO */}
+      <style>{`
+        .pdf-viewer-container {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+        }
+
+        .rpv-core__viewer {
+          background-color: transparent !important;
+          height: 100% !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+
+        .rpv-core__inner-pages {
+          background-color: transparent !important;
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: center !important;
+          justify-content: flex-start !important;
+          padding: 1rem !important;
+          overflow-y: auto !important;
+          scroll-behavior: smooth !important;
+        }
+
+        .rpv-core__inner-container {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+
+        .rpv-core__page-layer {
+          background-color: white !important;
+          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+          margin: 0.5rem auto !important;
+        }
+
+        /* Nasconde frecce di navigazione native */
+        .rpv-core__arrow-button {
+          display: none !important;
+        }
+
+        /* Ottimizzazione canvas per proporzioni corrette */
+        .rpv-core__canvas-layer canvas {
+          display: block !important;
+          max-width: 100% !important;
+          height: auto !important;
+        }
+
+        /* Scroll smooth per navigazione pagine */
+        .rpv-core__inner-pages::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        .rpv-core__inner-pages::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .rpv-core__inner-pages::-webkit-scrollbar-thumb {
+          background: rgba(0, 0, 0, 0.2);
+          border-radius: 4px;
+        }
+
+        .rpv-core__inner-pages::-webkit-scrollbar-thumb:hover {
+          background: rgba(0, 0, 0, 0.3);
+        }
+      `}</style>
     </div>
   );
 };
