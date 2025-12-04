@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Download, Printer, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react";
@@ -7,8 +7,10 @@ import { toast } from "@/lib/toast";
 import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
 
-import { Worker, Viewer, SpecialZoomLevel, ScrollMode } from "@react-pdf-viewer/core";
-import "@react-pdf-viewer/core/lib/styles/index.css";
+import * as pdfjsLib from "pdfjs-dist";
+
+// Worker URL
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
 
 interface QuoteData {
   numero: number;
@@ -41,21 +43,72 @@ interface QuoteData {
   showDiscountInTable: boolean;
 }
 
+interface PageData {
+  pageNum: number;
+  canvas: HTMLCanvasElement | null;
+  width: number;
+  height: number;
+}
+
 const PdfPreview = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const [loading, setLoading] = useState(true);
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
-  const [settings, setSettings] = useState<CompanySettings | null>(null);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string>("");
   const [returnPath, setReturnPath] = useState<string>("/");
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [pages, setPages] = useState<PageData[]>([]);
 
-  const viewerContainerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Carica e renderizza PDF
+  const loadPdf = useCallback(async (url: string) => {
+    try {
+      const loadingTask = pdfjsLib.getDocument(url);
+      const pdf = await loadingTask.promise;
+      
+      setTotalPages(pdf.numPages);
+      
+      const pagesData: PageData[] = [];
+      
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 1.5 }); // Scala base per qualità
+        
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        
+        if (context) {
+          await page.render({
+            canvasContext: context,
+            viewport: viewport,
+          }).promise;
+        }
+        
+        pagesData.push({
+          pageNum: i,
+          canvas: canvas,
+          width: viewport.width,
+          height: viewport.height,
+        });
+      }
+      
+      setPages(pagesData);
+      setLoading(false);
+    } catch (err) {
+      console.error("Errore caricamento PDF:", err);
+      toast.error("Errore durante il caricamento del PDF");
+    }
+  }, []);
 
   useEffect(() => {
     const data = location.state?.quoteData as QuoteData;
@@ -71,7 +124,6 @@ const PdfPreview = () => {
     }
 
     setQuoteData(data);
-    setSettings(companySettings);
 
     (async () => {
       try {
@@ -80,7 +132,7 @@ const PdfPreview = () => {
         const pdfBlob = new Blob([blob], { type: "application/pdf" });
         const url = URL.createObjectURL(pdfBlob);
         setPdfBlobUrl(url);
-        setLoading(false);
+        await loadPdf(url);
       } catch (err) {
         console.error("Errore generazione PDF:", err);
         toast.error("Errore durante la generazione del PDF");
@@ -91,7 +143,32 @@ const PdfPreview = () => {
     return () => {
       if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
     };
-  }, [location.state, navigate]);
+  }, [location.state, navigate, loadPdf]);
+
+  // Rileva pagina corrente durante lo scroll
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const containerRect = container.getBoundingClientRect();
+      const containerCenter = containerRect.top + containerRect.height / 2;
+
+      for (let i = 0; i < pageRefs.current.length; i++) {
+        const pageEl = pageRefs.current[i];
+        if (pageEl) {
+          const pageRect = pageEl.getBoundingClientRect();
+          if (pageRect.top <= containerCenter && pageRect.bottom >= containerCenter) {
+            setCurrentPage(i + 1);
+            break;
+          }
+        }
+      }
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [pages]);
 
   const handleSave = () => {
     if (!pdfBlobUrl || !quoteData) return;
@@ -107,8 +184,8 @@ const PdfPreview = () => {
   const handlePrint = () => {
     if (!pdfBlobUrl) return;
     
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
     iframe.src = pdfBlobUrl;
     document.body.appendChild(iframe);
     
@@ -118,7 +195,7 @@ const PdfPreview = () => {
         iframe.contentWindow?.print();
         toast.success("Invio alla stampante...");
         setTimeout(() => document.body.removeChild(iframe), 1000);
-      } catch (error) {
+      } catch {
         const w = window.open(pdfBlobUrl, "_blank");
         if (!w) {
           toast.error("Sblocca i popup per stampare");
@@ -133,36 +210,31 @@ const PdfPreview = () => {
     };
   };
 
-  // Zoom con transform esterno (NON usa zoomTo plugin)
   const handleZoomIn = () => {
-    setZoomLevel(prev => Math.min(prev + 0.25, 3));
+    setZoomLevel((prev) => Math.min(prev + 0.25, 3));
   };
 
   const handleZoomOut = () => {
-    setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
+    setZoomLevel((prev) => Math.max(prev - 0.25, 0.5));
   };
 
   const handlePreviousPage = () => {
-    if (currentPage > 1 && viewerContainerRef.current) {
-      const targetPageIndex = currentPage - 2;
-      const pageElement = viewerContainerRef.current.querySelector(
-        `[data-testid="core__page-layer-${targetPageIndex}"]`
-      );
-      if (pageElement) {
-        pageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+    if (currentPage > 1) {
+      const targetPage = currentPage - 1;
+      pageRefs.current[targetPage - 1]?.scrollIntoView({ 
+        behavior: "smooth", 
+        block: "center" 
+      });
     }
   };
 
   const handleNextPage = () => {
-    if (currentPage < totalPages && viewerContainerRef.current) {
-      const targetPageIndex = currentPage;
-      const pageElement = viewerContainerRef.current.querySelector(
-        `[data-testid="core__page-layer-${targetPageIndex}"]`
-      );
-      if (pageElement) {
-        pageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+    if (currentPage < totalPages) {
+      const targetPage = currentPage + 1;
+      pageRefs.current[targetPage - 1]?.scrollIntoView({ 
+        behavior: "smooth", 
+        block: "center" 
+      });
     }
   };
 
@@ -171,8 +243,6 @@ const PdfPreview = () => {
     e.stopPropagation();
     navigate(returnPath, { replace: true });
   };
-
-  const workerUrl = "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
 
   if (loading) {
     return (
@@ -185,6 +255,7 @@ const PdfPreview = () => {
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 w-full flex-1 flex flex-col min-h-0">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -197,60 +268,77 @@ const PdfPreview = () => {
         </motion.div>
 
         <div className="flex gap-6 flex-1 min-h-0 overflow-hidden">
+          {/* PDF Viewer */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex-1 glass rounded-2xl p-4 flex flex-col min-h-0 overflow-hidden"
           >
-            {/* Container con overflow hidden per UNA sola scrollbar */}
-            <div 
-              ref={viewerContainerRef}
-              className="pdf-viewer-container"
+            {/* Container con UN SOLO scroll verticale */}
+            <div
+              ref={scrollContainerRef}
+              className="flex-1 overflow-y-auto overflow-x-hidden"
               style={{
-                flex: 1,
-                minHeight: 0,
-                width: '100%',
-                height: '100%',
-                overflow: 'hidden',
+                scrollSnapType: "y mandatory",
+                scrollBehavior: "smooth",
               }}
             >
-              {pdfBlobUrl ? (
-                /* Wrapper ESTERNO con transform scale per zoom container+pagina insieme */
-                <div 
-                  className="zoom-wrapper"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    transform: `scale(${zoomLevel})`,
-                    transformOrigin: 'top center',
-                    transition: 'transform 0.2s ease-out',
-                  }}
-                >
-                  <Worker workerUrl={workerUrl}>
-                    <Viewer
-                      fileUrl={pdfBlobUrl}
-                      defaultScale={SpecialZoomLevel.PageFit}
-                      scrollMode={ScrollMode.Page}
-                      onDocumentLoad={(e) => {
-                        setTotalPages(e.doc.numPages);
-                        setCurrentPage(1);
+              {/* Wrapper per ZOOM - scala container + pagine insieme */}
+              <div
+                className="flex flex-col items-center gap-6 py-4"
+                style={{
+                  transform: `scale(${zoomLevel})`,
+                  transformOrigin: "top center",
+                  transition: "transform 0.2s ease-out",
+                }}
+              >
+                {pages.map((page, index) => (
+                  /* Container SINGOLA PAGINA - FIT esatto */
+                  <div
+                    key={page.pageNum}
+                    ref={(el) => (pageRefs.current[index] = el)}
+                    className="page-container"
+                    style={{
+                      scrollSnapAlign: "center",
+                      scrollSnapStop: "always",
+                      width: "fit-content",
+                      height: "fit-content",
+                      backgroundColor: "white",
+                      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)",
+                      borderRadius: "4px",
+                      overflow: "hidden",
+                      lineHeight: 0,
+                    }}
+                  >
+                    {/* Canvas renderizzato - NO spazi */}
+                    anvas
+                      ref={(canvasEl) => {
+                        if (canvasEl && page.canvas) {
+                          const ctx = canvasEl.getContext("2d");
+                          canvasEl.width = page.width;
+                          canvasEl.height = page.height;
+                          if (ctx) {
+                            ctx.drawImage(page.canvas, 0, 0);
+                          }
+                        }
                       }}
-                      onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
+                      style={{
+                        display: "block",
+                        margin: 0,
+                        padding: 0,
+                      }}
                     />
-                  </Worker>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                  ⚠️ PDF non disponibile
-                </div>
-              )}
+                  </div>
+                ))}
+              </div>
             </div>
           </motion.div>
 
+          {/* Control Panel */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="w-20 flex flex-col gap-3"
+            className="w-20 flex flex-col gap-3 flex-shrink-0"
           >
             <Button
               onClick={handleSave}
@@ -330,119 +418,26 @@ const PdfPreview = () => {
       </div>
 
       <style>{`
-        /* BLOCCA SCROLL PAGINA PRINCIPALE */
         body {
           overflow: hidden !important;
         }
 
-        /* Container principale */
-        .pdf-viewer-container {
-          display: flex;
-          flex-direction: column;
-        }
-
-        /* Zoom wrapper */
-        .zoom-wrapper {
-          display: flex;
-          flex-direction: column;
-        }
-
-        /* VIEWER - overflow hidden, NO scroll qui */
-        .pdf-viewer-container .rpv-core__viewer {
-          height: 100% !important;
-          width: 100% !important;
-          overflow: hidden !important;
-          background-color: transparent !important;
-        }
-
-        /* Inner container - overflow hidden */
-        .pdf-viewer-container .rpv-core__inner-container {
-          height: 100% !important;
-          overflow: hidden !important;
-        }
-
-        /* UNICO SCROLL VERTICALE QUI */
-        .pdf-viewer-container .rpv-core__inner-pages {
-          background-color: transparent !important;
-          padding: 1rem 0 !important;
-          overflow-y: auto !important;
-          overflow-x: hidden !important;
-          scroll-snap-type: y mandatory !important;
-          scroll-behavior: smooth !important;
-          display: flex !important;
-          flex-direction: column !important;
-          align-items: center !important;
-          gap: 1.5rem !important;
-        }
-
-        /* CONTAINER SINGOLA PAGINA - FIT senza spazi */
-        .pdf-viewer-container .rpv-core__page-layer {
-          scroll-snap-align: center !important;
-          scroll-snap-stop: always !important;
-          background-color: white !important;
-          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15) !important;
-          border-radius: 4px !important;
-          padding: 0 !important;
-          margin: 0 !important;
-          width: fit-content !important;
-          height: fit-content !important;
-          display: block !important;
-          overflow: hidden !important;
-        }
-
-        /* Figli del page layer - FIT */
-        .pdf-viewer-container .rpv-core__page-layer > * {
-          width: fit-content !important;
-          height: fit-content !important;
-          display: block !important;
-        }
-
-        /* Canvas layer senza spazi */
-        .pdf-viewer-container .rpv-core__canvas-layer {
-          line-height: 0 !important;
-          display: block !important;
-          padding: 0 !important;
-          margin: 0 !important;
-        }
-
-        .pdf-viewer-container .rpv-core__canvas-layer canvas {
-          display: block !important;
-          margin: 0 !important;
-          padding: 0 !important;
-        }
-
-        /* Text layer */
-        .pdf-viewer-container .rpv-core__text-layer {
-          line-height: 1 !important;
-          overflow: hidden !important;
-        }
-
-        /* Annotation layer */
-        .pdf-viewer-container .rpv-core__annotation-layer {
-          overflow: hidden !important;
-        }
-
-        /* Nascondi frecce native */
-        .rpv-core__arrow-button {
-          display: none !important;
-        }
-
-        /* Scrollbar personalizzata - UNA SOLA */
-        .pdf-viewer-container .rpv-core__inner-pages::-webkit-scrollbar {
+        /* Scrollbar personalizzata */
+        .flex-1.overflow-y-auto::-webkit-scrollbar {
           width: 10px;
         }
 
-        .pdf-viewer-container .rpv-core__inner-pages::-webkit-scrollbar-track {
+        .flex-1.overflow-y-auto::-webkit-scrollbar-track {
           background: rgba(0, 0, 0, 0.05);
           border-radius: 5px;
         }
 
-        .pdf-viewer-container .rpv-core__inner-pages::-webkit-scrollbar-thumb {
+        .flex-1.overflow-y-auto::-webkit-scrollbar-thumb {
           background: rgba(0, 0, 0, 0.25);
           border-radius: 5px;
         }
 
-        .pdf-viewer-container .rpv-core__inner-pages::-webkit-scrollbar-thumb:hover {
+        .flex-1.overflow-y-auto::-webkit-scrollbar-thumb:hover {
           background: rgba(0, 0, 0, 0.35);
         }
       `}</style>
