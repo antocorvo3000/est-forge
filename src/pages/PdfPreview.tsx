@@ -8,9 +8,7 @@ import { generateQuotePDF } from "@/lib/pdfGenerator";
 import type { CompanySettings } from "@/types/companySettings";
 
 import { Worker, Viewer, SpecialZoomLevel, ScrollMode } from "@react-pdf-viewer/core";
-import { zoomPlugin } from "@react-pdf-viewer/zoom";
 import "@react-pdf-viewer/core/lib/styles/index.css";
-import "@react-pdf-viewer/zoom/lib/styles/index.css";
 
 interface QuoteData {
   numero: number;
@@ -58,9 +56,6 @@ const PdfPreview = () => {
   const [zoomLevel, setZoomLevel] = useState(1);
 
   const viewerContainerRef = useRef<HTMLDivElement>(null);
-
-  const zoomPluginInstance = zoomPlugin();
-  const { zoomTo } = zoomPluginInstance;
 
   useEffect(() => {
     const data = location.state?.quoteData as QuoteData;
@@ -138,16 +133,13 @@ const PdfPreview = () => {
     };
   };
 
+  // Zoom con transform esterno (NON usa zoomTo plugin)
   const handleZoomIn = () => {
-    const newZoom = Math.min(zoomLevel + 0.25, 3);
-    setZoomLevel(newZoom);
-    zoomTo(newZoom);
+    setZoomLevel(prev => Math.min(prev + 0.25, 3));
   };
 
   const handleZoomOut = () => {
-    const newZoom = Math.max(0.5, zoomLevel - 0.25);
-    setZoomLevel(newZoom);
-    zoomTo(newZoom);
+    setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
   };
 
   const handlePreviousPage = () => {
@@ -210,7 +202,7 @@ const PdfPreview = () => {
             animate={{ opacity: 1, x: 0 }}
             className="flex-1 glass rounded-2xl p-4 flex flex-col min-h-0 overflow-hidden"
           >
-            {/* Container PDF con dimensioni esplicite */}
+            {/* Container con overflow hidden per UNA sola scrollbar */}
             <div 
               ref={viewerContainerRef}
               className="pdf-viewer-container"
@@ -219,22 +211,34 @@ const PdfPreview = () => {
                 minHeight: 0,
                 width: '100%',
                 height: '100%',
+                overflow: 'hidden',
               }}
             >
               {pdfBlobUrl ? (
-                <Worker workerUrl={workerUrl}>
-                  <Viewer
-                    fileUrl={pdfBlobUrl}
-                    plugins={[zoomPluginInstance]}
-                    defaultScale={SpecialZoomLevel.PageFit}
-                    scrollMode={ScrollMode.Page}
-                    onDocumentLoad={(e) => {
-                      setTotalPages(e.doc.numPages);
-                      setCurrentPage(1);
-                    }}
-                    onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
-                  />
-                </Worker>
+                /* Wrapper ESTERNO con transform scale per zoom container+pagina insieme */
+                <div 
+                  className="zoom-wrapper"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    transform: `scale(${zoomLevel})`,
+                    transformOrigin: 'top center',
+                    transition: 'transform 0.2s ease-out',
+                  }}
+                >
+                  <Worker workerUrl={workerUrl}>
+                    <Viewer
+                      fileUrl={pdfBlobUrl}
+                      defaultScale={SpecialZoomLevel.PageFit}
+                      scrollMode={ScrollMode.Page}
+                      onDocumentLoad={(e) => {
+                        setTotalPages(e.doc.numPages);
+                        setCurrentPage(1);
+                      }}
+                      onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
+                    />
+                  </Worker>
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
                   ⚠️ PDF non disponibile
@@ -331,38 +335,47 @@ const PdfPreview = () => {
           overflow: hidden !important;
         }
 
-        /* Container principale del viewer - DEVE avere altezza */
+        /* Container principale */
         .pdf-viewer-container {
           display: flex;
           flex-direction: column;
         }
 
-        /* Viewer principale */
+        /* Zoom wrapper */
+        .zoom-wrapper {
+          display: flex;
+          flex-direction: column;
+        }
+
+        /* VIEWER - overflow hidden, NO scroll qui */
         .pdf-viewer-container .rpv-core__viewer {
           height: 100% !important;
           width: 100% !important;
+          overflow: hidden !important;
           background-color: transparent !important;
         }
 
-        /* Inner container */
+        /* Inner container - overflow hidden */
         .pdf-viewer-container .rpv-core__inner-container {
           height: 100% !important;
+          overflow: hidden !important;
         }
 
-        /* SCROLL PAGES - scroll verticale con snap */
+        /* UNICO SCROLL VERTICALE QUI */
         .pdf-viewer-container .rpv-core__inner-pages {
           background-color: transparent !important;
           padding: 1rem 0 !important;
+          overflow-y: auto !important;
+          overflow-x: hidden !important;
           scroll-snap-type: y mandatory !important;
           scroll-behavior: smooth !important;
           display: flex !important;
           flex-direction: column !important;
           align-items: center !important;
           gap: 1.5rem !important;
-          overflow-y: auto !important;
         }
 
-        /* CONTAINER SINGOLA PAGINA - FIT */
+        /* CONTAINER SINGOLA PAGINA - FIT senza spazi */
         .pdf-viewer-container .rpv-core__page-layer {
           scroll-snap-align: center !important;
           scroll-snap-stop: always !important;
@@ -373,12 +386,23 @@ const PdfPreview = () => {
           margin: 0 !important;
           width: fit-content !important;
           height: fit-content !important;
+          display: block !important;
+          overflow: hidden !important;
         }
 
-        /* Canvas senza spazi */
+        /* Figli del page layer - FIT */
+        .pdf-viewer-container .rpv-core__page-layer > * {
+          width: fit-content !important;
+          height: fit-content !important;
+          display: block !important;
+        }
+
+        /* Canvas layer senza spazi */
         .pdf-viewer-container .rpv-core__canvas-layer {
           line-height: 0 !important;
           display: block !important;
+          padding: 0 !important;
+          margin: 0 !important;
         }
 
         .pdf-viewer-container .rpv-core__canvas-layer canvas {
@@ -390,6 +414,12 @@ const PdfPreview = () => {
         /* Text layer */
         .pdf-viewer-container .rpv-core__text-layer {
           line-height: 1 !important;
+          overflow: hidden !important;
+        }
+
+        /* Annotation layer */
+        .pdf-viewer-container .rpv-core__annotation-layer {
+          overflow: hidden !important;
         }
 
         /* Nascondi frecce native */
@@ -397,7 +427,7 @@ const PdfPreview = () => {
           display: none !important;
         }
 
-        /* Scrollbar personalizzata */
+        /* Scrollbar personalizzata - UNA SOLA */
         .pdf-viewer-container .rpv-core__inner-pages::-webkit-scrollbar {
           width: 10px;
         }
