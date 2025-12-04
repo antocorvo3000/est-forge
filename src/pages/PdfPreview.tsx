@@ -9,13 +9,8 @@ import type { CompanySettings } from "@/types/companySettings";
 
 import { Worker, Viewer, SpecialZoomLevel, ScrollMode } from "@react-pdf-viewer/core";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
-import { printPlugin } from "@react-pdf-viewer/print";
-import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
-
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/zoom/lib/styles/index.css";
-import "@react-pdf-viewer/print/lib/styles/index.css";
-import "@react-pdf-viewer/page-navigation/lib/styles/index.css";
 import "./pdf-transparent.css";
 
 interface QuoteData {
@@ -62,15 +57,10 @@ const PdfPreview = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [scale, setScale] = useState(1);
+  const [pdfDocument, setPdfDocument] = useState<any>(null);
 
   const zoomPluginInstance = zoomPlugin();
   const { zoomTo } = zoomPluginInstance;
-
-  const printPluginInstance = printPlugin();
-  const { print } = printPluginInstance;
-
-  const pageNavigationPluginInstance = pageNavigationPlugin();
-  const { jumpToPage } = pageNavigationPluginInstance;
 
   useEffect(() => {
     const data = location.state?.quoteData as QuoteData;
@@ -121,18 +111,16 @@ const PdfPreview = () => {
 
   const handlePrint = () => {
     if (!pdfBlobUrl) return;
-    try {
-      print();
-      toast.success("Invio alla stampante...");
-    } catch (error) {
-      console.error("Errore stampa:", error);
-      const w = window.open(pdfBlobUrl, "_blank");
-      if (!w) return toast.error("Sblocca i popup per stampare");
-      w.addEventListener("load", () => {
-        w.focus();
-        w.print();
-      });
+    const printWindow = window.open(pdfBlobUrl, "_blank");
+    if (!printWindow) {
+      toast.error("Sblocca i popup per stampare");
+      return;
     }
+    printWindow.addEventListener("load", () => {
+      printWindow.focus();
+      printWindow.print();
+    });
+    toast.success("Invio alla stampante...");
   };
 
   const handleZoomIn = () => {
@@ -147,15 +135,27 @@ const PdfPreview = () => {
     zoomTo(newScale);
   };
 
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      jumpToPage(currentPage - 2);
+  const handlePreviousPage = async () => {
+    if (currentPage > 1 && pdfDocument) {
+      const newPage = currentPage - 1;
+      setCurrentPage(newPage);
+      const container = document.querySelector('.rpv-core__inner-pages');
+      if (container) {
+        const pageElement = container.querySelector(`[data-testid="core__page-layer-${newPage - 1}"]`);
+        pageElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   };
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      jumpToPage(currentPage);
+  const handleNextPage = async () => {
+    if (currentPage < totalPages && pdfDocument) {
+      const newPage = currentPage + 1;
+      setCurrentPage(newPage);
+      const container = document.querySelector('.rpv-core__inner-pages');
+      if (container) {
+        const pageElement = container.querySelector(`[data-testid="core__page-layer-${newPage - 1}"]`);
+        pageElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   };
 
@@ -201,14 +201,13 @@ const PdfPreview = () => {
                   <div className="h-full w-full">
                     <Viewer
                       fileUrl={pdfBlobUrl}
-                      plugins={[
-                        zoomPluginInstance,
-                        printPluginInstance,
-                        pageNavigationPluginInstance
-                      ]}
+                      plugins={[zoomPluginInstance]}
                       defaultScale={SpecialZoomLevel.PageFit}
                       scrollMode={ScrollMode.Page}
-                      onDocumentLoad={(e) => setTotalPages(e.doc.numPages)}
+                      onDocumentLoad={(e) => {
+                        setTotalPages(e.doc.numPages);
+                        setPdfDocument(e.doc);
+                      }}
                       onPageChange={(e) => setCurrentPage(e.currentPage + 1)}
                     />
                   </div>
