@@ -815,7 +815,24 @@ payment_type: paymentEnabled ? paymentType : undefined,
     return false;
   }
 
-  const currentState = JSON.stringify({
+  // Funzione per normalizzare lo stato
+  const normalizeState = (state: any) => {
+    return {
+      ...state,
+      // Normalizza discountValue: 0 e "" sono equivalenti
+      discountValue: state.discountValue === "" ? 0 : state.discountValue,
+      // Normalizza le righe rimuovendo gli ID (che possono cambiare)
+      lines: state.lines.map((line: QuoteLine) => ({
+        description: line.description,
+        unit: line.unit,
+        quantity: typeof line.quantity === "number" ? line.quantity : parseFloat(line.quantity) || 0,
+        unitPrice: typeof line.unitPrice === "number" ? line.unitPrice : parseFloat(line.unitPrice) || 0,
+        total: typeof line.total === "number" ? line.total : parseFloat(line.total) || 0,
+      })),
+    };
+  };
+
+  const currentState = {
     clientData,
     workAddress,
     workCity,
@@ -832,19 +849,26 @@ payment_type: paymentEnabled ? paymentType : undefined,
     paymentType,
     paymentMethod,
     customPayment,
-  });
+  };
 
-  const hasChanged = initialData !== currentState;
+  const normalizedInitial = normalizeState(JSON.parse(initialData));
+  const normalizedCurrent = normalizeState(currentState);
+
+  const initialStr = JSON.stringify(normalizedInitial);
+  const currentStr = JSON.stringify(normalizedCurrent);
+
+  const hasChanged = initialStr !== currentStr;
   
   // Debug: mostra cosa è cambiato
   if (hasChanged) {
     console.log("[ModifyQuote] Modifiche rilevate");
-    console.log("Initial:", initialData.substring(0, 200));
-    console.log("Current:", currentState.substring(0, 200));
+    console.log("Initial:", initialStr.substring(0, 300));
+    console.log("Current:", currentStr.substring(0, 300));
   }
 
   return hasChanged;
 };
+
 
 
   const handleViewPdf = async () => {
