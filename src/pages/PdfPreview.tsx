@@ -308,20 +308,16 @@ const handlePrint = () => {
     return;
   }
 
-  const triggerPrint = () => {
+  // Lascia fare tutto al browser: niente toast, niente chiusure automatiche.
+  printWindow.addEventListener("load", () => {
     try {
       printWindow.focus();
       printWindow.print();
-      toast.success("Invio alla stampante...");
+      // NON chiudere la finestra, NON fare altri setTimeout qui
     } catch (error) {
       console.error("Errore stampa:", error);
       toast.error("Errore durante la stampa");
     }
-  };
-
-  // Alcuni browser caricano il PDF come plugin: aspetta un attimo prima di stampare
-  printWindow.addEventListener("load", () => {
-    setTimeout(triggerPrint, 400);
   });
 };
 
