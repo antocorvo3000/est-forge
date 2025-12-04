@@ -744,7 +744,6 @@ setPaymentMethod(data.modalita_pagamento || "da-concordare");
         toast.success("Preventivo modificato con successo");
       }
 
-      navigate("/");
     } catch (error) {
       console.error("Errore salvataggio:", error);
       toast.error("Errore durante il salvataggio");
