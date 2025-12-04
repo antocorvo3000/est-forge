@@ -301,7 +301,6 @@ const PdfPreview = () => {
 const handlePrint = () => {
   if (!pdfBlobUrl) return;
 
-  // Se esiste già un iframe di stampa, riusalo
   let iframe = document.getElementById("pdf-print-frame") as HTMLIFrameElement | null;
 
   if (!iframe) {
@@ -316,25 +315,40 @@ const handlePrint = () => {
     document.body.appendChild(iframe);
   }
 
+  // IMPORTANTE: salva il riferimento per gli eventi
+  const iframeRef = iframe;
+
   iframe.src = pdfBlobUrl;
 
   iframe.onload = () => {
     try {
-      const win = iframe!.contentWindow;
+      const win = iframeRef.contentWindow;
       if (!win) {
         toast.error("Impossibile accedere alla finestra di stampa");
         return;
       }
 
-      // Nessun timeout dopo print, nessuna rimozione iframe
-      win.focus();
-      win.print();
+      // Gestisci DOPO che l'utente chiude lo spooler
+      const handleAfterPrint = () => {
+        console.log("Stampa completata o annullata dall'utente");
+        win.removeEventListener("afterprint", handleAfterPrint);
+        // Ora puoi rimuovere l'iframe SE VUOI (opzionale)
+        // Non farlo e l'iframe resta per le prossime stampe
+      };
+
+      win.addEventListener("afterprint", handleAfterPrint);
+
+      setTimeout(() => {
+        win.focus();
+        win.print();
+      }, 800);
     } catch (error) {
       console.error("Errore stampa:", error);
       toast.error("Errore durante la stampa");
     }
   };
 };
+
 
   const handleZoomIn = () => {
     setZoomLevel((prev) => Math.min(prev + 0.25, 3));
