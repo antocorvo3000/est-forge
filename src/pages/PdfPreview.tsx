@@ -60,7 +60,6 @@ const PdfPreview = () => {
   const [zoomLevel, setZoomLevel] = useState(1);
   
   const viewerContainerRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const zoomPluginInstance = zoomPlugin();
   const { zoomTo } = zoomPluginInstance;
@@ -156,16 +155,17 @@ const PdfPreview = () => {
   };
 
   const scrollToPage = (pageNumber: number) => {
-    if (!scrollContainerRef.current) return;
+    if (!viewerContainerRef.current) return;
     
     const pageIndex = pageNumber - 1;
-    const pageElements = scrollContainerRef.current.querySelectorAll('.pdf-page-container');
+    const pageElement = viewerContainerRef.current.querySelector(
+      `[data-testid="core__page-layer-${pageIndex}"]`
+    );
     
-    if (pageElements[pageIndex]) {
-      pageElements[pageIndex].scrollIntoView({ 
+    if (pageElement) {
+      pageElement.scrollIntoView({ 
         behavior: 'smooth', 
-        block: 'nearest',
-        inline: 'center'
+        block: 'center'
       });
     }
   };
@@ -223,21 +223,14 @@ const PdfPreview = () => {
             className="flex-1 glass rounded-2xl p-4 flex flex-col min-h-0"
             ref={viewerContainerRef}
           >
-            <div 
-              className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden pdf-scroll-container"
-              ref={scrollContainerRef}
-              style={{
-                scrollSnapType: 'y mandatory',
-                scrollBehavior: 'smooth'
-              }}
-            >
+            <div className="flex-1 min-h-0 w-full overflow-hidden">
               {pdfBlobUrl ? (
                 <Worker workerUrl={workerUrl}>
                   <div 
-                    className="pdf-pages-wrapper"
+                    className="h-full w-full"
                     style={{
                       transform: `scale(${zoomLevel})`,
-                      transformOrigin: 'top center',
+                      transformOrigin: 'center center',
                       transition: 'transform 0.2s ease-out'
                     }}
                   >
@@ -345,81 +338,62 @@ const PdfPreview = () => {
       </div>
 
       <style>{`
-        /* IMPEDISCE SCROLL DELLA PAGINA PRINCIPALE */
+        /* BLOCCA SCROLL DELLA PAGINA */
         body {
           overflow: hidden !important;
         }
 
-        /* Container principale con scroll snap */
-        .pdf-scroll-container::-webkit-scrollbar {
-          width: 8px;
-        }
-
-        .pdf-scroll-container::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.05);
-          border-radius: 4px;
-        }
-
-        .pdf-scroll-container::-webkit-scrollbar-thumb {
-          background: rgba(0, 0, 0, 0.2);
-          border-radius: 4px;
-        }
-
-        .pdf-scroll-container::-webkit-scrollbar-thumb:hover {
-          background: rgba(0, 0, 0, 0.3);
-        }
-
-        /* Wrapper che si scala con lo zoom */
-        .pdf-pages-wrapper {
-          width: 100%;
-          min-height: 100%;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 1rem 0;
-        }
-
-        /* Viewer di base */
+        /* Viewer base - occupa tutto lo spazio */
         .rpv-core__viewer {
           background-color: transparent !important;
+          height: 100% !important;
           width: 100% !important;
+          overflow: hidden !important;
         }
 
-        /* Container delle pagine con scroll snap */
+        /* Container pagine - UN SOLO SCROLL VERTICALE */
         .rpv-core__inner-pages {
           background-color: transparent !important;
+          height: 100% !important;
+          width: 100% !important;
+          overflow-y: auto !important;
+          overflow-x: hidden !important;
           display: flex !important;
           flex-direction: column !important;
           align-items: center !important;
           gap: 1rem !important;
+          padding: 1rem 0 !important;
+          scroll-behavior: smooth !important;
+          scroll-snap-type: y mandatory !important;
         }
 
-        /* Ogni container di pagina con scroll snap */
+        /* CONTAINER DI OGNI PAGINA - FIT CON IL PDF, NO SCROLL */
         .rpv-core__page-layer {
-          scroll-snap-align: start !important;
+          scroll-snap-align: center !important;
           scroll-snap-stop: always !important;
           background-color: white !important;
           box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
           margin: 0 !important;
           padding: 0 !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-        }
-
-        /* Container interno della pagina - FIT alla pagina */
-        .rpv-core__inner-container {
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
           width: fit-content !important;
           height: fit-content !important;
+          overflow: hidden !important;
+          display: block !important;
         }
 
-        /* Canvas - nessuno spazio bianco */
+        /* Container interno - FIT esatto con la pagina */
+        .rpv-core__inner-container {
+          width: fit-content !important;
+          height: fit-content !important;
+          overflow: hidden !important;
+          display: block !important;
+        }
+
+        /* Canvas layer - NO spazi bianchi */
         .rpv-core__canvas-layer {
           display: block !important;
           line-height: 0 !important;
+          overflow: hidden !important;
         }
 
         .rpv-core__canvas-layer canvas {
@@ -428,26 +402,40 @@ const PdfPreview = () => {
           padding: 0 !important;
         }
 
-        /* Nasconde frecce native */
-        .rpv-core__arrow-button {
-          display: none !important;
-        }
-
-        /* Text layer ottimizzato */
+        /* Text layer FIT */
         .rpv-core__text-layer {
           line-height: 1 !important;
         }
 
-        /* Aggiunge la classe per lo scroll snap sui container */
-        .rpv-core__page-layer {
-          scroll-margin-top: 1rem !important;
+        /* Nascondi frecce native */
+        .rpv-core__arrow-button {
+          display: none !important;
         }
 
-        /* Assicura che non ci siano spazi extra */
-        .rpv-core__page-layer > div {
-          display: flex !important;
+        /* Scrollbar personalizzata SOLO per inner-pages */
+        .rpv-core__inner-pages::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        .rpv-core__inner-pages::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.05);
+          border-radius: 4px;
+        }
+
+        .rpv-core__inner-pages::-webkit-scrollbar-thumb {
+          background: rgba(0, 0, 0, 0.2);
+          border-radius: 4px;
+        }
+
+        .rpv-core__inner-pages::-webkit-scrollbar-thumb:hover {
+          background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Assicura che tutti i children siano fit */
+        .rpv-core__page-layer > * {
           width: fit-content !important;
           height: fit-content !important;
+          display: block !important;
         }
       `}</style>
     </div>
