@@ -638,21 +638,29 @@ const saveQuoteAndGeneratePdf = async () => {
 
 
   const handleViewPdf = async () => {
-    if (!clientData || !clientData.name.trim()) {
-      toast.error("Inserire i dati del cliente prima di generare il PDF");
-      return;
-    }
-    if (!workAddress.trim() || !workCity.trim()) {
-      toast.error("Inserire l'ubicazione del lavoro prima di generare il PDF");
-      return;
-    }
-    if (lines.every((line) => !line.description.trim())) {
-      toast.error("Inserire almeno una voce nel preventivo");
-      return;
-    }
+  if (!clientData || !clientData.name.trim()) {
+    toast.error("Inserire i dati del cliente prima di generare il PDF");
+    return;
+  }
+  if (!workAddress.trim() || !workCity.trim()) {
+    toast.error("Inserire l'ubicazione del lavoro prima di generare il PDF");
+    return;
+  }
+  if (lines.every((line) => !line.description.trim())) {
+    toast.error("Inserire almeno una voce nel preventivo");
+    return;
+  }
 
+  // Se non è stato salvato, mostra il popup di avviso
+  if (!isSaved) {
     setShowPdfWarningDialog(true);
-  };
+    return;
+  }
+
+  // Se è già stato salvato, genera direttamente il PDF
+  await proceedToGeneratePdf();
+};
+
 
   const proceedToGeneratePdf = async () => {
     try {
