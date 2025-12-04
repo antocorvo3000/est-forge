@@ -62,7 +62,6 @@ const PdfPreview = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [scale, setScale] = useState(1);
 
-  // Inizializza i plugin
   const zoomPluginInstance = zoomPlugin();
   const { zoomTo } = zoomPluginInstance;
 
@@ -77,7 +76,9 @@ const PdfPreview = () => {
     const companySettings = location.state?.settings as CompanySettings;
     const fromPath = location.state?.from as string;
 
-    if (fromPath) setReturnPath(fromPath);
+    if (fromPath) {
+      setReturnPath(fromPath);
+    }
 
     if (!data || !companySettings) {
       toast.error("Nessun dato disponibile per generare il PDF");
@@ -88,7 +89,7 @@ const PdfPreview = () => {
     setQuoteData(data);
     setSettings(companySettings);
 
-    (async () => {
+    const generatePDF = async () => {
       try {
         const pdf = await generateQuotePDF(data, companySettings);
         const blob = pdf.output("blob");
@@ -101,10 +102,14 @@ const PdfPreview = () => {
         toast.error("Errore durante la generazione del PDF");
         navigate(-1);
       }
-    })();
+    };
+
+    generatePDF();
 
     return () => {
-      if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl);
+      }
     };
   }, [location.state, navigate]);
 
@@ -123,7 +128,6 @@ const PdfPreview = () => {
     if (!pdfBlobUrl) return;
     
     try {
-      // Usa il plugin print per stampare correttamente
       print();
       toast.success("Invio alla stampante...");
     } catch (error) {
@@ -175,7 +179,6 @@ const PdfPreview = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 w-full flex-1 flex flex-col">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -188,7 +191,6 @@ const PdfPreview = () => {
         </motion.div>
 
         <div className="flex gap-6 flex-1 min-h-0 overflow-hidden">
-          {/* 📄 Widget viewer - Container a filo con il PDF */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -232,9 +234,11 @@ const PdfPreview = () => {
                         setCurrentPage(0);
                       }}
                       onPageChange={(e) => setCurrentPage(e.currentPage)}
-                      theme={{
-                        theme: 'light'
-                      }}
+                      renderError={(error: Error) => (
+                        <div className="flex items-center justify-center h-full text-destructive">
+                          Errore caricamento PDF: {error.message}
+                        </div>
+                      )}
                     />
                   </div>
                 </Worker>
@@ -246,7 +250,6 @@ const PdfPreview = () => {
             </div>
           </motion.div>
 
-          {/* 🎛 Control panel */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -329,9 +332,7 @@ const PdfPreview = () => {
         </div>
       </div>
 
-      {/* CSS Custom per il viewer */}
       <style>{`
-        /* Rimuovi padding e margini dal viewer */
         .rpv-core__viewer {
           background-color: transparent !important;
           padding: 0 !important;
@@ -352,22 +353,18 @@ const PdfPreview = () => {
           margin: 0 !important;
         }
 
-        /* Nascondi elementi di navigazione interni */
         .rpv-core__arrow-button {
           display: none !important;
         }
 
-        /* Modalità pagina singola - nasconde lo scroll verticale */
         .rpv-core__inner-pages--single {
           overflow: hidden !important;
         }
 
-        /* Migliora il rendering del canvas */
         .rpv-core__canvas-layer canvas {
           display: block !important;
         }
 
-        /* Nascondi la barra di scorrimento quando in modalità pagina */
         .rpv-core__inner-container {
           overflow: hidden !important;
         }
